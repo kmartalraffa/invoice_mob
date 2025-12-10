@@ -58,7 +58,7 @@
       let numQty = parseFloat(qtyValue);
       if (isNaN(numQty)) return;
 
-      // Keep user-entered values, no forced formatting
+      // Keep user-entered values, no forced decimal formatting
       qtyInput.value = qtyValue;
       totalInput.value = qtyValue;
     }
@@ -86,4 +86,20 @@
           document.getElementById('statusMsg').textContent = "Data saved successfully.";
           document.getElementById('errorMsg').style.display = "none";
         } else {
-          throw
+          throw new Error("Save failed");
+        }
+      } catch (error) {
+        document.getElementById('errorMsg').style.display = "block";
+        document.getElementById('statusMsg').textContent = "";
+      }
+    });
+
+    // ✅ Example Download function
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      // Replace with your XLSX generation logic
+      alert("Download XLSX Output triggered.");
+    });
+  </script>
+
+</body>
+</html>
