@@ -4,7 +4,7 @@
     <title>Shop Invoice - kmart alraffa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* CSS remains the same for a clean, mobile-friendly look */
+        /* CSS ഇവിടെ മാറ്റമില്ലാതെ നിലനിർത്തുന്നു */
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
         .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
         input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
@@ -19,14 +19,21 @@
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
         .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
+        .download-button { background-color: #007bff; margin-top: 10px; }
+        .download-button:hover { background-color: #0056b3; }
     </style>
 </head>
-<body>
+<body onload="loadItemData()">
 
     <div class="container">
         <h1>Shop Invoice</h1>
         <h2>kmart alraffa</h2>
 
+        <button id="downloadXLSXButton" class="download-button" onclick="openDownloadLink()" disabled>
+            XLSX ഔട്ട്പുട്ട് ഡൗൺലോഡ് ചെയ്യുക
+        </button>
+        <hr>
+        
         <div class="search-area">
             <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
             <input 
@@ -39,12 +46,11 @@
             <div id="autocompleteList" class="autocomplete-list"></div>
         </div>
         
-        <button onclick="performFinalSearch()" id="searchButton">Search Item</button>
+        <button onclick="performFinalSearch()" id="searchButton" disabled>Search Item</button>
         <hr>
 
         <h3>ഫലം & ഡാറ്റാ എൻട്രി</h3>
-        <div id="resultDisplay" class="result-box" style="display: none;">
-            </div>
+        <div id="resultDisplay" class="result-box" style="display: none;"></div>
 
         <label for="qtyInput" class="label-style">2. QTY (C കോളം):</label>
         <input 
@@ -63,7 +69,7 @@
 
         <button onclick="saveData()" id="saveButton" disabled>ഡാറ്റ സേവ് ചെയ്യുക (Save)</button>
         
-        <p id="message"></p>
+        <p id="message">Loading data...</p>
     </div>
 
     <script>
@@ -72,57 +78,100 @@
         // ====================================================================
         
         // --- !!! ഇവിടെ നിങ്ങളുടെ Apps Script URL പേസ്റ്റ് ചെയ്യുക !!! ---
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwGzwFNU58hHC4XT6c7NK_98vhRZFa0VKNbdq0EKNUdYy5T-PLmCjImoPdpFvQoeP3DWg/exec'; 
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzSE76Nfsm_UmCBnf4JvEq14EJYKRFdGNrpySpSiN91DSL2sZSvcc4P7JGHydifuo_-kw/exec'; 
+        // ------------------------------------------------------------------
+        
+        // --- !!! ഇവിടെ നിങ്ങളുടെ Google Sheet ID പേസ്റ്റ് ചെയ്യുക !!! ---
+        // Google Sheet URL-ൽ നിന്ന് (docs.google.com/spreadsheets/d/ഇതാണ്_SHEET_ID/edit) ലഭിക്കും.
+        const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10'; 
         // ------------------------------------------------------------------
 
+
+        let allItemData = [];
         let currentRow = null; 
         let selectedItem = null;
 
-        // 1. Search Logic (Uses combined string logic from Apps Script)
-        async function handleSearchInput() {
+        // XLSX Download Link സെറ്റ് ചെയ്യുന്നു
+        function setDownloadLink() {
+            if (SHEET_ID === '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10') {
+                document.getElementById('downloadXLSXButton').textContent = 'Sheet ID നൽകുക';
+                return;
+            }
+            // Google Sheets-ൽ നിന്ന് XLSX ആയി ഡൗൺലോഡ് ചെയ്യാനുള്ള URL ഫോർമാറ്റ്
+            const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+            document.getElementById('downloadXLSXButton').disabled = false;
+            document.getElementById('downloadXLSXButton').setAttribute('data-link', downloadLink);
+        }
+
+        function openDownloadLink() {
+            const link = document.getElementById('downloadXLSXButton').getAttribute('data-link');
+            if (link) {
+                // പുതിയ ടാബിൽ ഡൗൺലോഡ് ലിങ്ക് തുറക്കുന്നു
+                window.open(link, '_blank');
+            }
+        }
+
+        // പേജ് ലോഡ് ചെയ്യുമ്പോൾ JSON ഫയൽ Fetch ചെയ്യുന്നു
+        async function loadItemData() {
+            setDownloadLink(); // ഡൗൺലോഡ് ലിങ്ക് സെറ്റ് ചെയ്യുന്നു
+            try {
+                const response = await fetch('./items.json'); 
+                allItemData = await response.json();
+                document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
+                document.getElementById('searchButton').disabled = false;
+            } catch (e) {
+                console.error("Error loading items.json:", e);
+                document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+            }
+        }
+
+        // 1. Search Logic (പൂർണ്ണമായും ബ്രൗസറിൽ പ്രവർത്തിക്കുന്നു)
+        function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
-            const searchText = searchInput.value.trim();
+            const messageEl = document.getElementById('message');
+            const searchText = searchInput.value.trim().toLowerCase();
 
             listDiv.style.display = 'none';
             listDiv.innerHTML = '';
             
-            // 3 അക്ഷരങ്ങളിൽ കുറവാണെങ്കിൽ തിരയേണ്ടതില്ല
             if (searchText.length < 3) {
                 return;
             }
 
-            const url = `${WEB_APP_URL}?type=autocomplete&text=${encodeURIComponent(searchText)}`;
+            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+            const results = [];
             
-            try {
-                const response = await fetch(url);
-                const result = await response.json();
+            for (const data of allItemData) {
+                const combined = `${data.item.toLowerCase()} ${data.code}`;
+                const match = searchParts.every(part => combined.includes(part));
                 
-                if (result.status === 'success' && result.suggestions.length > 0) {
-                    result.suggestions.forEach(suggestion => {
-                        const div = document.createElement('div');
-                        div.className = 'autocomplete-item';
-                        // Display: CODE - ITEM
-                        div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
-                        
-                        div.onclick = () => {
-                            // Selection: Search box-ൽ ITEM CODE ITEM NAME എന്ന് വരുന്നു
-                            searchInput.value = `${suggestion.code} ${suggestion.item}`;
-                            selectedItem = suggestion; 
-                            listDiv.style.display = 'none';
-                            showSelectedItem();
-                        };
-                        listDiv.appendChild(div);
-                    });
-                    listDiv.style.display = 'block';
+                if (match) {
+                    results.push(data);
+                    if (results.length >= 20) break;
                 }
-            } catch (e) {
-                console.error("Error fetching suggestions:", e);
-                document.getElementById('message').textContent = 'Search error occurred.';
             }
+
+            if (results.length > 0) {
+                results.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    
+                    div.onclick = () => {
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        selectedItem = suggestion; 
+                        listDiv.style.display = 'none';
+                        showSelectedItem();
+                    };
+                    listDiv.appendChild(div);
+                });
+                listDiv.style.display = 'block';
+            }
+            messageEl.textContent = `Found ${results.length} items.`;
         }
 
-        // 2. Button Action (To confirm selection if dropdown is missed)
+        // 2 & 3. Selection and Display Logic (മാറ്റമില്ല)
         function performFinalSearch() {
             if (selectedItem) {
                 showSelectedItem();
@@ -134,7 +183,6 @@
             }
         }
         
-        // 3. Show Selected Item (Updates display box)
         function showSelectedItem() {
             if (selectedItem) {
                 currentRow = selectedItem.row;
@@ -146,7 +194,7 @@
         }
 
 
-        // 4. Formatting and Calculation Logic (QTY -> 3 decimals, Total -> 2 decimals + QTY value)
+        // 4. Formatting and Calculation Logic (മാറ്റമില്ല)
         function formatQtyAndCalculateTotal() {
             const qtyInput = document.getElementById('qtyInput');
             let qtyValue = qtyInput.value;
@@ -160,15 +208,12 @@
             let numQty = parseFloat(qtyValue);
             if (isNaN(numQty)) return;
 
-            // QTY Formatting (1 -> 1.000, 1.2 -> 1.200) - 3 decimal places
             qtyInput.value = numQty.toFixed(3); 
-            
-            // Total Column Calculation (Value from QTY moves to TOTAL, 2 decimal places for currency)
             totalInput.value = numQty.toFixed(2);
         }
 
 
-        // 5. Save Logic (Saves to C and E columns)
+        // 5. Save Logic (doPost-ലേക്ക് ഡാറ്റ അയയ്ക്കുന്നു - മാറ്റമില്ല)
         async function saveData() {
             const qty = document.getElementById('qtyInput').value.trim(); 
             const total = document.getElementById('totalInput').value.trim(); 
@@ -214,7 +259,7 @@
                     messageEl.textContent = `Save Error: ${result.message}`;
                 }
             } catch (e) {
-                messageEl.textContent = 'An error occurred while saving data.';
+                messageEl.textContent = 'An error occurred while saving data. Check network/AppScript URL.';
             }
         }
     </script>
