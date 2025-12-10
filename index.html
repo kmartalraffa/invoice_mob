@@ -4,7 +4,7 @@
     <title>Shop Invoice - kmart alraffa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        /* CSS for mobile-friendly layout and clean design */
+        /* CSS remains the same for a clean, mobile-friendly look */
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
         .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
         input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
@@ -14,9 +14,8 @@
         h1 { text-align: center; color: #333; margin-bottom: 5px; }
         h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
         .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
-        /* Autocomplete positioning is crucial */
         .search-area { position: relative; }
-        .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; /* Adjusting width for container */ background: white; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; background: white; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .autocomplete-item:hover { background-color: #f0f0f0; }
         .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
@@ -73,13 +72,13 @@
         // ====================================================================
         
         // --- !!! ഇവിടെ നിങ്ങളുടെ Apps Script URL പേസ്റ്റ് ചെയ്യുക !!! ---
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxS5F7-0WaDnz4AjnfuGDFMKgxQ1l1R-a6JbR5tlCMS9IGcfPLouF-ipwveqdQG6hy0uw/exec'; 
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwGzwFNU58hHC4XT6c7NK_98vhRZFa0VKNbdq0EKNUdYy5T-PLmCjImoPdpFvQoeP3DWg/exec'; 
         // ------------------------------------------------------------------
 
         let currentRow = null; 
         let selectedItem = null;
 
-        // 1. Search Logic (Code Exact Match OR Item Name Contains)
+        // 1. Search Logic (Uses combined string logic from Apps Script)
         async function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -103,10 +102,11 @@
                     result.suggestions.forEach(suggestion => {
                         const div = document.createElement('div');
                         div.className = 'autocomplete-item';
+                        // Display: CODE - ITEM
                         div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
                         
                         div.onclick = () => {
-                            // Selection
+                            // Selection: Search box-ൽ ITEM CODE ITEM NAME എന്ന് വരുന്നു
                             searchInput.value = `${suggestion.code} ${suggestion.item}`;
                             selectedItem = suggestion; 
                             listDiv.style.display = 'none';
@@ -122,7 +122,7 @@
             }
         }
 
-        // 2. Button Action (Primarily confirming selection or showing error)
+        // 2. Button Action (To confirm selection if dropdown is missed)
         function performFinalSearch() {
             if (selectedItem) {
                 showSelectedItem();
@@ -161,7 +161,6 @@
             if (isNaN(numQty)) return;
 
             // QTY Formatting (1 -> 1.000, 1.2 -> 1.200) - 3 decimal places
-            // Using toFixed(3) ensures 3 decimal places are always displayed
             qtyInput.value = numQty.toFixed(3); 
             
             // Total Column Calculation (Value from QTY moves to TOTAL, 2 decimal places for currency)
@@ -169,7 +168,7 @@
         }
 
 
-        // 5. Save Logic
+        // 5. Save Logic (Saves to C and E columns)
         async function saveData() {
             const qty = document.getElementById('qtyInput').value.trim(); 
             const total = document.getElementById('totalInput').value.trim(); 
