@@ -41,7 +41,9 @@
     Unable to save data. Please check your internet connection or AppScript URL.
   </div>
 
+  <!-- JavaScript -->
   <script>
+    // ✅ Qty/Total formatting fixed
     function formatQtyAndCalculateTotal() {
       const qtyInput = document.getElementById('qtyInput');
       const totalInput = document.getElementById('totalInput');
@@ -56,14 +58,32 @@
       let numQty = parseFloat(qtyValue);
       if (isNaN(numQty)) return;
 
-      // ✅ Keep user-entered values, no forced formatting
+      // Keep user-entered values, no forced formatting
       qtyInput.value = qtyValue;
       totalInput.value = qtyValue;
     }
 
-    // Attach event
-    document.getElementById('qtyInput').addEventListener('input', formatQtyAndCalculateTotal);
-  </script>
+    document.getElementById('qtyInput')
+      .addEventListener('input', formatQtyAndCalculateTotal);
 
-</body>
-</html>
+    // ✅ Example Save function (AppScript integration)
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      try {
+        // Replace with your AppScript URL
+        const scriptURL = "YOUR_APPSCRIPT_URL";
+        const data = {
+          item: document.getElementById('itemInput').value,
+          qty: document.getElementById('qtyInput').value,
+          total: document.getElementById('totalInput').value
+        };
+
+        const response = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          document.getElementById('statusMsg').textContent = "Data saved successfully.";
+          document.getElementById('errorMsg').style.display = "none";
+        } else {
+          throw
