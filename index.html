@@ -1,49 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Invoice Entry</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop Invoice - kmart alraffa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, button { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
-    button { background-color: #28a745; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #218838; }
-    #statusMsg { margin-top: 15px; color: green; }
-    #errorMsg { margin-top: 15px; color: red; display: none; }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 400px; margin: auto; background: white; padding: 20px;
+      border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
+    button:hover:enabled { background-color: #45a049; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    h1 { text-align: center; color: #333; margin-bottom: 5px; }
+    h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
+    .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+    .search-area { position: relative; }
+    .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto;
+      position: absolute; width: 100%; background: white; z-index: 10; display: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+    .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+    .autocomplete-item:hover { background-color: #f0f0f0; }
+    .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
+    .download-button { background-color: #007bff; margin-top: 10px; }
+    .download-button:hover { background-color: #0056b3; }
   </style>
 </head>
-<body>
+<body onload="loadItemData()">
 
-  <!-- Item Search -->
-  <label for="itemInput">Enter Item Code or Name:</label>
-  <input type="text" id="itemInput" placeholder="Item Code or Name">
-  <button id="searchBtn">Find Item</button>
+  <div class="container">
+    <h1>Shop Invoice</h1>
+    <h2>kmart alraffa</h2>
 
-  <!-- Qty -->
-  <label for="qtyInput">Quantity (Column C):</label>
-  <input type="number" id="qtyInput" placeholder="Quantity" inputmode="numeric">
+    <button id="downloadXLSXButton" class="download-button" onclick="openDownloadLink()" disabled>
+      Download XLSX (Google Sheets export)
+    </button>
 
-  <!-- Total -->
-  <label for="totalInput">Total (Column E):</label>
-  <input type="number" id="totalInput" placeholder="Total" inputmode="numeric">
+    <hr>
 
-  <!-- Save Button -->
-  <button id="saveBtn">Save Data</button>
+    <div class="search-area">
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="item code or name"
+        onkeyup="handleSearchInput()"
+        autocomplete="off">
 
-  <!-- XLSX Download -->
-  <button id="downloadBtn">Download XLSX Output</button>
+      <div id="autocompleteList" class="autocomplete-list"></div>
+    </div>
 
-  <!-- Status / Error Messages -->
-  <div id="statusMsg">Data loaded successfully. Ready to search.</div>
-  <div id="errorMsg">
-    Unable to save data. Please check your internet connection or AppScript URL.
+    <button onclick="performFinalSearch()" id="searchButton" disabled>Search Item</button>
+    <hr>
+
+    <h3>Selection</h3>
+    <div id="resultDisplay" class="result-box" style="display: none;"></div>
+
+    <label for="qtyInput" class="label-style">2. QTY (Column C):</label>
+    <input
+      type="number"
+      id="qtyInput"
+      placeholder="Quantity"
+      inputmode="decimal"
+      oninput="formatQtyAndCalculateTotal()">
+
+    <label for="totalInput" class="label-style">3. TOTAL (Column E):</label>
+    <input
+      type="number"
+      id="totalInput"
+      placeholder="Total Amount"
+      inputmode="decimal">
+
+    <button onclick="saveData()" id="saveButton" disabled>Save</button>
+
+    <p id="message">Loading data ...</p>
   </div>
 
-  <!-- JavaScript -->
   <script>
-    // ✅ Qty/Total formatting fixed
+    // CONFIG
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyR4vzoLj0-L2UN5uT668f52FJokyeq-xokqPOIgSalbybOY03VzU7ZWf7_eQCR7soTlg/exec';
+    const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10';
+
+    // STATE
+    let allItemData = [];
+    let currentRow = null;
+    let selectedItem = null;
+
+    // Set Google Sheets XLSX export direct link
+    function setDownloadLink() {
+      const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+      const btn = document.getElementById('downloadXLSXButton');
+      btn.disabled = false;
+      btn.setAttribute('data-link', downloadLink);
+      btn.textContent = 'Download XLSX (Google Sheets export)';
+    }
+
+    function openDownloadLink() {
+      const link = document.getElementById('downloadXLSXButton').getAttribute('data-link');
+      if (link) window.open(link, '_blank');
+    }
+
+    // Load items.json for search (code + item + row)
+    async function loadItemData() {
+      setDownloadLink();
+      try {
+        const response = await fetch('./items.json');
+        allItemData = await response.json();
+        document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
+        document.getElementById('searchButton').disabled = false;
+      } catch (e) {
+        console.error("Error loading items.json:", e);
+        document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+      }
+    }
+
+    // Autocomplete + filtering
+    function handleSearchInput() {
+      const searchInput = document.getElementById('searchInput');
+      const listDiv = document.getElementById('autocompleteList');
+      const messageEl = document.getElementById('message');
+      const searchText = searchInput.value.trim().toLowerCase();
+
+      listDiv.style.display = 'none';
+      listDiv.innerHTML = '';
+
+      if (searchText.length < 3) {
+        messageEl.textContent = 'Type at least 3 characters.';
+        return;
+      }
+
+      const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+      const results = [];
+
+      for (const data of allItemData) {
+        const itemName = (data.item || '').toLowerCase();
+        const code = String(data.code || '');
+        const combined = `${itemName} ${code}`;
+        const match = searchParts.every(part => combined.includes(part));
+        if (match) {
+          results.push(data);
+          if (results.length >= 20) break;
+        }
+      }
+
+      if (results.length > 0) {
+        results.forEach(suggestion => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+          div.onclick = () => {
+            searchInput.value = `${suggestion.code} ${suggestion.item}`;
+            selectedItem = suggestion; // expected { code, item, row }
+            listDiv.style.display = 'none';
+            showSelectedItem();
+          };
+          listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+      }
+      messageEl.textContent = `Found ${results.length} items.`;
+    }
+
+    // Finalize selection
+    function performFinalSearch() {
+      if (selectedItem) {
+        showSelectedItem();
+      } else {
+        document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
+        document.getElementById('resultDisplay').style.display = 'none';
+        document.getElementById('saveButton').disabled = true;
+        currentRow = null;
+      }
+    }
+
+    function showSelectedItem() {
+      if (selectedItem) {
+        currentRow = selectedItem.row; // row index from items.json
+        document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+        document.getElementById('resultDisplay').style.display = 'block';
+        document.getElementById('saveButton').disabled = false;
+        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+      }
+    }
+
+    // Qty/Total formatting – remove forced decimals
     function formatQtyAndCalculateTotal() {
       const qtyInput = document.getElementById('qtyInput');
       const totalInput = document.getElementById('totalInput');
@@ -55,51 +197,64 @@
         return;
       }
 
-      let numQty = parseFloat(qtyValue);
+      const numQty = parseFloat(qtyValue);
       if (isNaN(numQty)) return;
 
-      // Keep user-entered values, no forced decimal formatting
+      // Keep user-entered value exactly (no toFixed)
       qtyInput.value = qtyValue;
       totalInput.value = qtyValue;
     }
 
-    document.getElementById('qtyInput')
-      .addEventListener('input', formatQtyAndCalculateTotal);
+    // Save to Apps Script
+    async function saveData() {
+      const qty = document.getElementById('qtyInput').value.trim();
+      const total = document.getElementById('totalInput').value.trim();
+      const messageEl = document.getElementById('message');
 
-    // ✅ Example Save function (AppScript integration)
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      try {
-        // Replace with your AppScript URL
-        const scriptURL = "YOUR_APPSCRIPT_URL";
-        const data = {
-          item: document.getElementById('itemInput').value,
-          qty: document.getElementById('qtyInput').value,
-          total: document.getElementById('totalInput').value
-        };
-
-        const response = await fetch(scriptURL, {
-          method: 'POST',
-          body: JSON.stringify(data)
-        });
-
-        if (response.ok) {
-          document.getElementById('statusMsg').textContent = "Data saved successfully.";
-          document.getElementById('errorMsg').style.display = "none";
-        } else {
-          throw new Error("Save failed");
-        }
-      } catch (error) {
-        document.getElementById('errorMsg').style.display = "block";
-        document.getElementById('statusMsg').textContent = "";
+      if (!currentRow) {
+        messageEl.textContent = 'Please select an item first.';
+        return;
       }
-    });
 
-    // ✅ Example Download function
-    document.getElementById('downloadBtn').addEventListener('click', () => {
-      // Replace with your XLSX generation logic
-      alert("Download XLSX Output triggered.");
-    });
+      if (!qty || !total) {
+        messageEl.textContent = 'Please fill both QTY and TOTAL to save.';
+        return;
+      }
+
+      messageEl.textContent = 'Saving data ...';
+
+      const postData = {
+        row: currentRow,
+        qty: parseFloat(qty),
+        total: parseFloat(total)
+      };
+
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(postData)
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          messageEl.textContent = 'Successfully Saved Data!';
+          // Reset fields
+          document.getElementById('qtyInput').value = '';
+          document.getElementById('totalInput').value = '';
+          document.getElementById('searchInput').value = '';
+          document.getElementById('saveButton').disabled = true;
+          document.getElementById('resultDisplay').style.display = 'none';
+          currentRow = null;
+          selectedItem = null;
+        } else {
+          messageEl.textContent = `Save Error: ${result.message || 'Unknown error'}`;
+        }
+      } catch (e) {
+        console.error(e);
+        messageEl.textContent = 'An error occurred while saving data. Check network/AppScript URL.';
+      }
+    }
   </script>
-
 </body>
 </html>
