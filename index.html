@@ -73,7 +73,7 @@
     </div>
 
     <script>
-        // ====================================================================
+                // ====================================================================
         // JAVASCRIPT LOGIC
         // ====================================================================
         
@@ -82,26 +82,28 @@
         // ------------------------------------------------------------------
         
         // --- !!! ഇവിടെ നിങ്ങളുടെ Google Sheet ID പേസ്റ്റ് ചെയ്യുക !!! ---
-        // Google Sheet URL-ൽ നിന്ന് (docs.google.com/spreadsheets/d/ഇതാണ്_SHEET_ID/edit) ലഭിക്കും.
-        const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10'
+        // നിങ്ങൾ നൽകിയ ID: 1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10
+        const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10'; 
         // ------------------------------------------------------------------
-
 
         let allItemData = [];
         let currentRow = null; 
         let selectedItem = null;
 
-        // XLSX Download Link സെറ്റ് ചെയ്യുന്നു
+        // XLSX Download Link സെറ്റ് ചെയ്യുന്നു (ഇവിടെയാണ് തിരുത്ത് വരുത്തേണ്ടത്)
         function setDownloadLink() {
-            if (SHEET_ID === '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10') {
-                document.getElementById('downloadXLSXButton').textContent = 'Sheet ID നൽകുക';
-                return;
-            }
+            // ഈ ഫംഗ്ഷനിലെ ID ചെക്ക് ഇപ്പോൾ ഒഴിവാക്കിയിരിക്കുന്നു.
+            
             // Google Sheets-ൽ നിന്ന് XLSX ആയി ഡൗൺലോഡ് ചെയ്യാനുള്ള URL ഫോർമാറ്റ്
             const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+            
             document.getElementById('downloadXLSXButton').disabled = false;
             document.getElementById('downloadXLSXButton').setAttribute('data-link', downloadLink);
+            document.getElementById('downloadXLSXButton').textContent = 'XLSX ഔട്ട്പുട്ട് ഡൗൺലോഡ് ചെയ്യുക';
         }
+
+        // ... ബാക്കിയുള്ള കോഡുകൾ മാറ്റമില്ലാതെ തുടരുന്നു ...
+
 
         function openDownloadLink() {
             const link = document.getElementById('downloadXLSXButton').getAttribute('data-link');
