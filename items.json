@@ -1,1082 +1,1067 @@
 [
   {
-    "code": "205",
+    "code": 205,
     "item": "AMLA",
     "row": 2
   },
   {
-    "code": "198",
+    "code": 198,
     "item": "ARAVI CHINA",
     "row": 3
   },
   {
-    "code": "191",
+    "code": 191,
     "item": "BABY CORN",
     "row": 4
   },
   {
-    "code": "185",
+    "code": 185,
     "item": "BANANAGREEN",
     "row": 5
   },
   {
-    "code": "119",
+    "code": 119,
     "item": "BEANS",
     "row": 6
   },
   {
-    "code": "139",
-    "item": "BROCCOLI",
+    "code": 111,
+    "item": "BEETROOT",
     "row": 7
   },
   {
-    "code": "137",
-    "item": "CABBAGE",
+    "code": 129,
+    "item": "BIGON BIG",
     "row": 8
   },
   {
-    "code": "136",
-    "item": "CARROT",
+    "code": 134,
+    "item": "BIGON GR LONG",
     "row": 9
   },
   {
-    "code": "161",
-    "item": "CHILLI GREEN",
+    "code": 133,
+    "item": "BIGON GREEN",
     "row": 10
   },
   {
-    "code": "134",
-    "item": "DRUMSTICK",
+    "code": 132,
+    "item": "BIGON LONG",
     "row": 11
   },
   {
-    "code": "193",
-    "item": "FRENCH BEANS",
+    "code": 128,
+    "item": "BIGON SMALL",
     "row": 12
   },
   {
-    "code": "163",
-    "item": "GREEN PEAS",
+    "code": 130,
+    "item": "BIGON STAR",
     "row": 13
   },
   {
-    "code": "192",
-    "item": "GARLIC",
+    "code": 131,
+    "item": "BIGON SUPER",
     "row": 14
   },
   {
-    "code": "183",
-    "item": "GINGER",
+    "code": 118,
+    "item": "BINDI",
     "row": 15
   },
   {
-    "code": "138",
-    "item": "LEMON",
+    "code": 188,
+    "item": "BROCOLI",
     "row": 16
   },
   {
-    "code": "164",
-    "item": "OKRA",
+    "code": 122,
+    "item": "CABAGE",
     "row": 17
   },
   {
-    "code": "165",
-    "item": "ONION BIG",
+    "code": 325,
+    "item": "CAPSICUM MIX",
     "row": 18
   },
   {
-    "code": "172",
-    "item": "POTATO",
+    "code": 124,
+    "item": "CAPSICUM GRE",
     "row": 19
   },
   {
-    "code": "167",
-    "item": "TOMATO",
+    "code": 125,
+    "item": "CAPSICUM RED",
     "row": 20
   },
   {
-    "code": "153",
-    "item": "ASH GOURD",
+    "code": 126,
+    "item": "CAPSICUM YELO",
     "row": 21
   },
   {
-    "code": "154",
-    "item": "BITTER GOURD",
+    "code": 194,
+    "item": "CARROT CHINA",
     "row": 22
   },
   {
-    "code": "160",
-    "item": "BOTTLE GOURD",
+    "code": 196,
+    "item": "CARROT INDIA",
     "row": 23
   },
   {
-    "code": "155",
-    "item": "BRINJAL BIG",
+    "code": 195,
+    "item": "CARROT PAK",
     "row": 24
   },
   {
-    "code": "156",
-    "item": "BRINJAL LONG",
+    "code": 309,
+    "item": "CELERY LEAVES",
     "row": 25
   },
   {
-    "code": "157",
-    "item": "BRINJAL ROUND",
+    "code": 175,
+    "item": "CHENA",
     "row": 26
   },
   {
-    "code": "158",
-    "item": "BROCCOLI",
+    "code": 152,
+    "item": "CHILLY INDIA",
     "row": 27
   },
   {
-    "code": "159",
-    "item": "CAULIFLOWER",
+    "code": 151,
+    "item": "CHILLY LOCAL",
     "row": 28
   },
   {
-    "code": "168",
-    "item": "CHINESE CABBAGE",
+    "code": 355,
+    "item": "CHINES CABAGE",
     "row": 29
   },
   {
-    "code": "169",
-    "item": "CHOPPED CABBAGE",
+    "code": 165,
+    "item": "COCONUT WHOLE",
     "row": 30
   },
   {
-    "code": "170",
+    "code": 142,
     "item": "CUCUMBER",
     "row": 31
   },
   {
-    "code": "171",
-    "item": "CUCUMBER V",
+    "code": 184,
+    "item": "CURRY LEAF",
     "row": 32
   },
   {
-    "code": "173",
-    "item": "GREEN PEAS",
+    "code": 193,
+    "item": "DRUMSTICK",
     "row": 33
   },
   {
-    "code": "174",
-    "item": "MUSHROOM WHITE",
+    "code": 144,
+    "item": "FLOWER",
     "row": 34
   },
   {
-    "code": "175",
-    "item": "MUSHROOM OYSTER",
+    "code": 192,
+    "item": "FRESH CORN",
     "row": 35
   },
   {
-    "code": "176",
-    "item": "PEAS",
+    "code": 319,
+    "item": "FRESH TAMRINT",
     "row": 36
   },
   {
-    "code": "177",
-    "item": "PUMPKIN ORANGE",
+    "code": 155,
+    "item": "GARLIC CHINA",
     "row": 37
   },
   {
-    "code": "178",
-    "item": "PUMPKIN YELLOW",
+    "code": 322,
+    "item": "GARLIC FIELD",
     "row": 38
   },
   {
-    "code": "179",
-    "item": "PUMPKIN JAPANESE",
+    "code": 158,
+    "item": "GARLIC INDIA",
     "row": 39
   },
   {
-    "code": "180",
-    "item": "RADISH WHITE",
+    "code": 156,
+    "item": "GARLIC PKT",
     "row": 40
   },
   {
-    "code": "181",
-    "item": "RADISH PINK",
+    "code": 160,
+    "item": "GINGER CHAINA",
     "row": 41
   },
   {
-    "code": "182",
-    "item": "SWEET POTATO",
+    "code": 159,
+    "item": "GINGER IND",
     "row": 42
   },
   {
-    "code": "184",
-    "item": "ZUCCHINI GREEN",
+    "code": 150,
+    "item": "GOVAROILLY",
     "row": 43
   },
   {
-    "code": "186",
-    "item": "ZUCCHINI YELLOW",
+    "code": 335,
+    "item": "GREN CHILY THAI",
     "row": 44
   },
   {
-    "code": "187",
-    "item": "APPLE RED",
+    "code": 140,
+    "item": "ICE BERG",
     "row": 45
   },
   {
-    "code": "188",
-    "item": "APPLE GREEN",
+    "code": 360,
+    "item": "K LEAF LULU",
     "row": 46
   },
   {
-    "code": "189",
-    "item": "BANANA ROBUSTA",
+    "code": 135,
+    "item": "KADU LONG",
     "row": 47
   },
   {
-    "code": "190",
-    "item": "BANANA SMALL",
+    "code": 136,
+    "item": "KADU ROUND",
     "row": 48
   },
   {
-    "code": "194",
-    "item": "BERRY STRAWBERRY",
+    "code": 176,
+    "item": "KAPPA",
     "row": 49
   },
   {
-    "code": "195",
-    "item": "BERRY BLUEBERRY",
+    "code": 116,
+    "item": "KARELA",
     "row": 50
   },
   {
-    "code": "196",
-    "item": "GRAPES WHITE",
+    "code": 141,
+    "item": "KASS",
     "row": 51
   },
   {
-    "code": "197",
-    "item": "GRAPES RED",
+    "code": 202,
+    "item": "KAKROL",
     "row": 52
   },
   {
-    "code": "199",
-    "item": "LEMON",
+    "code": 190,
+    "item": "KOORKA",
     "row": 53
   },
   {
-    "code": "200",
-    "item": "LIME",
+    "code": 138,
+    "item": "KOOSA",
     "row": 54
   },
   {
-    "code": "201",
-    "item": "MANGO",
+    "code": 173,
+    "item": "KUMBALAM",
     "row": 55
   },
   {
-    "code": "202",
-    "item": "ORANGE",
+    "code": 187,
+    "item": "LEAF ALL ",
     "row": 56
   },
   {
-    "code": "203",
-    "item": "PAPAYA",
+    "code": 146,
+    "item": "LEMON BIG",
     "row": 57
   },
   {
-    "code": "204",
-    "item": "WATERMELON",
+    "code": 352,
+    "item": "LEMON BIG AFRC",
     "row": 58
   },
   {
-    "code": "206",
-    "item": "CHIKU",
+    "code": 147,
+    "item": "LEMON GRASS",
     "row": 59
   },
   {
-    "code": "207",
-    "item": "AVOCADO",
+    "code": 145,
+    "item": "LEMON IND",
     "row": 60
   },
   {
-    "code": "208",
-    "item": "DRAGON FRUIT",
+    "code": 127,
+    "item": "LONG BEANS",
     "row": 61
   },
   {
-    "code": "209",
-    "item": "KIWI",
+    "code": 163,
+    "item": "MANGO GREEN",
     "row": 62
   },
   {
-    "code": "210",
-    "item": "PASSION FRUIT",
+    "code": 179,
+    "item": "MASHROOM",
     "row": 63
   },
   {
-    "code": "211",
-    "item": "PEAR",
+    "code": 171,
+    "item": "MATHAN ROUND",
     "row": 64
   },
   {
-    "code": "212",
-    "item": "PERSIMMON",
+    "code": 169,
+    "item": "MATHAN YELLOW",
     "row": 65
   },
   {
-    "code": "213",
-    "item": "PINEAPPLE",
+    "code": 162,
+    "item": "MOOLY CHAINA",
     "row": 66
   },
   {
-    "code": "214",
-    "item": "POMEGRANATE",
+    "code": 374,
+    "item": "MURINGA LEAF",
     "row": 67
   },
   {
-    "code": "215",
-    "item": "RAMBUTAN",
+    "code": 161,
+    "item": "MUTTER",
     "row": 68
   },
   {
-    "code": "216",
-    "item": "TANGERINE",
+    "code": 101,
+    "item": "ONION",
     "row": 69
   },
   {
-    "code": "217",
-    "item": "TENDER COCONUT",
+    "code": 168,
+    "item": "PADAVALAM",
     "row": 70
   },
   {
-    "code": "218",
-    "item": "GRAPE FRUIT",
+    "code": 207,
+    "item": "PAPAYA GREEN",
     "row": 71
   },
   {
-    "code": "219",
-    "item": "GRAPE FRUIT RED",
+    "code": 356,
+    "item": "PAPDI",
     "row": 72
   },
   {
-    "code": "220",
-    "item": "GRAPE FRUIT WHITE",
+    "code": 105,
+    "item": "POTATO",
     "row": 73
   },
   {
-    "code": "221",
-    "item": "APRICOT",
+    "code": 109,
+    "item": "POTATO PAK",
     "row": 74
   },
   {
-    "code": "222",
-    "item": "APRICOT DRY",
+    "code": 106,
+    "item": "POTATO SMALL",
     "row": 75
   },
   {
-    "code": "223",
-    "item": "PEACH",
+    "code": 107,
+    "item": "POTATO SWEET",
     "row": 76
   },
   {
-    "code": "224",
-    "item": "PEACH YELLOW",
+    "code": 354,
+    "item": "PUSHEK",
     "row": 77
   },
   {
-    "code": "225",
-    "item": "PEACH WHITE",
+    "code": 336,
+    "item": "RED CHILLY THAI",
     "row": 78
   },
   {
-    "code": "226",
-    "item": "PLUM",
+    "code": 174,
+    "item": "SHELGUM",
     "row": 79
   },
   {
-    "code": "227",
-    "item": "PLUM RED",
+    "code": 103,
+    "item": "SMALL ONION",
     "row": 80
   },
   {
-    "code": "228",
-    "item": "PLUM BLACK",
+    "code": 357,
+    "item": "SPROUT BEANS ",
     "row": 81
   },
   {
-    "code": "229",
-    "item": "NECTARINE",
+    "code": 166,
+    "item": "TENDER COCONUT",
     "row": 82
   },
   {
-    "code": "230",
-    "item": "PINEAPPLE",
+    "code": 177,
+    "item": "THURAI IND",
     "row": 83
   },
   {
-    "code": "231",
-    "item": "CANTALOUPE",
+    "code": 149,
+    "item": "TINDLY",
     "row": 84
   },
   {
-    "code": "232",
-    "item": "HONEYDEW",
+    "code": 112,
+    "item": "TOMATO",
     "row": 85
   },
   {
-    "code": "233",
-    "item": "PUMPKIN JAPANESE",
+    "code": 115,
+    "item": "TOMATO BABY",
     "row": 86
   },
   {
-    "code": "234",
-    "item": "PUMPKIN ORANGE",
+    "code": 114,
+    "item": "TOMATO IND",
     "row": 87
   },
   {
-    "code": "235",
-    "item": "PUMPKIN YELLOW",
+    "code": 178,
+    "item": "VELLARI",
     "row": 88
   },
   {
-    "code": "236",
-    "item": "WATERMELON",
+    "code": 104,
+    "item": "WHITE ONION",
     "row": 89
   },
   {
-    "code": "237",
-    "item": "WATERMELON SEEDLESS",
+    "code": 189,
+    "item": "PARVAR",
     "row": 90
   },
   {
-    "code": "238",
-    "item": "CAPSICUM GREEN",
+    "code": 180,
+    "item": "BANANA LEAF",
     "row": 91
   },
   {
-    "code": "239",
-    "item": "CAPSICUM RED",
+    "code": 148,
+    "item": "LEMON VIATNAM",
     "row": 92
   },
   {
-    "code": "240",
-    "item": "CAPSICUM YELLOW",
+    "code": 206,
+    "item": "LEAF",
     "row": 93
   },
   {
-    "code": "241",
-    "item": "CHILLI RED",
+    "code": 347,
+    "item": "ONION EGYPT",
     "row": 94
   },
   {
-    "code": "242",
-    "item": "CHILLI GREEN",
+    "code": 348,
+    "item": "ANJEER IRAN",
     "row": 95
   },
   {
-    "code": "243",
-    "item": "MUSHROOM WHITE",
+    "code": 10122,
+    "item": "THOOFU",
     "row": 96
   },
   {
-    "code": "244",
-    "item": "MUSHROOM OYSTER",
+    "code": 153,
+    "item": "BAJI MULAK",
     "row": 97
   },
   {
-    "code": "245",
-    "item": "MUSHROOM BROWN",
+    "code": 203,
+    "item": "LOTHI",
     "row": 98
   },
   {
-    "code": "246",
-    "item": "MUSHROOM ENIOKI",
+    "code": 772,
+    "item": "DATES KALASI",
     "row": 99
   },
   {
-    "code": "247",
-    "item": "FENNEL",
+    "code": 200,
+    "item": "KADACHKKA",
     "row": 100
   },
   {
-    "code": "248",
-    "item": "FENNEL BULB",
+    "code": 365,
+    "item": "KONNAPPOO",
     "row": 101
   },
   {
-    "code": "249",
-    "item": "CELERY",
+    "code": 192,
+    "item": "SWEET CORN",
     "row": 102
   },
   {
-    "code": "250",
-    "item": "LEEK",
+    "code": 204,
+    "item": "KOCHU",
     "row": 103
   },
   {
-    "code": "251",
-    "item": "PARSLEY",
+    "code": 1104,
+    "item": "NEW ITEM 1104",
     "row": 104
   },
   {
-    "code": "252",
-    "item": "CORIANDER",
+    "code": 1105,
+    "item": "NEW ITEM 1105",
     "row": 105
   },
   {
-    "code": "253",
-    "item": "CILANTRO",
+    "code": 1106,
+    "item": "NEW ITEM 1106",
     "row": 106
   },
   {
-    "code": "254",
-    "item": "MINT",
+    "code": 1107,
+    "item": "NEW ITEM 1107",
     "row": 107
   },
   {
-    "code": "255",
-    "item": "MINT LEAVES",
+    "code": 1108,
+    "item": "NEW ITEM 1108",
     "row": 108
   },
   {
-    "code": "256",
-    "item": "BASIL",
+    "code": 1109,
+    "item": "NEW ITEM 1109",
     "row": 109
   },
   {
-    "code": "257",
-    "item": "BASIL SWEET",
+    "code": 1110,
+    "item": "NEW ITEM 1110",
     "row": 110
   },
   {
-    "code": "258",
-    "item": "BASIL THAI",
+    "code": 1111,
+    "item": "NEW ITEM 1111",
     "row": 111
   },
   {
-    "code": "259",
-    "item": "DILL",
+    "code": 1112,
+    "item": "NEW ITEM 1112",
     "row": 112
   },
   {
-    "code": "260",
-    "item": "OREGANO",
+    "code": 1113,
+    "item": "NEW ITEM 1113",
     "row": 113
   },
   {
-    "code": "261",
-    "item": "ROSEMARY",
+    "code": 1114,
+    "item": "NEW ITEM 1114",
     "row": 114
   },
   {
-    "code": "262",
-    "item": "SAGE",
+    "code": 1115,
+    "item": "NEW ITEM 1115",
     "row": 115
   },
   {
-    "code": "263",
-    "item": "THYME",
+    "code": 1116,
+    "item": "NEW ITEM 1116",
     "row": 116
   },
   {
-    "code": "264",
-    "item": "CHIVES",
+    "code": 1117,
+    "item": "NEW ITEM 1117",
     "row": 117
   },
   {
-    "code": "265",
-    "item": "SPRING ONION",
+    "code": 1118,
+    "item": "NEW ITEM 1118",
     "row": 118
   },
   {
-    "code": "266",
-    "item": "LETTUCE ROMAINE",
+    "code": 1119,
+    "item": "NEW ITEM 1119",
     "row": 119
   },
   {
-    "code": "267",
-    "item": "LETTUCE ICEBERG",
+    "code": 1120,
+    "item": "NEW ITEM 1120",
     "row": 120
   },
   {
-    "code": "268",
-    "item": "LETTUCE LOLOROSSO",
+    "code": 1121,
+    "item": "NEW ITEM 1121",
     "row": 121
   },
   {
-    "code": "269",
-    "item": "LETTUCE OAKLEAF",
+    "code": 1122,
+    "item": "NEW ITEM 1122",
     "row": 122
   },
   {
-    "code": "270",
-    "item": "LETTUCE BUTTERHEAD",
+    "code": 1123,
+    "item": "NEW ITEM 1123",
     "row": 123
   },
   {
-    "code": "271",
-    "item": "LETTUCE FRISEE",
+    "code": 1124,
+    "item": "NEW ITEM 1124",
     "row": 124
   },
   {
-    "code": "272",
-    "item": "SPINACH",
+    "code": 1125,
+    "item": "NEW ITEM 1125",
     "row": 125
   },
   {
-    "code": "273",
-    "item": "KALE",
+    "code": 1126,
+    "item": "NEW ITEM 1126",
     "row": 126
   },
   {
-    "code": "274",
-    "item": "ARUGULA",
+    "code": 1127,
+    "item": "NEW ITEM 1127",
     "row": 127
   },
   {
-    "code": "275",
-    "item": "WATERCRESS",
+    "code": 1128,
+    "item": "NEW ITEM 1128",
     "row": 128
   },
   {
-    "code": "276",
-    "item": "RADICCHIO",
+    "code": 219,
+    "item": "ANAR EGYPT",
     "row": 129
   },
   {
-    "code": "277",
-    "item": "ENDIVE",
+    "code": 218,
+    "item": "ANAR IND ",
     "row": 130
   },
   {
-    "code": "278",
-    "item": "BEETROOT",
+    "code": 222,
+    "item": "APPLE AFRICA",
     "row": 131
   },
   {
-    "code": "279",
-    "item": "SWEETCORN",
+    "code": 229,
+    "item": "APPLE BABY",
     "row": 132
   },
   {
-    "code": "280",
-    "item": "CUCUMBER",
+    "code": 225,
+    "item": "APPLE GREEN",
     "row": 133
   },
   {
-    "code": "281",
-    "item": "ONION WHITE",
+    "code": 224,
+    "item": "APPLE IRAN",
     "row": 134
   },
   {
-    "code": "282",
-    "item": "ONION RED",
+    "code": 221,
+    "item": "APPLE GALA RED",
     "row": 135
   },
   {
-    "code": "283",
-    "item": "PINEAPPLE",
+    "code": 223,
+    "item": "APPLE USA",
     "row": 136
   },
   {
-    "code": "284",
-    "item": "MANGO",
+    "code": 321,
+    "item": "APRICOT",
     "row": 137
   },
   {
-    "code": "285",
-    "item": "AVOCADO",
+    "code": 277,
+    "item": "AVACADO",
     "row": 138
   },
   {
-    "code": "286",
-    "item": "DRAGON FRUIT",
+    "code": 212,
+    "item": "BANANA BIG",
     "row": 139
   },
   {
-    "code": "287",
-    "item": "KIWI",
+    "code": 788,
+    "item": "DRY DATES BLACK",
     "row": 140
   },
   {
-    "code": "288",
-    "item": "PERSIMMON",
+    "code": 216,
+    "item": "BANANA PHILIPI",
     "row": 141
   },
   {
-    "code": "289",
-    "item": "ORANGE",
+    "code": 213,
+    "item": "BANANAS SML",
     "row": 142
   },
   {
-    "code": "290",
-    "item": "APPLE",
+    "code": 312,
+    "item": "BLACK BERRY",
     "row": 143
   },
   {
-    "code": "291",
-    "item": "PEAR",
+    "code": 316,
+    "item": "BLUE BERRY",
     "row": 144
   },
   {
-    "code": "292",
-    "item": "PLUM",
+    "code": 297,
+    "item": "CRANBERRY",
     "row": 145
   },
   {
-    "code": "293",
-    "item": "PEACH",
+    "code": 294,
+    "item": "CUSTARD APPLE",
     "row": 146
   },
   {
-    "code": "294",
-    "item": "GRAPES",
+    "code": 298,
+    "item": "DRAGON FRUIT",
     "row": 147
   },
   {
-    "code": "295",
-    "item": "STRAWBERRY",
+    "code": 370,
+    "item": "GRAPE GLOB BOX",
     "row": 148
   },
   {
-    "code": "296",
-    "item": "BLUEBERRY",
+    "code": 231,
+    "item": "GRAPE GR BOX",
     "row": 149
   },
   {
-    "code": "297",
-    "item": "RASPBERRY",
+    "code": 209,
+    "item": "GRAPE GR IRAN",
     "row": 150
   },
   {
-    "code": "298",
-    "item": "BLACKBERRY",
+    "code": 230,
+    "item": "GRAPE GR LOOSE",
     "row": 151
   },
   {
-    "code": "299",
-    "item": "CHERRY",
+    "code": 233,
+    "item": "GRAPE RED BOX",
     "row": 152
   },
   {
-    "code": "300",
-    "item": "LEMON",
+    "code": 232,
+    "item": "GRAPE RED LOSE",
     "row": 153
   },
   {
-    "code": "301",
-    "item": "LIME",
+    "code": 324,
+    "item": "GRAPE SEED LESS",
     "row": 154
   },
   {
-    "code": "302",
-    "item": "POMEGRANATE",
+    "code": 237,
+    "item": "GRP BLACK BOX",
     "row": 155
   },
   {
-    "code": "303",
-    "item": "RAMBUTAN",
+    "code": 236,
+    "item": "GRP BLACK LOOS",
     "row": 156
   },
   {
-    "code": "304",
-    "item": "TANGERINE",
+    "code": 243,
+    "item": "GUAVA BIG",
     "row": 157
   },
   {
-    "code": "305",
-    "item": "GRAPE FRUIT",
+    "code": 242,
+    "item": "GUAVA SMAL",
     "row": 158
   },
   {
-    "code": "306",
-    "item": "APRICOT",
+    "code": 293,
+    "item": "KAKA FRUIT",
     "row": 159
   },
   {
-    "code": "307",
-    "item": "PEACH",
+    "code": 353,
+    "item": "KAKA FRUIT TRY",
     "row": 160
   },
   {
-    "code": "308",
-    "item": "PLUM",
+    "code": 244,
+    "item": "KIWI",
     "row": 161
   },
   {
-    "code": "309",
-    "item": "NECTARINE",
+    "code": 253,
+    "item": "MANGO JASMINE",
     "row": 162
   },
   {
-    "code": "310",
-    "item": "CANTALOUPE",
+    "code": 334,
+    "item": "MANGOSTEN",
     "row": 163
   },
   {
-    "code": "311",
-    "item": "HONEYDEW",
+    "code": 291,
+    "item": "NUTRIN",
     "row": 164
   },
   {
-    "code": "312",
-    "item": "WATERMELON",
+    "code": 331,
+    "item": "PINE APPLE BABAY",
     "row": 165
   },
   {
-    "code": "313",
-    "item": "CAPSICUM GREEN",
+    "code": 266,
+    "item": "ORANGE BABY",
     "row": 166
   },
   {
-    "code": "314",
-    "item": "CAPSICUM RED",
+    "code": 375,
+    "item": "ORANGE MED",
     "row": 167
   },
   {
-    "code": "315",
-    "item": "CAPSICUM YELLOW",
+    "code": 257,
+    "item": "ORANGE NAVEL",
     "row": 168
   },
   {
-    "code": "316",
-    "item": "CHILLI RED",
+    "code": 259,
+    "item": "ORANGE SANDRA",
     "row": 169
   },
   {
-    "code": "317",
-    "item": "CHILLI GREEN",
+    "code": 258,
+    "item": "ORANGE VALAN",
     "row": 170
   },
   {
-    "code": "318",
-    "item": "MUSHROOM WHITE",
+    "code": 288,
+    "item": "PAPAYA YELLOW",
     "row": 171
   },
   {
-    "code": "319",
-    "item": "MUSHROOM OYSTER",
+    "code": 290,
+    "item": "PEACH LOOSE",
     "row": 172
   },
   {
-    "code": "320",
-    "item": "MUSHROOM BROWN",
+    "code": 269,
+    "item": "PEAR CHINA",
     "row": 173
   },
   {
-    "code": "321",
-    "item": "FENNEL",
+    "code": 270,
+    "item": "PEARS GREEN",
     "row": 174
   },
   {
-    "code": "322",
-    "item": "CELERY",
+    "code": 271,
+    "item": "PINEAPPLE IND",
     "row": 175
   },
   {
-    "code": "323",
-    "item": "LEEK",
+    "code": 272,
+    "item": "PINEAPPLE PHILI",
     "row": 176
   },
   {
-    "code": "324",
-    "item": "PARSLEY",
+    "code": 273,
+    "item": "PLUMS RED",
     "row": 177
   },
   {
-    "code": "325",
-    "item": "CORIANDER",
+    "code": 281,
+    "item": "RAMBOOTTAN",
     "row": 178
   },
   {
-    "code": "326",
-    "item": "MINT",
+    "code": 296,
+    "item": "RASPBERRY",
     "row": 179
   },
   {
-    "code": "327",
-    "item": "BASIL",
+    "code": 317,
+    "item": "CHERRY APPLE",
     "row": 180
   },
   {
-    "code": "328",
-    "item": "DILL",
+    "code": 234,
+    "item": "RED GLOBE LOOSE",
     "row": 181
   },
   {
-    "code": "329",
-    "item": "OREGANO",
+    "code": 306,
+    "item": "ROCK MELON",
     "row": 182
   },
   {
-    "code": "330",
-    "item": "ROSEMARY",
+    "code": 366,
+    "item": "S SEEDLESS",
     "row": 183
   },
   {
-    "code": "331",
-    "item": "SAGE",
+    "code": 283,
+    "item": "SHAMAM YELO",
     "row": 184
   },
   {
-    "code": "332",
-    "item": "THYME",
+    "code": 235,
+    "item": "SMAL GLOB BOX",
     "row": 185
   },
   {
-    "code": "333",
-    "item": "CHIVES",
+    "code": 286,
+    "item": "STRAWBRY BOX",
     "row": 186
   },
   {
-    "code": "334",
-    "item": "SPRING ONION",
+    "code": 284,
+    "item": "WATER MELON",
     "row": 187
   },
   {
-    "code": "335",
-    "item": "LETTUCE ROMAINE",
+    "code": 251,
+    "item": "MANGO KAIZ",
     "row": 188
   },
   {
-    "code": "336",
-    "item": "LETTUCE ICEBERG",
+    "code": 254,
+    "item": "MAGO PAK",
     "row": 189
   },
   {
-    "code": "337",
-    "item": "LETTUCE LOLOROSSO",
+    "code": 250,
+    "item": "MANGO BADAMI",
     "row": 190
   },
   {
-    "code": "338",
-    "item": "LETTUCE OAKLEAF",
+    "code": 279,
+    "item": "CHERRY",
     "row": 191
   },
   {
-    "code": "339",
-    "item": "LETTUCE BUTTERHEAD",
+    "code": 234,
+    "item": "GRAPE RED GLOBE",
     "row": 192
   },
   {
-    "code": "340",
-    "item": "LETTUCE FRISEE",
+    "code": 226,
+    "item": "APPLE GOLDEN",
     "row": 193
   },
   {
-    "code": "341",
-    "item": "SPINACH",
+    "code": 871,
+    "item": "MANGO NEW",
     "row": 194
   },
   {
-    "code": "342",
-    "item": "KALE",
+    "code": 772,
+    "item": "DATES IRAQI",
     "row": 195
   },
   {
-    "code": "343",
-    "item": "ARUGULA",
+    "code": 220,
+    "item": "APPLE FUJI",
     "row": 196
   },
   {
-    "code": "344",
-    "item": "WATERCRESS",
+    "code": 359,
+    "item": "LONGAN FRUIT",
     "row": 197
   },
   {
-    "code": "345",
-    "item": "RADICCHIO",
+    "code": 252,
+    "item": "MANGO Local UAE",
     "row": 198
   },
   {
-    "code": "346",
-    "item": "ENDIVE",
+    "code": 280,
+    "item": "CHIKKU",
     "row": 199
   },
   {
-    "code": "347",
-    "item": "BEETROOT",
+    "code": 310,
+    "item": "MANGO Neelam",
     "row": 200
   },
   {
-    "code": "348",
-    "item": "SWEETCORN",
+    "code": 253,
+    "item": "MANGO JASMIN",
     "row": 201
   },
   {
-    "code": "349",
-    "item": "TOMATO",
+    "code": 229,
+    "item": "APPLE ROYAL GALA BABY",
     "row": 202
   },
   {
-    "code": "350",
-    "item": "POTATO",
+    "code": 256,
+    "item": "MANGO KENIYA",
     "row": 203
   },
   {
-    "code": "351",
-    "item": "ONION BIG",
+    "code": 255,
+    "item": "MANGO CHOSA",
     "row": 204
   },
   {
-    "code": "352",
-    "item": "GARLIC",
+    "code": 227,
+    "item": "APPLE NEWZILANAD",
     "row": 205
   },
   {
-    "code": "353",
-    "item": "GINGER",
+    "code": 307,
+    "item": "FRESH DATES YELOW",
     "row": 206
   },
   {
-    "code": "354",
-    "item": "CABBAGE",
+    "code": 308,
+    "item": "FRESH DATES RED",
     "row": 207
   },
   {
-    "code": "355",
-    "item": "CARROT",
+    "code": 247,
+    "item": "LICHI",
     "row": 208
   },
   {
-    "code": "356",
-    "item": "CUCUMBER",
+    "code": 186,
+    "item": "MANGO RATTA",
     "row": 209
   },
   {
-    "code": "357",
-    "item": "ASH GOURD",
+    "code": 1210,
+    "item": "NEW ITEM 1210",
     "row": 210
   },
   {
-    "code": "358",
-    "item": "BITTER GOURD",
+    "code": 1211,
+    "item": "NEW ITEM 1211",
     "row": 211
   },
   {
-    "code": "359",
-    "item": "BOTTLE GOURD",
+    "code": 1212,
+    "item": "NEW ITEM 1212",
     "row": 212
   },
   {
-    "code": "360",
-    "item": "BRINJAL BIG",
+    "code": 1213,
+    "item": "NEW ITEM 1213",
     "row": 213
   },
   {
-    "code": "361",
-    "item": "BRINJAL LONG",
+    "code": 1214,
+    "item": "NEW ITEM 1214",
     "row": 214
-  },
-  {
-    "code": "362",
-    "item": "BRINJAL ROUND",
-    "row": 215
-  },
-  {
-    "code": "363",
-    "item": "BROCCOLI",
-    "row": 216
-  },
-  {
-    "code": "364",
-    "item": "CAULIFLOWER",
-    "row": 217
   }
 ]
