@@ -1,203 +1,187 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RAFFA VEG&FRUIT Inventory Tool</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Invoice - kmart alraffa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box; /* Padding is included in width */
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            margin: 10px 0;
-            border: none;
-            cursor: pointer;
-            width: 100%;
-            opacity: 0.9;
-        }
-        button:hover:not(:disabled) {
-            opacity: 1;
-        }
-        button:disabled {
-            background-color: #aaa;
-            cursor: not-allowed;
-        }
-        #resultDisplay {
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            background-color: #e9e9e9;
-        }
-        #message {
-            color: blue;
-            margin-top: 15px;
-        }
-        .autocomplete-item {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            background-color: white;
-        }
-        .autocomplete-item:hover {
-            background-color: #f1f1f1;
-        }
-        #autocompleteList {
-            border: 1px solid #ccc; 
-            max-height: 150px; 
-            overflow-y: auto; 
-            cursor: pointer; 
-            display: none;
-            position: absolute; /* To float above other elements */
-            width: calc(100% - 40px); /* Adjust width based on body margin */
-            z-index: 10;
-        }
+        /* CSS for mobile-friendly layout and clean design */
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
+        button:hover:enabled { background-color: #45a049; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        h1 { text-align: center; color: #333; margin-bottom: 5px; }
+        h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
+        .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+        /* Autocomplete positioning is crucial */
+        .search-area { position: relative; }
+        .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; /* Adjusting width for container */ background: white; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .autocomplete-item:hover { background-color: #f0f0f0; }
+        .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
 
-    <h1>RAFFA VEG&FRUIT ഡാറ്റാ എൻട്രി</h1>
-    
-    <label for="codeSearch">1. CODE (A കോളം - Exact Match):</label>
-    <input type="text" id="codeSearch" placeholder="Code നൽകുക" autocomplete="off"><br>
-    
-    <label for="itemSearch">2. ITEMS (B കോളം - 3 അക്ഷരങ്ങൾക്ക് ശേഷം തിരയുക):</label>
-    <input type="text" id="itemSearch" placeholder="Item Name-ന്റെ ആദ്യ 3 അക്ഷരങ്ങൾ നൽകുക" onkeyup="handleItemSearch()" autocomplete="off">
-    <div id="autocompleteList"></div>
-    
-    <br>
-    <button onclick="performFinalSearch()">തിരയുക (Search)</button>
-    <hr>
-    
-    <h2>ഫലം & ഡാറ്റാ എൻട്രി</h2>
-    <div id="resultDisplay">തിരഞ്ഞെടുത്ത ഇനം ഇവിടെ കാണിക്കും</div>
+    <div class="container">
+        <h1>Shop Invoice</h1>
+        <h2>kmart alraffa</h2>
 
-    <label for="qtyInput">3. QTY (C കോളം - Blank):</label>
-    <input type="number" id="qtyInput" placeholder="Quantity"><br>
-    
-    <label for="totalInput">4. TOTAL (E കോളം - Blank):</label>
-    <input type="number" id="totalInput" placeholder="Total Value"><br>
-    
-    <button onclick="saveData()" id="saveButton" disabled>ഡാറ്റ സേവ് ചെയ്യുക (Save)</button>
-    
-    <p id="message"></p>
+        <div class="search-area">
+            <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="item code or name" 
+                onkeyup="handleSearchInput()"
+                autocomplete="off">
+
+            <div id="autocompleteList" class="autocomplete-list"></div>
+        </div>
+        
+        <button onclick="performFinalSearch()" id="searchButton">Search Item</button>
+        <hr>
+
+        <h3>ഫലം & ഡാറ്റാ എൻട്രി</h3>
+        <div id="resultDisplay" class="result-box" style="display: none;">
+            </div>
+
+        <label for="qtyInput" class="label-style">2. QTY (C കോളം):</label>
+        <input 
+            type="number" 
+            id="qtyInput" 
+            placeholder="Quantity" 
+            inputmode="decimal" 
+            oninput="formatQtyAndCalculateTotal()">
+
+        <label for="totalInput" class="label-style">3. TOTAL (E കോളം):</label>
+        <input 
+            type="number" 
+            id="totalInput" 
+            placeholder="Total Amount" 
+            inputmode="decimal">
+
+        <button onclick="saveData()" id="saveButton" disabled>ഡാറ്റ സേവ് ചെയ്യുക (Save)</button>
+        
+        <p id="message"></p>
+    </div>
 
     <script>
-        // *** നിങ്ങളുടെ Google Apps Script URL ഇവിടെ ചേർത്തിരിക്കുന്നു ***
+        // ====================================================================
+        // JAVASCRIPT LOGIC
+        // ====================================================================
+        
+        // --- !!! ഇവിടെ നിങ്ങളുടെ Apps Script URL പേസ്റ്റ് ചെയ്യുക !!! ---
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxS5F7-0WaDnz4AjnfuGDFMKgxQ1l1R-a6JbR5tlCMS9IGcfPLouF-ipwveqdQG6hy0uw/exec'; 
+        // ------------------------------------------------------------------
+
         let currentRow = null; 
+        let selectedItem = null;
 
-        // ഓട്ടോ കംപ്ലീറ്റ് തിരയൽ
-        async function handleItemSearch() {
-            const itemInput = document.getElementById('itemSearch');
+        // 1. Search Logic (Code Exact Match OR Item Name Contains)
+        async function handleSearchInput() {
+            const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
-            const searchText = itemInput.value.trim();
+            const searchText = searchInput.value.trim();
 
+            listDiv.style.display = 'none';
+            listDiv.innerHTML = '';
+            
+            // 3 അക്ഷരങ്ങളിൽ കുറവാണെങ്കിൽ തിരയേണ്ടതില്ല
             if (searchText.length < 3) {
-                listDiv.style.display = 'none';
                 return;
             }
 
-            const url = `${WEB_APP_URL}?type=autocomplete&text=${searchText}`;
+            const url = `${WEB_APP_URL}?type=autocomplete&text=${encodeURIComponent(searchText)}`;
             
             try {
                 const response = await fetch(url);
                 const result = await response.json();
-                
-                listDiv.innerHTML = '';
                 
                 if (result.status === 'success' && result.suggestions.length > 0) {
                     result.suggestions.forEach(suggestion => {
                         const div = document.createElement('div');
                         div.className = 'autocomplete-item';
-                        div.innerHTML = `${suggestion.item} [Code: ${suggestion.code}]`;
+                        div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
                         
                         div.onclick = () => {
-                            document.getElementById('codeSearch').value = suggestion.code;
-                            itemInput.value = suggestion.item;
+                            // Selection
+                            searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                            selectedItem = suggestion; 
                             listDiv.style.display = 'none';
-                            performFinalSearch(); // തിരഞ്ഞെടുത്ത ഉടൻ ഫൈനൽ തിരച്ചിൽ നടത്തുന്നു
+                            showSelectedItem();
                         };
                         listDiv.appendChild(div);
                     });
                     listDiv.style.display = 'block';
-                } else {
-                    listDiv.style.display = 'none';
                 }
             } catch (e) {
+                console.error("Error fetching suggestions:", e);
                 document.getElementById('message').textContent = 'Search error occurred.';
             }
         }
 
-        // കൃത്യമായ കോഡ്, ഐറ്റം മാച്ച് തിരയൽ
-        async function performFinalSearch() {
-            const code = document.getElementById('codeSearch').value.trim();
-            const item = document.getElementById('itemSearch').value.trim();
-            const messageEl = document.getElementById('message');
-            const saveButton = document.getElementById('saveButton');
-            const resultDiv = document.getElementById('resultDisplay');
-            
-            messageEl.textContent = 'Searching...';
-            saveButton.disabled = true;
-            currentRow = null;
-            resultDiv.innerHTML = 'തിരഞ്ഞെടുത്ത ഇനം ഇവിടെ കാണിക്കും';
-            
-            if (!code || !item) {
-                messageEl.textContent = 'Please enter both Code and Item Name.';
-                return;
+        // 2. Button Action (Primarily confirming selection or showing error)
+        function performFinalSearch() {
+            if (selectedItem) {
+                showSelectedItem();
+            } else {
+                document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
+                document.getElementById('resultDisplay').style.display = 'none';
+                document.getElementById('saveButton').disabled = true;
+                currentRow = null;
             }
-
-            const url = `${WEB_APP_URL}?type=final_match&code=${encodeURIComponent(code)}&item=${encodeURIComponent(item)}`;
-
-            try {
-                const response = await fetch(url);
-                const result = await response.json();
-
-                if (result.status === 'found') {
-                    currentRow = result.row;
-                    messageEl.textContent = `Item Found! (Row ${currentRow}). Ready to update.`;
-                    resultDiv.innerHTML = `<strong>CODE:</strong> ${result.data_a} | <strong>ITEM:</strong> ${result.data_b}`;
-                    saveButton.disabled = false;
-                } else {
-                    messageEl.textContent = 'Error: Exact Code and Item Name combination not found.';
-                    saveButton.disabled = true;
-                }
-
-            } catch (e) {
-                messageEl.textContent = 'An error occurred during search.';
+        }
+        
+        // 3. Show Selected Item (Updates display box)
+        function showSelectedItem() {
+            if (selectedItem) {
+                currentRow = selectedItem.row;
+                document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+                document.getElementById('resultDisplay').style.display = 'block';
+                document.getElementById('saveButton').disabled = false;
+                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
             }
         }
 
-        // C (QTY), E (TOTAL) കോളങ്ങളിൽ ഡാറ്റ സേവ് ചെയ്യുക
+
+        // 4. Formatting and Calculation Logic (QTY -> 3 decimals, Total -> 2 decimals + QTY value)
+        function formatQtyAndCalculateTotal() {
+            const qtyInput = document.getElementById('qtyInput');
+            let qtyValue = qtyInput.value;
+            const totalInput = document.getElementById('totalInput');
+
+            if (qtyValue === '') {
+                totalInput.value = '';
+                return;
+            }
+
+            let numQty = parseFloat(qtyValue);
+            if (isNaN(numQty)) return;
+
+            // QTY Formatting (1 -> 1.000, 1.2 -> 1.200) - 3 decimal places
+            // Using toFixed(3) ensures 3 decimal places are always displayed
+            qtyInput.value = numQty.toFixed(3); 
+            
+            // Total Column Calculation (Value from QTY moves to TOTAL, 2 decimal places for currency)
+            totalInput.value = numQty.toFixed(2);
+        }
+
+
+        // 5. Save Logic
         async function saveData() {
-            const qty = document.getElementById('qtyInput').value.trim();
+            const qty = document.getElementById('qtyInput').value.trim(); 
             const total = document.getElementById('totalInput').value.trim(); 
             const messageEl = document.getElementById('message');
             
             if (!currentRow) {
-                messageEl.textContent = 'Please search and find an item first.';
+                messageEl.textContent = 'Please select an item first.';
                 return;
             }
 
-            if (!qty && !total) {
-                messageEl.textContent = 'Please fill at least Quantity (C) or Total (E) to save.';
+            if (!qty || !total) {
+                messageEl.textContent = 'Please fill both QTY and TOTAL to save.';
                 return;
             }
 
@@ -205,30 +189,28 @@
             
             const postData = {
                 row: currentRow,
-                qty: qty,
-                total: total 
+                qty: parseFloat(qty),
+                total: parseFloat(total)
             };
 
             try {
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(postData)
                 });
                 const result = await response.json();
 
                 if (result.status === 'success') {
                     messageEl.textContent = 'Successfully Saved Data!';
-                    // Clear all fields and state after successful save
+                    // Reset fields
                     document.getElementById('qtyInput').value = '';
                     document.getElementById('totalInput').value = '';
-                    document.getElementById('codeSearch').value = '';
-                    document.getElementById('itemSearch').value = '';
+                    document.getElementById('searchInput').value = '';
                     document.getElementById('saveButton').disabled = true;
-                    document.getElementById('resultDisplay').innerHTML = 'തിരഞ്ഞെടുത്ത ഇനം ഇവിടെ കാണിക്കും';
+                    document.getElementById('resultDisplay').style.display = 'none';
                     currentRow = null;
+                    selectedItem = null;
                 } else {
                     messageEl.textContent = `Save Error: ${result.message}`;
                 }
