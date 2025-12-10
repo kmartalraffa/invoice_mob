@@ -1,269 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Shop Invoice - kmart alraffa</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        /* CSS ഇവിടെ മാറ്റമില്ലാതെ നിലനിർത്തുന്നു */
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
-        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
-        button:hover:enabled { background-color: #45a049; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        h1 { text-align: center; color: #333; margin-bottom: 5px; }
-        h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
-        .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
-        .search-area { position: relative; }
-        .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto; position: absolute; width: 100%; background: white; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .autocomplete-item:hover { background-color: #f0f0f0; }
-        .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
-        .download-button { background-color: #007bff; margin-top: 10px; }
-        .download-button:hover { background-color: #0056b3; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Invoice Entry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, button { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
+    button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #218838; }
+    #statusMsg { margin-top: 15px; color: green; }
+    #errorMsg { margin-top: 15px; color: red; display: none; }
+  </style>
 </head>
-<body onload="loadItemData()">
+<body>
 
-    <div class="container">
-        <h1>Shop Invoice</h1>
-        <h2>kmart alraffa</h2>
+  <!-- Item Search -->
+  <label for="itemInput">Enter Item Code or Name:</label>
+  <input type="text" id="itemInput" placeholder="Item Code or Name">
+  <button id="searchBtn">Find Item</button>
 
-        <button id="downloadXLSXButton" class="download-button" onclick="openDownloadLink()" disabled>
-            XLSX ഔട്ട്പുട്ട് ഡൗൺലോഡ് ചെയ്യുക
-        </button>
-        <hr>
-        
-        <div class="search-area">
-            <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="item code or name" 
-                onkeyup="handleSearchInput()"
-                autocomplete="off">
+  <!-- Qty -->
+  <label for="qtyInput">Quantity (Column C):</label>
+  <input type="number" id="qtyInput" placeholder="Quantity" inputmode="numeric">
 
-            <div id="autocompleteList" class="autocomplete-list"></div>
-        </div>
-        
-        <button onclick="performFinalSearch()" id="searchButton" disabled>Search Item</button>
-        <hr>
+  <!-- Total -->
+  <label for="totalInput">Total (Column E):</label>
+  <input type="number" id="totalInput" placeholder="Total" inputmode="numeric">
 
-        <h3>ഫലം & ഡാറ്റാ എൻട്രി</h3>
-        <div id="resultDisplay" class="result-box" style="display: none;"></div>
+  <!-- Save Button -->
+  <button id="saveBtn">Save Data</button>
 
-        <label for="qtyInput" class="label-style">2. QTY (C കോളം):</label>
-        <input 
-            type="number" 
-            id="qtyInput" 
-            placeholder="Quantity" 
-            inputmode="decimal" 
-            oninput="formatQtyAndCalculateTotal()">
+  <!-- XLSX Download -->
+  <button id="downloadBtn">Download XLSX Output</button>
 
-        <label for="totalInput" class="label-style">3. TOTAL (E കോളം):</label>
-        <input 
-            type="number" 
-            id="totalInput" 
-            placeholder="Total Amount" 
-            inputmode="decimal">
+  <!-- Status / Error Messages -->
+  <div id="statusMsg">Data loaded successfully. Ready to search.</div>
+  <div id="errorMsg">
+    Unable to save data. Please check your internet connection or AppScript URL.
+  </div>
 
-        <button onclick="saveData()" id="saveButton" disabled>ഡാറ്റ സേവ് ചെയ്യുക (Save)</button>
-        
-        <p id="message">Loading data...</p>
-    </div>
+  <script>
+    function formatQtyAndCalculateTotal() {
+      const qtyInput = document.getElementById('qtyInput');
+      const totalInput = document.getElementById('totalInput');
 
-    <script>
-                // ====================================================================
-        // JAVASCRIPT LOGIC
-        // ====================================================================
-        
-        // --- !!! ഇവിടെ നിങ്ങളുടെ Apps Script URL പേസ്റ്റ് ചെയ്യുക !!! ---
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyR4vzoLj0-L2UN5uT668f52FJokyeq-xokqPOIgSalbybOY03VzU7ZWf7_eQCR7soTlg/exec'; 
-        // ------------------------------------------------------------------
-        
-        // --- !!! ഇവിടെ നിങ്ങളുടെ Google Sheet ID പേസ്റ്റ് ചെയ്യുക !!! ---
-        // നിങ്ങൾ നൽകിയ ID: 1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10
-        const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10'; 
-        // ------------------------------------------------------------------
+      let qtyValue = qtyInput.value;
 
-        let allItemData = [];
-        let currentRow = null; 
-        let selectedItem = null;
+      if (qtyValue === '') {
+        totalInput.value = '';
+        return;
+      }
 
-        // XLSX Download Link സെറ്റ് ചെയ്യുന്നു (ഇവിടെയാണ് തിരുത്ത് വരുത്തേണ്ടത്)
-        function setDownloadLink() {
-            // ഈ ഫംഗ്ഷനിലെ ID ചെക്ക് ഇപ്പോൾ ഒഴിവാക്കിയിരിക്കുന്നു.
-            
-            // Google Sheets-ൽ നിന്ന് XLSX ആയി ഡൗൺലോഡ് ചെയ്യാനുള്ള URL ഫോർമാറ്റ്
-            const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
-            
-            document.getElementById('downloadXLSXButton').disabled = false;
-            document.getElementById('downloadXLSXButton').setAttribute('data-link', downloadLink);
-            document.getElementById('downloadXLSXButton').textContent = 'XLSX ഔട്ട്പുട്ട് ഡൗൺലോഡ് ചെയ്യുക';
-        }
+      let numQty = parseFloat(qtyValue);
+      if (isNaN(numQty)) return;
 
-        // ... ബാക്കിയുള്ള കോഡുകൾ മാറ്റമില്ലാതെ തുടരുന്നു ...
+      // ✅ Keep user-entered values, no forced formatting
+      qtyInput.value = qtyValue;
+      totalInput.value = qtyValue;
+    }
 
+    // Attach event
+    document.getElementById('qtyInput').addEventListener('input', formatQtyAndCalculateTotal);
+  </script>
 
-        function openDownloadLink() {
-            const link = document.getElementById('downloadXLSXButton').getAttribute('data-link');
-            if (link) {
-                // പുതിയ ടാബിൽ ഡൗൺലോഡ് ലിങ്ക് തുറക്കുന്നു
-                window.open(link, '_blank');
-            }
-        }
-
-        // പേജ് ലോഡ് ചെയ്യുമ്പോൾ JSON ഫയൽ Fetch ചെയ്യുന്നു
-        async function loadItemData() {
-            setDownloadLink(); // ഡൗൺലോഡ് ലിങ്ക് സെറ്റ് ചെയ്യുന്നു
-            try {
-                const response = await fetch('./items.json'); 
-                allItemData = await response.json();
-                document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
-                document.getElementById('searchButton').disabled = false;
-            } catch (e) {
-                console.error("Error loading items.json:", e);
-                document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
-            }
-        }
-
-        // 1. Search Logic (പൂർണ്ണമായും ബ്രൗസറിൽ പ്രവർത്തിക്കുന്നു)
-        function handleSearchInput() {
-            const searchInput = document.getElementById('searchInput');
-            const listDiv = document.getElementById('autocompleteList');
-            const messageEl = document.getElementById('message');
-            const searchText = searchInput.value.trim().toLowerCase();
-
-            listDiv.style.display = 'none';
-            listDiv.innerHTML = '';
-            
-            if (searchText.length < 3) {
-                return;
-            }
-
-            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
-            const results = [];
-            
-            for (const data of allItemData) {
-                const combined = `${data.item.toLowerCase()} ${data.code}`;
-                const match = searchParts.every(part => combined.includes(part));
-                
-                if (match) {
-                    results.push(data);
-                    if (results.length >= 20) break;
-                }
-            }
-
-            if (results.length > 0) {
-                results.forEach(suggestion => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-item';
-                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
-                    
-                    div.onclick = () => {
-                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
-                        selectedItem = suggestion; 
-                        listDiv.style.display = 'none';
-                        showSelectedItem();
-                    };
-                    listDiv.appendChild(div);
-                });
-                listDiv.style.display = 'block';
-            }
-            messageEl.textContent = `Found ${results.length} items.`;
-        }
-
-        // 2 & 3. Selection and Display Logic (മാറ്റമില്ല)
-        function performFinalSearch() {
-            if (selectedItem) {
-                showSelectedItem();
-            } else {
-                document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
-                document.getElementById('resultDisplay').style.display = 'none';
-                document.getElementById('saveButton').disabled = true;
-                currentRow = null;
-            }
-        }
-        
-        function showSelectedItem() {
-            if (selectedItem) {
-                currentRow = selectedItem.row;
-                document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
-                document.getElementById('resultDisplay').style.display = 'block';
-                document.getElementById('saveButton').disabled = false;
-                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
-            }
-        }
-
-
-        // 4. Formatting and Calculation Logic (മാറ്റമില്ല)
-        function formatQtyAndCalculateTotal() {
-            const qtyInput = document.getElementById('qtyInput');
-            let qtyValue = qtyInput.value;
-            const totalInput = document.getElementById('totalInput');
-
-            if (qtyValue === '') {
-                totalInput.value = '';
-                return;
-            }
-
-            let numQty = parseFloat(qtyValue);
-            if (isNaN(numQty)) return;
-
-            qtyInput.value = numQty.toFixed(3); 
-            totalInput.value = numQty.toFixed(2);
-        }
-
-
-        // 5. Save Logic (doPost-ലേക്ക് ഡാറ്റ അയയ്ക്കുന്നു - മാറ്റമില്ല)
-        async function saveData() {
-            const qty = document.getElementById('qtyInput').value.trim(); 
-            const total = document.getElementById('totalInput').value.trim(); 
-            const messageEl = document.getElementById('message');
-            
-            if (!currentRow) {
-                messageEl.textContent = 'Please select an item first.';
-                return;
-            }
-
-            if (!qty || !total) {
-                messageEl.textContent = 'Please fill both QTY and TOTAL to save.';
-                return;
-            }
-
-            messageEl.textContent = 'Saving data...';
-            
-            const postData = {
-                row: currentRow,
-                qty: parseFloat(qty),
-                total: parseFloat(total)
-            };
-
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(postData)
-                });
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    messageEl.textContent = 'Successfully Saved Data!';
-                    // Reset fields
-                    document.getElementById('qtyInput').value = '';
-                    document.getElementById('totalInput').value = '';
-                    document.getElementById('searchInput').value = '';
-                    document.getElementById('saveButton').disabled = true;
-                    document.getElementById('resultDisplay').style.display = 'none';
-                    currentRow = null;
-                    selectedItem = null;
-                } else {
-                    messageEl.textContent = `Save Error: ${result.message}`;
-                }
-            } catch (e) {
-                messageEl.textContent = 'An error occurred while saving data. Check network/AppScript URL.';
-            }
-        }
-    </script>
 </body>
 </html>
