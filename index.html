@@ -256,8 +256,9 @@
     function downloadLocalCartXLSX() {
         // 🚨 ലൈബ്രറി ലോഡ് ആയിട്ടുണ്ടോ എന്ന് ഉറപ്പാക്കുന്നു
         if (typeof XLSX === 'undefined') {
-            console.error("XLSX library not loaded. Check CDN link.");
-            alert("Error: XLSX library failed to load. Please refresh the page.");
+            console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
+            document.getElementById('message').textContent = 'ERROR: XLSX library failed to load. Check console (F12) for details.';
+            alert("Error: XLSX download failed. Library not found.");
             return;
         }
         
@@ -277,11 +278,6 @@
         
         // 2. ഹെഡ്ഡർ ഡാറ്റാ (ഇൻവോയ്സ് ഘടന) നേരിട്ട് ചേർക്കുന്നു
         
-        // Row 1 (പഴയ Row 2): Kmart Supermarket LLC
-        // Row 2 (പഴയ Row 3): Branch: Burdubai (al raffa)
-        // Row 3 (പഴയ Row 4): ഇന്നത്തെ തീയതി
-        // Row 4 (പഴയ Row 5): VEGETABLE AND FRUITS INVOICE
-        
         XLSX.utils.sheet_add_aoa(ws, [
             ['Kmart Supermarket LLC'], 
             ['Branch: Burdubai (al raffa)'], 
@@ -300,7 +296,6 @@
             const itemDetails = allItemData.find(d => d.row === item.row);
             const itemCode = itemDetails ? String(itemDetails.code) : ''; 
             
-            // ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
             let itemBarcode = '';
             if (itemCode) {
                  itemBarcode = `9900${itemCode}000000`;
@@ -317,7 +312,6 @@
                 rateExcl = rateInc / 1.05; 
             }
 
-            // A8, B8, C8, D8, E8, F8 എന്നിവയിൽ നിന്ന് തുടങ്ങുന്നു
             data_for_sheet.push([
                 itemBarcode, 
                 item.item, 
@@ -327,8 +321,7 @@
                 total      
             ]);
             
-            // ടോട്ടൽ സം ഫോർമുല ഉണ്ടാക്കുന്നു
-            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
+            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); 
             
             if (totalSumFormula === "") {
                 totalSumFormula = `F8:${totalCellRef}`;
@@ -337,23 +330,19 @@
             }
         });
         
-        // കാർട്ട് ഡാറ്റാ A8 എന്ന സെല്ലിൽ നിന്ന് തുടങ്ങുന്നു
         XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
         
         // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
         const grandTotalRow = 7 + items.length; 
         
-        // GRAND TOTAL: എന്ന ടെക്സ്റ്റ് A കോളത്തിൽ ചേർക്കുന്നു
         XLSX.utils.sheet_add_aoa(ws, [
             ['GRAND TOTAL:']
         ], { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) }); 
         
-        // GRAND TOTAL തുകയുടെ ഫോർമുല F കോളത്തിൽ ചേർക്കുന്നു
         const totalFormulaCell = XLSX.utils.encode_cell({c: 5, r: grandTotalRow}); 
         
-        // ഷീറ്റിൽ ഫോർമുല സെറ്റ് ചെയ്യുന്നു: (F11 സെല്ലിൽ) =SUM(F8:FXX)
         XLSX.utils.sheet_add_aoa(ws, [
-            [{t:'f', f:`SUM(${totalSumFormula})`}] // 't'ype: 'f'ormula, 'f'ormula: SUM(...)
+            [{t:'f', f:`SUM(${totalSumFormula})`}] 
         ], { origin: totalFormulaCell });
         
         
@@ -367,9 +356,6 @@
         
         document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
     }
-
-    // --- MASS UPDATE LOGIC (പൂർണ്ണമായി നീക്കം ചെയ്തു) ---
-
   </script>
 </body>
 </html>
