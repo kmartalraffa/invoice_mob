@@ -93,9 +93,9 @@
   <script>
     // CONFIG: Apps Script URL ഉം Sheet ID ഉം ഉപയോഗിക്കുന്നു
     // 🚨 പുതിയ Apps Script URL ഇവിടെ നൽകിയിരിക്കുന്നു
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw7NZxGbf5S2pR4QnOp_lABXP0okBM03Juu3lAlWaeAEC57PR98tgMVhnFK7Y7Kk2UrVkQ/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwx-w4CWfFAUletzk1On6l9P61jjCFAzWSKXhIMQD5msmZ5ZYsdEDQ8cu3vsWDjMfmi2g/exec';
     const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10';
-    const CART_STORAGE_KEY = 'kmartLocalCart'; // Local Storage-ൽ ഡാറ്റ സൂക്ഷിക്കാനുള്ള കീ
+    const CART_STORAGE_KEY = 'kmartLocalCart'; 
 
     // STATE
     let allItemData = [];
@@ -104,7 +104,6 @@
     // --- LOCAL STORAGE UTILITIES ---
     function loadLocalCart() {
         const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-        // JSON ഡാറ്റാ ഒബ്ജക്റ്റ് ആയി പാർസ് ചെയ്യുന്നു. ഡാറ്റാ ഇല്ലെങ്കിൽ {} നൽകുന്നു
         return storedCart ? JSON.parse(storedCart) : {}; 
     }
 
@@ -202,7 +201,7 @@
     // --- LOCAL CART LOGIC ---
     
     function renderCart() {
-        const localCart = loadLocalCart(); // Local Storage-ൽ നിന്ന് ഡാറ്റാ എടുക്കുന്നു
+        const localCart = loadLocalCart(); 
         const items = Object.values(localCart);
         const cartDisplay = document.getElementById('localCartDisplay');
         const cartCount = document.getElementById('cartCount');
@@ -244,7 +243,7 @@
             return;
         }
         
-        const localCart = loadLocalCart(); // നിലവിലെ Cart ലോഡ് ചെയ്യുന്നു
+        const localCart = loadLocalCart(); 
 
         // Add or update item in the local cart
         const cartItem = {
@@ -257,7 +256,7 @@
         // Use row as the unique key
         localCart[selectedItem.row] = cartItem;
         
-        saveLocalCart(localCart); // Local Storage-ൽ സേവ് ചെയ്യുന്നു
+        saveLocalCart(localCart); 
 
         // Reset inputs and selection
         document.getElementById('qtyInput').value = '';
@@ -275,7 +274,7 @@
     // --- MASS UPDATE LOGIC (Send to Apps Script) ---
 
     async function updateGoogleSheet() {
-        const localCart = loadLocalCart(); // Local Storage-ൽ നിന്ന് ഡാറ്റാ എടുക്കുന്നു
+        const localCart = loadLocalCart(); 
         
         if (Object.keys(localCart).length === 0) {
             document.getElementById('message').textContent = 'Cart is empty.';
@@ -288,7 +287,6 @@
         updateButton.disabled = true;
         messageEl.textContent = 'Pushing data to Google Sheet... This may take a moment.';
 
-        // Apps Script പ്രതീക്ഷിക്കുന്ന ഡാറ്റാ ഫോർമാറ്റിലേക്ക് മാറ്റുന്നു
         const cartArray = Object.values(localCart);
         const postData = JSON.stringify({ items: cartArray }); 
         
