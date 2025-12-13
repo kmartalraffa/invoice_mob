@@ -328,12 +328,20 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-    // --- DOWNLOAD XLSX (FORMATTED INVOICE) ---
-    function downloadLocalCartXLSX() {
-      if (typeof XLSX === 'undefined') {
-        alert("XLSX library not loaded.");
-        return;
-      }
+  function downloadLocalCartXLSX() {
+  if (typeof XLSX === 'undefined') {
+    alert("XLSX library not loaded.");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = {};
+
+  ws['A1'] = { v: "TEST CELL" };
+
+  XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+  XLSX.writeFile(wb, "test_simple.xlsx");
+}
 
       const localCart = loadLocalCart();
       const items = Object.values(localCart);
