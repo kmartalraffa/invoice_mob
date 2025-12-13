@@ -287,8 +287,9 @@
         XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
         // Row 5 (ഒഴിവ് വരി)
         XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A5" }); 
-        // Row 6: ഹെഡ്ഡർ
-        XLSX.utils.sheet_add_aoa(ws, [['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL']], { origin: "A6" });
+        
+        // 🚨 Row 6: ഹെഡ്ഡർ മാറ്റുന്നു: TOTAL കഴിഞ്ഞ ശേഷം ItemBarCode ചേർക്കുന്നു. (A, B, C, D, E, F, G കോളങ്ങൾ)
+        XLSX.utils.sheet_add_aoa(ws, [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']], { origin: "A6" });
         
         
         // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
@@ -300,6 +301,7 @@
             const itemDetails = allItemData.find(d => d.row === item.row);
             const itemCode = itemDetails ? String(itemDetails.code) : ''; 
             
+            // ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
             let itemBarcode = '';
             if (itemCode) {
                  itemBarcode = `9900${itemCode}000000`;
@@ -316,16 +318,22 @@
                 rateExcl = rateInc / 1.05; 
             }
 
+            const finalRateExcl = parseFloat(rateExcl.toFixed(3));
+            const finalRateInc = parseFloat(rateInc.toFixed(3));
+
+            // ഡാറ്റാ വരി: CODE (A), ITEM NAME (B), QTY (C), Rate (D), RATE.inc (E), TOTAL (F), ItemBarCode (G)
             data_for_sheet.push([
-                itemBarcode, 
-                item.item, 
-                qty,       
-                parseFloat(rateExcl.toFixed(3)), 
-                parseFloat(rateInc.toFixed(3)),  
-                total      
+                itemCode,           // A8: CODE (പഴയ സ്ഥാനത്ത്)
+                item.item,          // B8: ITEM NAME
+                qty,                // C8: QTY
+                finalRateExcl,      // D8: Rate
+                finalRateInc,       // E8: RATE.inc
+                total,              // F8: TOTAL
+                itemBarcode         // G8: ItemBarCode (പുതിയ സ്ഥാനം)
             ]);
             
-            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); 
+            // TOTAL ഫോർമുല F കോളത്തെ മാത്രം ആശ്രയിക്കുന്നു
+            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
             
             if (totalSumFormula === "") {
                 totalSumFormula = `F8:${totalCellRef}`;
@@ -340,9 +348,8 @@
         // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
         const grandTotalRow = 7 + items.length; 
         
-        // 🚨 തിരുത്തിയത്: ഫൂട്ടർ ഡാറ്റാ ഒരു Array of Arrays ആയി ചേർക്കുന്നു
         const footer_data = [
-            // GRAND TOTAL: A കോളത്തിൽ ടെക്സ്റ്റ്, F കോളത്തിൽ ഫോർമുല
+            // GRAND TOTAL: A കോളത്തിൽ ടെക്സ്റ്റ്, F കോളത്തിൽ ഫോർമുല (F=5)
             ['GRAND TOTAL:', null, null, null, null, {t:'f', f:`SUM(${totalSumFormula})`}] 
         ];
 
