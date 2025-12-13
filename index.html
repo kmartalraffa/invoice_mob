@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
     .container { max-width: 400px; margin: auto; background: white; padding: 20px;
@@ -277,18 +277,21 @@
         
         // 2. ഹെഡ്ഡർ ഡാറ്റാ (Row 1 മുതൽ Row 6 വരെ)
         
-        // ഹെഡ്ഡർ ഡാറ്റാ എല്ലാം ഒരൊറ്റ Array of Arrays ആയി കൺസോളിഡേറ്റ് ചെയ്യുന്നു
-        const header_data = [
-            ['Kmart Supermarket LLC'], 
-            ['Branch: Burdubai (al raffa)'], 
-            [formattedDate], // Row 3: ഇന്നത്തെ തീയതി
-            ['VEGETABLE AND FRUITS INVOICE'], 
-            [], // Row 5: ഒഴിവ് വരി
-            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6: ഹെഡ്ഡർ
-        ];
+        // 🚨 തിരുത്തിയത്: ഹെഡ്ഡർ വരികൾ ഓരോന്നായി ചേർക്കുന്നു (ഇതാണ് ഏറ്റവും സുരക്ഷിതമായ മാർഗ്ഗം)
         
-        // A1-ൽ നിന്ന് ഹെഡ്ഡർ ഡാറ്റാ ചേർക്കുന്നു
-        XLSX.utils.sheet_add_aoa(ws, header_data, { origin: "A1" });
+        // Row 1
+        XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
+        // Row 2
+        XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)']], { origin: "A2" });
+        // Row 3
+        XLSX.utils.sheet_add_aoa(ws, [[formattedDate]], { origin: "A3" });
+        // Row 4
+        XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
+        // Row 5 (ഒഴിവ് വരി)
+        XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A5" }); 
+        // Row 6: ഹെഡ്ഡർ
+        XLSX.utils.sheet_add_aoa(ws, [['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL']], { origin: "A6" });
+        
         
         // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
         
@@ -315,7 +318,6 @@
                 rateExcl = rateInc / 1.05; 
             }
 
-            // ഡാറ്റാ വരി
             data_for_sheet.push([
                 itemBarcode, 
                 item.item, 
@@ -325,7 +327,6 @@
                 total      
             ]);
             
-            // ടോട്ടൽ സം ഫോർമുല ഉണ്ടാക്കുന്നു
             const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
             
             if (totalSumFormula === "") {
