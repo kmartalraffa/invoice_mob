@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> <style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
+  <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
     .container { max-width: 400px; margin: auto; background: white; padding: 20px;
       border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
@@ -253,6 +254,13 @@
     // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
 
     function downloadLocalCartXLSX() {
+        // 🚨 ലൈബ്രറി ലോഡ് ആയിട്ടുണ്ടോ എന്ന് ഉറപ്പാക്കുന്നു
+        if (typeof XLSX === 'undefined') {
+            console.error("XLSX library not loaded. Check CDN link.");
+            alert("Error: XLSX library failed to load. Please refresh the page.");
+            return;
+        }
+        
         const localCart = loadLocalCart();
         const items = Object.values(localCart);
         
@@ -262,7 +270,6 @@
         }
         
         const now = new Date();
-        // 🚨 Date ഫോർമാറ്റ് മാറ്റി: "14/12/2025" പോലെ ലഭിക്കാൻ
         const formattedDate = now.toLocaleDateString('en-GB'); 
         
         // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
@@ -278,13 +285,11 @@
         XLSX.utils.sheet_add_aoa(ws, [
             ['Kmart Supermarket LLC'], 
             ['Branch: Burdubai (al raffa)'], 
-            [formattedDate], // 🚨 തീയതി Row 3-ൽ ചേർക്കുന്നു
+            [formattedDate], 
             ['VEGETABLE AND FRUITS INVOICE'], 
-            [], // Row 5: ഒഴിവ് വരി (പുതിയ കണക്കിൽ Row 5 ഒഴിവാണ്)
+            [], 
             ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6: ഹെഡ്ഡർ
         ], { origin: "A1" });
-        
-        // Row 7: ഒരു ഒഴിവ് വരി (ഡാറ്റാ തുടങ്ങുന്നത് Row 8-ൽ നിന്ന്)
         
         // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
         
