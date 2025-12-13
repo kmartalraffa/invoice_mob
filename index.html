@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -53,7 +54,7 @@
       <div id="autocompleteList" class="autocomplete-list"></div>
     </div>
 
-    <button onclick="performFinalSearch()" id="searchButton" disabled>Search Item</button>
+    <button onclick="alert('Please select item from the dropdown list by clicking on it.')" id="searchButton" disabled>Search Item</button>
     <hr>
 
     <h3>Selection</h3>
@@ -110,14 +111,14 @@
         const response = await fetch('./items.json');
         allItemData = await response.json();
         document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
-        document.getElementById('searchButton').disabled = false;
+        // Search Button ഇനി ഉപയോഗിക്കാത്തതിനാൽ enable ചെയ്യേണ്ടതില്ല.
       } catch (e) {
         console.error("Error loading items.json:", e);
         document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
       }
     }
 
-    // Autocomplete + filtering (UPDATED to set currentRow on click)
+    // Autocomplete + filtering
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
@@ -156,7 +157,7 @@
             selectedItem = suggestion;
             listDiv.style.display = 'none';
             
-            // 🚨 പ്രധാന മാറ്റം: ഇവിടെത്തന്നെ currentRow സെറ്റ് ചെയ്യുന്നു
+            // 🚨 പ്രധാന മാറ്റം: ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്യുന്നു
             currentRow = selectedItem.row; 
             showSelectedItem();
           };
@@ -167,10 +168,11 @@
       messageEl.textContent = `Found ${results.length} items.`;
     }
 
-    // Finalize selection
+    // Finalize selection (ഇപ്പോൾ അപ്രസക്തമാണ്, പക്ഷേ നിലനിർത്തുന്നു)
     function performFinalSearch() {
+      // ഈ ഫംഗ്ഷൻ ഇപ്പോൾ അലേർട്ട് മെസ്സേജ് നൽകാനായി മാറ്റിയ HTML-ൽ ഉപയോഗിക്കുന്നു
+      // ഇനി ഉപയോഗിക്കേണ്ടതില്ല, എങ്കിലും ബാക്കി കോഡ് നിലനിർത്തുന്നു
       if (selectedItem) {
-        // ക്ലിക്കിൽ തന്നെ currentRow സെറ്റ് ചെയ്തതിനാൽ, ഈ ഫംഗ്ഷൻ ഇവിടെ confirm ചെയ്യുന്നു
         currentRow = selectedItem.row; 
         showSelectedItem();
       } else {
@@ -183,7 +185,7 @@
 
     function showSelectedItem() {
       if (selectedItem) {
-        // currentRow ഇപ്പോൾ ക്ലിക്കിൽത്തന്നെ സെറ്റ് ചെയ്തിട്ടുണ്ട്, ഇത് ഇവിടെ വീണ്ടും സെറ്റ് ചെയ്യുന്നതിലെ പ്രശ്നം ഒഴിവാക്കുന്നു
+        // ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്തതിനാൽ, ഇത് ഡാറ്റാ ഡിസ്‌പ്ലേ ചെയ്യുന്നു
         document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
         document.getElementById('resultDisplay').style.display = 'block';
         document.getElementById('saveButton').disabled = false;
@@ -219,7 +221,7 @@
       const qty = qtyInput.value.trim();
       const total = totalInput.value.trim();
       
-      // റോബസ്റ്റ് വാലിഡേഷൻ: currentRow നിർവചിച്ചിരിക്കണം, QTY/TOTAL എന്നിവ സാധുവായ സംഖ്യകളായിരിക്കണം
+      // റോബസ്റ്റ് വാലിഡേഷൻ
       if (!currentRow || isNaN(parseFloat(qty)) || isNaN(parseFloat(total))) {
         messageEl.textContent = 'Error: Please select an item and ensure QTY/TOTAL are valid numbers.';
         return;
@@ -238,7 +240,6 @@
       try {
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
-          // Content-Type ഹെഡ്ഡർ ഒഴിവാക്കുന്നു
           body: formParams 
         });
         
