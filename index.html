@@ -191,7 +191,8 @@
         document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
       } catch (e) {
         console.error("Error loading items.json:", e);
-        document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+        document.getElementById('message').textContent =
+          'Error loading item data. Check items.json file.';
       }
       renderCart();
     }
@@ -253,7 +254,8 @@
           `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
         document.getElementById('resultDisplay').style.display = 'block';
         document.getElementById('addButton').disabled = false;
-        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+        document.getElementById('message').textContent =
+          'Item Selected. Enter Qty/Total.';
       }
     }
 
@@ -341,18 +343,20 @@
       }
 
       const now = new Date();
-      const formattedDate = now.toLocaleDateString('en-GB');
+      const formattedDate = now.toLocaleDateString('en-GB'); // dd/mm/yyyy
+      const dateForFile =
+        String(now.getDate()).padStart(2, '0') + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getFullYear());
 
       const wb = XLSX.utils.book_new();
       const ws = {};
 
-      // ROW HEIGHTS
+      // ROW HEIGHTS (we'll set some, Excel can auto for others)
       ws['!rows'] = [
-        { hpt: 30 }, // 1
-        { hpt: 20 }, // 2
-        { hpt: 20 }, // 3
-        { hpt: 20 }, // 4
-        { hpt: 20 }, // 5+
+        { hpt: 30 }, // row 1
+        { hpt: 20 }, // row 2
+        { hpt: 20 }  // row 3
       ];
 
       // COLUMN WIDTHS
@@ -370,7 +374,7 @@
       ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
         { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // A2:G2
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // A3:G3
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }  // A3:G3
       ];
 
       const borderAll = {
@@ -418,14 +422,14 @@
       ws['A2'] = { v: "VEGETABLE AND FRUITS INVOICE", s: headerMedium };
       ws['A3'] = { v: "DATE: " + formattedDate, s: headerMedium };
 
-      // ITEM HEADER (ROW 4)
+      // ITEM HEADER (row index 3 -> Excel row 4)
       const headers = ["CODE", "ITEM NAME", "QTY", "RATE INC", "TOTAL", "ItemBarCode", "Rate"];
       headers.forEach((h, i) => {
         ws[XLSX.utils.encode_cell({ r: 3, c: i })] = { v: h, s: itemHeader };
       });
 
-      // ITEM ROWS (start at rowIndex = 4 -> Excel row 5)
-      let rowIndex = 4;
+      // ITEM ROWS
+      let rowIndex = 4; // Excel row 5
       let grandTotal = 0;
 
       items.forEach(cartItem => {
@@ -442,12 +446,13 @@
 
         const barcode = `9900${code}000000`;
 
+        // CODE, ITEM, QTY, RATE INC, TOTAL, BARCODE, RATE (excl)
         const rowData = [
           code,
           name,
           qty,
           rateInc.toFixed(3),
-          total,             // TOTAL
+          total,
           barcode,
           rateExcl.toFixed(3)
         ];
@@ -460,9 +465,9 @@
       });
 
       // GRAND TOTAL ROW
-      const totalRow = rowIndex + 1; // leave one empty row if you want; here we go direct
+      const totalRow = rowIndex + 1; // one row space before total (optional)
 
-      // Merge A-totalRow:D-totalRow and E-totalRow:G-totalRow
+      // Merge A:D and E:G for total row (0-based index)
       ws['!merges'].push(
         { s: { r: totalRow - 1, c: 0 }, e: { r: totalRow - 1, c: 3 } },
         { s: { r: totalRow - 1, c: 4 }, e: { r: totalRow - 1, c: 6 } }
@@ -474,10 +479,8 @@
       // APPEND SHEET
       XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
 
-      const filename =
-        `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}` +
-        `${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}` +
-        `${String(now.getMinutes()).padStart(2, '0')}.xlsx`;
+      // FILENAME: (DATE) invoice.xlsx  -> e.g. "14-12-2025 invoice.xlsx"
+      const filename = `${dateForFile} invoice.xlsx`;
 
       XLSX.writeFile(wb, filename);
       document.getElementById('message').textContent =
