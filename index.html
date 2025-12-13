@@ -54,7 +54,8 @@ let selectedItem = null;
 let cart = {};
 
 // ✅ FETCH items.json
-fetch("items.json")
+fetch("fetch("https://raw.githubusercontent.com/kmartalraffa/invoice_mob/main/items.json")
+")
   .then(res => res.json())
   .then(data => {
     allItemData = data;
