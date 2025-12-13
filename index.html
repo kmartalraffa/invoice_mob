@@ -291,10 +291,8 @@
         const postData = JSON.stringify({ items: cartArray }); 
         
         try {
-            // Apps Script-ലേക്ക് POST അഭ്യർത്ഥന അയയ്ക്കുന്നു
             const response = await fetch(WEB_APP_URL, {
                 method: 'POST',
-                // Content-Type: application/json ആണ്, ഇത് Apps Script-ൽ POST request ആയി പ്രവർത്തിക്കും.
                 headers: { 'Content-Type': 'application/json' }, 
                 body: postData 
             });
@@ -302,20 +300,30 @@
             // Apps Script-ൽ നിന്ന് Text/Plain ആയിട്ടായിരിക്കും പ്രതികരണം വരുന്നത് (CORS പരിഹരിക്കാൻ)
             const resultText = await response.text();
             
-            // ടെക്സ്റ്റ് പ്രതികരണത്തെ JSON ആയി പാർസ് ചെയ്യുന്നു
-            const result = JSON.parse(resultText); 
+            let result;
+            try {
+                // ടെക്സ്റ്റ് പ്രതികരണത്തെ JSON ആയി പാർസ് ചെയ്യാൻ ശ്രമിക്കുന്നു
+                result = JSON.parse(resultText); 
+            } catch (parseError) {
+                // JSON പാഴ്സിംഗ് പരാജയപ്പെട്ടാൽ
+                console.error("Failed to parse JSON response:", resultText, parseError);
+                messageEl.textContent = `ERROR: Failed to read server response. Check Apps Script logs for errors. Raw Response: ${resultText.substring(0, 50)}...`;
+                updateButton.disabled = false;
+                renderCart();
+                return;
+            }
 
             if (result.status === 'success') {
                 messageEl.textContent = `SUCCESS: Updated ${result.updatedCount} items in Google Sheet.`;
-                saveLocalCart({}); // Empty the Local Storage Cart on success
+                saveLocalCart({}); 
             } else {
                 // Apps Script-ലെ പിശക് സന്ദേശം ഇവിടെ കാണിക്കുന്നു
-                messageEl.textContent = `ERROR: Sheet update failed. ${result.message || 'Unknown error'}`;
+                messageEl.textContent = `ERROR: Sheet update failed. ${result.message || 'Unknown AppScript error'}`;
             }
         } catch (e) {
             console.error(e);
-            // JSON പാർസിംഗ് പിശകുകളോ മറ്റ് നെറ്റ്വർക്ക് പിശകുകളോ ഇവിടെ കൈകാര്യം ചെയ്യുന്നു
-            messageEl.textContent = 'An error occurred. Check network/AppScript URL or check Apps Script Logs.';
+            // നെറ്റ്വർക്ക് പിശകുകൾ (Failed to fetch)
+            messageEl.textContent = 'An error occurred. Check network/AppScript URL or ensure the Apps Script URL is correct and deployed as "Anyone".';
         }
         
         updateButton.disabled = false;
