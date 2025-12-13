@@ -5,7 +5,6 @@
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -98,8 +97,13 @@
       margin-bottom: 5px;
       display: block;
     }
-    #addButton { background-color: #4CAF50; }
-    #downloadXLSXButton { background-color: #007bff; }
+    #addButton {
+      background-color: #4CAF50;
+    }
+    #downloadXLSXButton {
+      background-color: #007bff;
+      margin-bottom: 15px;
+    }
     .cart-item {
       display: flex;
       justify-content: space-between;
@@ -107,9 +111,11 @@
       border-bottom: 1px dashed #ccc;
       font-size: 14px;
     }
+    .cart-item:last-child {
+      border-bottom: none;
+    }
   </style>
 </head>
-
 <body onload="loadItemData()">
   <div class="container">
     <h1>Shop Invoice</h1>
@@ -117,253 +123,366 @@
     <hr>
 
     <div class="search-area">
-      <label class="label-style">1. ITEM CODE OR NAME :</label>
-      <input type="text" id="searchInput" placeholder="Type to search" onkeyup="handleSearchInput()" autocomplete="off">
-      <div id="autocompleteList" class="autocomplete-list" style="display:none;"></div>
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Type to search and click an item"
+        onkeyup="handleSearchInput()"
+        autocomplete="off">
+      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
     </div>
 
     <hr>
 
     <h3>Selection</h3>
-    <div id="resultDisplay" class="result-box" style="display:none;"></div>
+    <div id="resultDisplay" class="result-box" style="display: none;"></div>
 
-    <label class="label-style">2. QTY (Input) :</label>
-    <input type="number" id="qtyInput" placeholder="Quantity" inputmode="decimal">
+    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
+    <input
+      type="number"
+      id="qtyInput"
+      placeholder="Quantity"
+      inputmode="decimal">
 
-    <label class="label-style">3. TOTAL (Input) :</label>
-    <input type="number" id="totalInput" placeholder="Total Amount" inputmode="decimal">
+    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
+    <input
+      type="number"
+      id="totalInput"
+      placeholder="Total Amount"
+      inputmode="decimal">
 
-    <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
-
+    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
     <hr>
 
     <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
     <div id="localCartDisplay" class="cart-box"></div>
 
-    <button id="downloadXLSXButton" onclick="downloadLocalCartXLSX()" disabled>Download Cart as XLSX</button>
+    <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
+      Download Cart as XLSX
+    </button>
 
     <p id="message">Loading data ...</p>
   </div>
 
-<script>
-const CART_STORAGE_KEY = 'kmartLocalCart';
-let allItemData = [];
-let selectedItem = null;
+  <script>
+    // CONFIG
+    const CART_STORAGE_KEY = 'kmartLocalCart';
 
-function loadLocalCart() {
-  const stored = localStorage.getItem(CART_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : {};
-}
-function saveLocalCart(data) {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(data));
-}
+    // STATE
+    let allItemData = [];
+    let selectedItem = null;
 
-async function loadItemData() {
-  try {
-    const res = await fetch('./items.json');
-    allItemData = await res.json();
-    document.getElementById('message').textContent = 'Data loaded successfully.';
-  } catch {
-    document.getElementById('message').textContent = 'Error loading items.json';
-  }
-  renderCart();
-}
-
-function handleSearchInput() {
-  const input = document.getElementById('searchInput').value.trim().toLowerCase();
-  const list = document.getElementById('autocompleteList');
-  const msg = document.getElementById('message');
-
-  selectedItem = null;
-  document.getElementById('resultDisplay').style.display = 'none';
-  document.getElementById('addButton').disabled = true;
-
-  list.innerHTML = "";
-  list.style.display = "none";
-
-  if (input.length < 3) {
-    msg.textContent = "Type at least 3 characters.";
-    return;
-  }
-
-  const parts = input.split(/\s+/);
-  const results = [];
-
-  for (const d of allItemData) {
-    const name = (d.item || "").toLowerCase();
-    const code = String(d.code || "");
-    const combined = `${name} ${code}`;
-    if (parts.every(p => combined.includes(p))) {
-      results.push(d);
-      if (results.length >= 20) break;
+    // --- LOCAL STORAGE UTILITIES ---
+    function loadLocalCart() {
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      return storedCart ? JSON.parse(storedCart) : {};
     }
-  }
 
-  results.forEach(r => {
-    const div = document.createElement('div');
-    div.className = "autocomplete-item";
-    div.innerHTML = `<strong>${r.code}</strong> - ${r.item}`;
-    div.onclick = () => {
-      document.getElementById('searchInput').value = `${r.code} ${r.item}`;
-      selectedItem = r;
-      list.style.display = "none";
-      showSelectedItem();
-    };
-    list.appendChild(div);
-  });
+    function saveLocalCart(cartData) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+    }
 
-  list.style.display = results.length ? "block" : "none";
-  msg.textContent = `Found ${results.length} items.`;
-}
+    // --- INITIAL LOAD ---
+    async function loadItemData() {
+      try {
+        const response = await fetch('./items.json');
+        allItemData = await response.json();
+        document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
+      } catch (e) {
+        console.error("Error loading items.json:", e);
+        document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+      }
+      renderCart();
+    }
 
-function showSelectedItem() {
-  const box = document.getElementById('resultDisplay');
-  box.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
-  box.style.display = "block";
-  document.getElementById('addButton').disabled = false;
-}
+    // --- SEARCH AND SELECTION LOGIC ---
+    function handleSearchInput() {
+      const searchInput = document.getElementById('searchInput');
+      const listDiv = document.getElementById('autocompleteList');
+      const messageEl = document.getElementById('message');
+      const searchText = searchInput.value.trim().toLowerCase();
 
-function renderCart() {
-  const cart = loadLocalCart();
-  const items = Object.values(cart);
-  const display = document.getElementById('localCartDisplay');
-  const count = document.getElementById('cartCount');
-  const dlBtn = document.getElementById('downloadXLSXButton');
+      selectedItem = null;
+      document.getElementById('resultDisplay').style.display = 'none';
+      document.getElementById('addButton').disabled = true;
 
-  count.textContent = items.length;
-  dlBtn.disabled = items.length === 0;
+      listDiv.style.display = 'none';
+      listDiv.innerHTML = "";
 
-  if (!items.length) {
-    display.innerHTML = "Cart is empty.";
-    return;
-  }
+      if (searchText.length < 3) {
+        messageEl.textContent = 'Type at least 3 characters.';
+        return;
+      }
 
-  display.innerHTML = "";
-  items.forEach(i => {
-    const div = document.createElement('div');
-    div.className = "cart-item";
-    div.innerHTML = `<span>${i.item} (Row ${i.row})</span><span>Qty: ${i.qty} | Total: ${i.total}</span>`;
-    display.appendChild(div);
-  });
-}
+      const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+      const results = [];
 
-function addItemToCart() {
-  if (!selectedItem) return alert("Select an item first.");
+      for (const data of allItemData) {
+        const itemName = (data.item || "").toLowerCase();
+        const code = String(data.code || "");
+        const combined = `${itemName} ${code}`;
+        const match = searchParts.every(part => combined.includes(part));
+        if (match) {
+          results.push(data);
+          if (results.length >= 20) break;
+        }
+      }
 
-  const qty = parseFloat(document.getElementById('qtyInput').value);
-  const total = parseFloat(document.getElementById('totalInput').value);
+      if (results.length > 0) {
+        results.forEach(suggestion => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+          div.onclick = () => {
+            searchInput.value = `${suggestion.code} ${suggestion.item}`;
+            selectedItem = suggestion;
+            listDiv.style.display = 'none';
+            showSelectedItem();
+          };
+          listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+      }
+      messageEl.textContent = `Found ${results.length} items.`;
+    }
 
-  if (isNaN(qty) || isNaN(total) || qty <= 0) {
-    return alert("Enter valid QTY and TOTAL.");
-  }
+    function showSelectedItem() {
+      if (selectedItem) {
+        document.getElementById('resultDisplay').innerHTML =
+          `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+        document.getElementById('resultDisplay').style.display = 'block';
+        document.getElementById('addButton').disabled = false;
+        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+      }
+    }
 
-  const cart = loadLocalCart();
-  cart[selectedItem.row] = {
-    row: selectedItem.row,
-    qty,
-    total,
-    item: selectedItem.item
-  };
+    // --- LOCAL CART LOGIC ---
+    function renderCart() {
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+      const cartDisplay = document.getElementById('localCartDisplay');
+      const cartCount = document.getElementById('cartCount');
+      const downloadButton = document.getElementById('downloadXLSXButton');
 
-  saveLocalCart(cart);
+      cartCount.textContent = items.length;
+      downloadButton.disabled = items.length === 0;
 
-  document.getElementById('qtyInput').value = "";
-  document.getElementById('totalInput').value = "";
-  document.getElementById('searchInput').value = "";
-  document.getElementById('resultDisplay').style.display = "none";
-  document.getElementById('addButton').disabled = true;
+      if (items.length === 0) {
+        cartDisplay.innerHTML = 'Cart is empty. Add items above.';
+        return;
+      }
 
-  selectedItem = null;
-  renderCart();
-  document.getElementById('message').textContent = "Item added.";
-}
+      cartDisplay.innerHTML = "";
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <span>${item.item} (${item.row})</span>
+          <span>Qty: ${item.qty} | Total: ${item.total}</span>
+        `;
+        cartDisplay.appendChild(div);
+      });
+    }
 
-function downloadLocalCartXLSX() {
-  const cart = loadLocalCart();
-  const items = Object.values(cart);
-  if (!items.length) return alert("Cart empty.");
+    function addItemToCart() {
+      if (!selectedItem) {
+        alert('Please select an item first.');
+        return;
+      }
 
-  const now = new Date();
-  const date = now.toLocaleDateString('en-GB');
+      const qty = document.getElementById('qtyInput').value.trim();
+      const total = document.getElementById('totalInput').value.trim();
+      const numQty = parseFloat(qty);
+      const numTotal = parseFloat(total);
 
-  const ws = XLSX.utils.aoa_to_sheet([]);
+      if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+        alert('Please enter valid QTY and TOTAL values.');
+        return;
+      }
 
-  XLSX.utils.sheet_add_aoa(ws, [['KMART SUPERMARKET LLC [AL RAFFA]']], { origin: "A1" });
-  XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A2" });
-  XLSX.utils.sheet_add_aoa(ws, [[date]], { origin: "A3" });
+      const localCart = loadLocalCart();
 
-  ws['!merges'] = [
-    { s: { r:0, c:0 }, e:{ r:0, c:6 } },
-    { s: { r:1, c:0 }, e:{ r:1, c:6 } },
-    { s: { r:2, c:0 }, e:{ r:2, c:6 } }
-  ];
-
-  ws['A1'].s = { font:{ bold:true, sz:18 }, alignment:{ horizontal:"center" } };
-  ws['A2'].s = { font:{ bold:true, sz:10 }, alignment:{ horizontal:"center" } };
-  ws['A3'].s = { font:{ bold:true, sz:11 }, alignment:{ horizontal:"center" } };
-
-  XLSX.utils.sheet_add_aoa(ws, [['ITEM NAME','CODE','QTY','RATE','TOTAL']], { origin:"A4" });
-
-  ['A4','B4','C4','D4','E4'].forEach(c=>{
-    ws[c].s = {
-      font:{ bold:true },
-      alignment:{ horizontal:"center" },
-      border:{ top:{style:"thin"}, bottom:{style:"thin"}, left:{style:"thin"}, right:{style:"thin"} }
-    };
-  });
-
-  const rows = [];
-  let totalSum = 0;
-
-  items.forEach(i=>{
-    const d = allItemData.find(x=>x.row===i.row);
-    const code = d ? d.code : "";
-    const rate = i.qty > 0 ? (i.total / i.qty).toFixed(2) : 0;
-    totalSum += i.total;
-    rows.push([i.item, code, i.qty, rate, i.total]);
-  });
-
-  XLSX.utils.sheet_add_aoa(ws, rows, { origin:"A5" });
-
-  const start = 5;
-  const end = 4 + items.length;
-
-  for (let r=start; r<=end; r++) {
-    ws[`A${r}`].s = {
-      alignment:{ horizontal:"left" },
-      border:{ top:{style:"thin"}, bottom:{style:"thin"}, left:{style:"thin"}, right:{style:"thin"} }
-    };
-    ['B','C','D','E'].forEach(col=>{
-      ws[`${col}${r}`].s = {
-        alignment:{ horizontal:"center" },
-        border:{ top:{style:"thin"}, bottom:{style:"thin"}, left:{style:"thin"}, right:{style:"thin"} }
+      const cartItem = {
+        row: selectedItem.row,
+        qty: numQty,
+        total: numTotal,
+        item: selectedItem.item
       };
-    });
-  }
 
-  const footer = end + 2;
-  XLSX.utils.sheet_add_aoa(ws, [['GRAND TOTAL','','','', totalSum.toFixed(2)]], { origin:`A${footer}` });
+      localCart[selectedItem.row] = cartItem;
+      saveLocalCart(localCart);
 
-  ws[`A${footer}`].s = { font:{ bold:true } };
-  ws[`E${footer}`].s = {
-    font:{ bold:true },
-    alignment:{ horizontal:"center" },
-    border:{ top:{style:"medium"}, bottom:{style:"medium"}, left:{style:"medium"}, right:{style:"medium"} }
-  };
+      // Reset inputs and selection
+      document.getElementById('qtyInput').value = "";
+      document.getElementById('totalInput').value = "";
+      document.getElementById('searchInput').value = "";
+      document.getElementById('resultDisplay').style.display = 'none';
+      document.getElementById('addButton').disabled = true;
+      selectedItem = null;
 
-  ws['!cols'] = [
-    { wch:25 }, { wch:10 }, { wch:8 }, { wch:10 }, { wch:12 }
-  ];
+      renderCart();
+      document.getElementById('message').textContent =
+        `Item added to local storage. (${cartItem.item})`;
+    }
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+    // --- DOWNLOAD XLSX (FORMATTED INVOICE) ---
+    function downloadLocalCartXLSX() {
+      if (typeof XLSX === 'undefined') {
+        alert("XLSX library not loaded.");
+        return;
+      }
 
-  const filename = `INVOICE_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.xlsx`;
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+      if (items.length === 0) {
+        alert('Cart is empty.');
+        return;
+      }
 
-  XLSX.writeFile(wb, filename);
-  document.getElementById('message').textContent = "Invoice downloaded.";
-}
-</script>
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('en-GB');
 
+      const wb = XLSX.utils.book_new();
+      const ws = {};
+
+      // ROW HEIGHTS
+      ws['!rows'] = [
+        { hpt: 30 }, // 1
+        { hpt: 20 }, // 2
+        { hpt: 20 }, // 3
+        { hpt: 20 }, // 4
+        { hpt: 20 }, // 5+
+      ];
+
+      // COLUMN WIDTHS
+      ws['!cols'] = [
+        { wch: 10 }, // A
+        { wch: 30 }, // B
+        { wch: 10 }, // C
+        { wch: 10 }, // D
+        { wch: 10 }, // E
+        { wch: 20 }, // F
+        { wch: 10 }  // G
+      ];
+
+      // MERGES
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // A2:G2
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }, // A3:G3
+      ];
+
+      const borderAll = {
+        top: { style: "thin" },
+        bottom: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" }
+      };
+
+      const center = { horizontal: "center", vertical: "center" };
+
+      const headerBig = {
+        font: { name: "Calibri", sz: 18, bold: true },
+        alignment: center,
+        border: borderAll
+      };
+
+      const headerMedium = {
+        font: { name: "Calibri", sz: 14, bold: true },
+        alignment: center,
+        border: borderAll
+      };
+
+      const itemHeader = {
+        font: { name: "Calibri", sz: 12, bold: true },
+        alignment: center,
+        border: borderAll,
+        fill: { fgColor: { rgb: "FFF2F2F2" } } // light gray
+      };
+
+      const itemRow = {
+        font: { name: "Calibri", sz: 12 },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: borderAll
+      };
+
+      const grandTotalStyle = {
+        font: { name: "Calibri", sz: 18, bold: true },
+        alignment: center,
+        border: borderAll
+      };
+
+      // HEADER ROWS
+      ws['A1'] = { v: "KMART SUPERMARKET LLC [AL RAFFA]", s: headerBig };
+      ws['A2'] = { v: "VEGETABLE AND FRUITS INVOICE", s: headerMedium };
+      ws['A3'] = { v: "DATE: " + formattedDate, s: headerMedium };
+
+      // ITEM HEADER (ROW 4)
+      const headers = ["CODE", "ITEM NAME", "QTY", "RATE INC", "TOTAL", "ItemBarCode", "Rate"];
+      headers.forEach((h, i) => {
+        ws[XLSX.utils.encode_cell({ r: 3, c: i })] = { v: h, s: itemHeader };
+      });
+
+      // ITEM ROWS (start at rowIndex = 4 -> Excel row 5)
+      let rowIndex = 4;
+      let grandTotal = 0;
+
+      items.forEach(cartItem => {
+        const itemDetails = allItemData.find(d => d.row === cartItem.row);
+        const code = itemDetails ? itemDetails.code : "";
+        const name = itemDetails ? itemDetails.item : "";
+        const qty = cartItem.qty;
+        const total = cartItem.total;
+
+        const rateInc = qty > 0 ? total / qty : 0;
+        const rateExcl = rateInc / 1.05;
+
+        grandTotal += total;
+
+        const barcode = `9900${code}000000`;
+
+        const rowData = [
+          code,
+          name,
+          qty,
+          rateInc.toFixed(3),
+          total,             // TOTAL
+          barcode,
+          rateExcl.toFixed(3)
+        ];
+
+        rowData.forEach((v, i) => {
+          ws[XLSX.utils.encode_cell({ r: rowIndex, c: i })] = { v, s: itemRow };
+        });
+
+        rowIndex++;
+      });
+
+      // GRAND TOTAL ROW
+      const totalRow = rowIndex + 1; // leave one empty row if you want; here we go direct
+
+      // Merge A-totalRow:D-totalRow and E-totalRow:G-totalRow
+      ws['!merges'].push(
+        { s: { r: totalRow - 1, c: 0 }, e: { r: totalRow - 1, c: 3 } },
+        { s: { r: totalRow - 1, c: 4 }, e: { r: totalRow - 1, c: 6 } }
+      );
+
+      ws['A' + totalRow] = { v: "GRAND TOTAL", s: grandTotalStyle };
+      ws['E' + totalRow] = { v: grandTotal, s: grandTotalStyle };
+
+      // APPEND SHEET
+      XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+
+      const filename =
+        `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}` +
+        `${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}` +
+        `${String(now.getMinutes()).padStart(2, '0')}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+      document.getElementById('message').textContent =
+        `${items.length} items downloaded as ${filename}.`;
+    }
+  </script>
 </body>
 </html>
