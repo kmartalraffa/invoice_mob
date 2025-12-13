@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
     .container { max-width: 400px; margin: auto; background: white; padding: 20px;
@@ -251,7 +251,7 @@
         document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
     }
 
-       // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
+    // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
 
     function downloadLocalCartXLSX() {
         if (typeof XLSX === 'undefined') {
@@ -274,15 +274,17 @@
         
         // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
         const ws = XLSX.utils.json_to_sheet({});
-
-        // 🚨 ഹെഡ്ഡർ ഡാറ്റാ എല്ലാം ഒരൊറ്റ Array of Arrays ആയി കൺസോളിഡേറ്റ് ചെയ്യുന്നു (Row 1 മുതൽ Row 6 വരെ)
+        
+        // 2. ഹെഡ്ഡർ ഡാറ്റാ (Row 1 മുതൽ Row 6 വരെ)
+        
+        // ഹെഡ്ഡർ ഡാറ്റാ എല്ലാം ഒരൊറ്റ Array of Arrays ആയി കൺസോളിഡേറ്റ് ചെയ്യുന്നു
         const header_data = [
-            ['Kmart Supermarket LLC'],           // Row 1
-            ['Branch: Burdubai (al raffa)'],     // Row 2
-            [formattedDate],                     // Row 3 (തീയതി)
-            ['VEGETABLE AND FRUITS INVOICE'],    // Row 4
-            [],                                  // Row 5 (ഒഴിവ് വരി)
-            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6 (ഹെഡ്ഡർ)
+            ['Kmart Supermarket LLC'], 
+            ['Branch: Burdubai (al raffa)'], 
+            [formattedDate], // Row 3: ഇന്നത്തെ തീയതി
+            ['VEGETABLE AND FRUITS INVOICE'], 
+            [], // Row 5: ഒഴിവ് വരി
+            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6: ഹെഡ്ഡർ
         ];
         
         // A1-ൽ നിന്ന് ഹെഡ്ഡർ ഡാറ്റാ ചേർക്കുന്നു
@@ -324,7 +326,7 @@
             ]);
             
             // ടോട്ടൽ സം ഫോർമുല ഉണ്ടാക്കുന്നു
-            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); 
+            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
             
             if (totalSumFormula === "") {
                 totalSumFormula = `F8:${totalCellRef}`;
@@ -362,7 +364,6 @@
         
         document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
     }
-
   </script>
 </body>
 </html>
