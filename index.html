@@ -251,10 +251,9 @@
         document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
     }
 
-    // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
+       // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
 
     function downloadLocalCartXLSX() {
-        // 🚨 ലൈബ്രറി ലോഡ് ആയിട്ടുണ്ടോ എന്ന് ഉറപ്പാക്കുന്നു
         if (typeof XLSX === 'undefined') {
             console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
             document.getElementById('message').textContent = 'ERROR: XLSX library failed to load. Check console (F12) for details.';
@@ -275,17 +274,19 @@
         
         // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
         const ws = XLSX.utils.json_to_sheet({});
+
+        // 🚨 ഹെഡ്ഡർ ഡാറ്റാ എല്ലാം ഒരൊറ്റ Array of Arrays ആയി കൺസോളിഡേറ്റ് ചെയ്യുന്നു (Row 1 മുതൽ Row 6 വരെ)
+        const header_data = [
+            ['Kmart Supermarket LLC'],           // Row 1
+            ['Branch: Burdubai (al raffa)'],     // Row 2
+            [formattedDate],                     // Row 3 (തീയതി)
+            ['VEGETABLE AND FRUITS INVOICE'],    // Row 4
+            [],                                  // Row 5 (ഒഴിവ് വരി)
+            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6 (ഹെഡ്ഡർ)
+        ];
         
-        // 2. ഹെഡ്ഡർ ഡാറ്റാ (ഇൻവോയ്സ് ഘടന) നേരിട്ട് ചേർക്കുന്നു
-        
-        XLSX.utils.sheet_add_aoa(ws, [
-            ['Kmart Supermarket LLC'], 
-            ['Branch: Burdubai (al raffa)'], 
-            [formattedDate], 
-            ['VEGETABLE AND FRUITS INVOICE'], 
-            [], 
-            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6: ഹെഡ്ഡർ
-        ], { origin: "A1" });
+        // A1-ൽ നിന്ന് ഹെഡ്ഡർ ഡാറ്റാ ചേർക്കുന്നു
+        XLSX.utils.sheet_add_aoa(ws, header_data, { origin: "A1" });
         
         // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
         
@@ -312,6 +313,7 @@
                 rateExcl = rateInc / 1.05; 
             }
 
+            // ഡാറ്റാ വരി
             data_for_sheet.push([
                 itemBarcode, 
                 item.item, 
@@ -321,6 +323,7 @@
                 total      
             ]);
             
+            // ടോട്ടൽ സം ഫോർമുല ഉണ്ടാക്കുന്നു
             const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); 
             
             if (totalSumFormula === "") {
@@ -330,17 +333,20 @@
             }
         });
         
+        // കാർട്ട് ഡാറ്റാ A8 എന്ന സെല്ലിൽ നിന്ന് തുടങ്ങുന്നു
         XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
         
         // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
         const grandTotalRow = 7 + items.length; 
         
+        // GRAND TOTAL: എന്ന ടെക്സ്റ്റ് A കോളത്തിൽ ചേർക്കുന്നു
         XLSX.utils.sheet_add_aoa(ws, [
             ['GRAND TOTAL:']
         ], { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) }); 
         
         const totalFormulaCell = XLSX.utils.encode_cell({c: 5, r: grandTotalRow}); 
         
+        // ഷീറ്റിൽ ഫോർമുല സെറ്റ് ചെയ്യുന്നു
         XLSX.utils.sheet_add_aoa(ws, [
             [{t:'f', f:`SUM(${totalSumFormula})`}] 
         ], { origin: totalFormulaCell });
@@ -356,6 +362,7 @@
         
         document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
     }
+
   </script>
 </body>
 </html>
