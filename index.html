@@ -4,53 +4,142 @@
   <meta charset="UTF-8">
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
+  <!-- XLSX library for Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
-    .container { max-width: 400px; margin: auto; background: white; padding: 20px;
-      border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-    input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px;
-      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-    button { width: 100%; padding: 10px; color: white; border: none; border-radius: 4px; 
-      cursor: pointer; font-size: 16px; margin-bottom: 15px; }
-    button:hover:enabled { opacity: 0.9; }
-    button:disabled { background-color: #cccccc !important; cursor: not-allowed; }
-    h1 { text-align: center; color: #333; margin-bottom: 5px; }
-    h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
-    .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
-    .cart-box { background-color: #fff3e0; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
-    .search-area { position: relative; }
-    .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto;
-      position: absolute; width: 100%; background: white; z-index: 10; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-    .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-    .autocomplete-item:hover { background-color: #f0f0f0; }
-    .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    button:hover:enabled {
+      opacity: 0.9;
+    }
+    button:disabled {
+      background-color: #cccccc !important;
+      cursor: not-allowed;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    h2 {
+      text-align: center;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    h3 {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+    .result-box {
+      background-color: #e0f7fa;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .cart-box {
+      background-color: #fff3e0;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .search-area {
+      position: relative;
+    }
+    .autocomplete-list {
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      background: white;
+      z-index: 10;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+    .label-style {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
 
     /* Buttons */
-    #addButton { background-color: #4CAF50; }
-    #downloadXLSXButton { background-color: #007bff; margin-bottom: 15px;}
-    
-    .cart-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #ccc; font-size: 14px; }
-    .cart-item:last-child { border-bottom: none; }
+    #addButton {
+      background-color: #4CAF50;
+    }
+    #downloadXLSXButton {
+      background-color: #007bff;
+      margin-bottom: 15px;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #ccc;
+      font-size: 14px;
+    }
+    .cart-item:last-child {
+      border-bottom: none;
+    }
   </style>
 </head>
-<body onload="loadItemData()">
 
+<body onload="loadItemData()">
   <div class="container">
     <h1>Shop Invoice</h1>
     <h2>kmart alraffa</h2>
-
     <hr>
 
     <div class="search-area">
-      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
       <input
         type="text"
         id="searchInput"
         placeholder="Type to search and click an item"
         onkeyup="handleSearchInput()"
         autocomplete="off">
-
       <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
     </div>
 
@@ -59,14 +148,14 @@
     <h3>Selection</h3>
     <div id="resultDisplay" class="result-box" style="display: none;"></div>
 
-    <label for="qtyInput" class="label-style">2. QTY (Input):</label>
+    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
     <input
       type="number"
       id="qtyInput"
       placeholder="Quantity"
       inputmode="decimal">
 
-    <label for="totalInput" class="label-style">3. TOTAL (Input):</label>
+    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
     <input
       type="number"
       id="totalInput"
@@ -76,47 +165,45 @@
     <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
 
     <hr>
-    
+
     <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
-    <div id="localCartDisplay" class="cart-box">
-      </div>
+    <div id="localCartDisplay" class="cart-box"></div>
 
     <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
       Download Cart as XLSX
     </button>
-    
+
     <p id="message">Loading data ...</p>
   </div>
 
   <script>
-    // CONFIG:
-    const CART_STORAGE_KEY = 'kmartLocalCart'; 
+    // CONFIG
+    const CART_STORAGE_KEY = 'kmartLocalCart';
 
     // STATE
     let allItemData = [];
     let selectedItem = null;
-    
+
     // --- LOCAL STORAGE UTILITIES ---
     function loadLocalCart() {
-        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-        return storedCart ? JSON.parse(storedCart) : {}; 
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      return storedCart ? JSON.parse(storedCart) : {};
     }
 
     function saveLocalCart(cartData) {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
     }
 
-
-    // --- UTILITIES & INITIAL LOAD ---
-
+    // --- INITIAL LOAD ---
     async function loadItemData() {
       try {
-        const response = await fetch('./items.json'); 
+        const response = await fetch('./items.json');
         allItemData = await response.json();
         document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
       } catch (e) {
         console.error("Error loading items.json:", e);
-        document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+        document.getElementById('message').textContent =
+          'Error loading item data. Check items.json file.';
       }
       renderCart();
     }
@@ -128,12 +215,13 @@
       const messageEl = document.getElementById('message');
       const searchText = searchInput.value.trim().toLowerCase();
 
+      // Reset selection state
       selectedItem = null;
       document.getElementById('resultDisplay').style.display = 'none';
       document.getElementById('addButton').disabled = true;
 
       listDiv.style.display = 'none';
-      listDiv.innerHTML = '';
+      listDiv.innerHTML = "";
 
       if (searchText.length < 3) {
         messageEl.textContent = 'Type at least 3 characters.';
@@ -144,9 +232,10 @@
       const results = [];
 
       for (const data of allItemData) {
-        const itemName = (data.item || '').toLowerCase();
-        const code = String(data.code || '');
+        const itemName = (data.item || "").toLowerCase();
+        const code = String(data.code || "");
         const combined = `${itemName} ${code}`;
+
         const match = searchParts.every(part => combined.includes(part));
         if (match) {
           results.push(data);
@@ -169,203 +258,213 @@
         });
         listDiv.style.display = 'block';
       }
+
       messageEl.textContent = `Found ${results.length} items.`;
     }
 
     function showSelectedItem() {
       if (selectedItem) {
-        document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
-        document.getElementById('resultDisplay').style.display = 'block';
+        const display = document.getElementById('resultDisplay');
+        display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+        display.style.display = 'block';
+
         document.getElementById('addButton').disabled = false;
         document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
       }
     }
-    
+
     // --- LOCAL CART LOGIC ---
-    
     function renderCart() {
-        const localCart = loadLocalCart(); 
-        const items = Object.values(localCart);
-        const cartDisplay = document.getElementById('localCartDisplay');
-        const cartCount = document.getElementById('cartCount');
-        const downloadButton = document.getElementById('downloadXLSXButton'); 
-        
-        cartCount.textContent = items.length;
-        downloadButton.disabled = items.length === 0;
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+      const cartDisplay = document.getElementById('localCartDisplay');
+      const cartCount = document.getElementById('cartCount');
+      const downloadButton = document.getElementById('downloadXLSXButton');
 
-        if (items.length === 0) {
-            cartDisplay.innerHTML = 'Cart is empty. Add items above.';
-            return;
-        }
+      cartCount.textContent = items.length;
+      downloadButton.disabled = (items.length === 0);
 
-        cartDisplay.innerHTML = '';
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'cart-item';
-            div.innerHTML = `
-                <span>${item.item} (${item.row})</span>
-                <span>Qty: ${item.qty} | Total: ${item.total}</span>
-            `;
-            cartDisplay.appendChild(div);
-        });
+      if (items.length === 0) {
+        cartDisplay.innerHTML = 'Cart is empty. Add items above.';
+        return;
+      }
+
+      cartDisplay.innerHTML = "";
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <span>${item.item} (Row: ${item.row})</span>
+          <span>Qty: ${item.qty} | Total: ${item.total}</span>
+        `;
+        cartDisplay.appendChild(div);
+      });
     }
 
     function addItemToCart() {
-        if (!selectedItem) {
-            alert('Please select an item first.');
-            return;
-        }
+      if (!selectedItem) {
+        alert('Please select an item first.');
+        return;
+      }
 
-        const qty = document.getElementById('qtyInput').value.trim();
-        const total = document.getElementById('totalInput').value.trim();
-        const numQty = parseFloat(qty);
-        const numTotal = parseFloat(total);
+      const qtyStr = document.getElementById('qtyInput').value.trim();
+      const totalStr = document.getElementById('totalInput').value.trim();
 
-        if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
-            alert('Please enter valid QTY and TOTAL values.');
-            return;
-        }
-        
-        const localCart = loadLocalCart(); 
+      const numQty = parseFloat(qtyStr);
+      const numTotal = parseFloat(totalStr);
 
-        const cartItem = {
-            row: selectedItem.row,
-            qty: numQty,
-            total: numTotal,
-            item: selectedItem.item 
-        };
-        
-        localCart[selectedItem.row] = cartItem;
-        
-        saveLocalCart(localCart); 
+      if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+        alert('Please enter valid QTY and TOTAL values.');
+        return;
+      }
 
-        // Reset inputs and selection
-        document.getElementById('qtyInput').value = '';
-        document.getElementById('totalInput').value = '';
-        document.getElementById('searchInput').value = '';
-        document.getElementById('resultDisplay').style.display = 'none';
-        document.getElementById('addButton').disabled = true;
-        selectedItem = null;
-        
-        renderCart();
-        document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
+      const localCart = loadLocalCart();
+
+      const cartItem = {
+        row: selectedItem.row,
+        qty: numQty,
+        total: numTotal,
+        item: selectedItem.item
+      };
+
+      // Use row as key so each row is unique in the cart
+      localCart[selectedItem.row] = cartItem;
+      saveLocalCart(localCart);
+
+      // Reset inputs and selection
+      document.getElementById('qtyInput').value = "";
+      document.getElementById('totalInput').value = "";
+      document.getElementById('searchInput').value = "";
+      document.getElementById('resultDisplay').style.display = 'none';
+      document.getElementById('addButton').disabled = true;
+      selectedItem = null;
+
+      renderCart();
+      document.getElementById('message').textContent =
+        `Item added to local storage. (${cartItem.item})`;
     }
 
-    // --- NEW: DOWNLOAD XLSX LOGIC (Excel File - Invoice Format) ---
-
+    // --- DOWNLOAD XLSX LOGIC ---
     function downloadLocalCartXLSX() {
-        if (typeof XLSX === 'undefined') {
-            console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
-            document.getElementById('message').textContent = 'ERROR: XLSX library failed to load.';
-            alert("Error: XLSX download failed. Library not found.");
-            return;
+      if (typeof XLSX === 'undefined') {
+        console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
+        document.getElementById('message').textContent =
+          'ERROR: XLSX library failed to load.';
+        alert("Error: XLSX download failed. Library not found.");
+        return;
+      }
+
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+
+      if (items.length === 0) {
+        alert('Cart is empty. Nothing to download.');
+        return;
+      }
+
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('en-GB');
+
+      // Create a new sheet with an empty base
+      const ws = XLSX.utils.json_to_sheet([]);
+
+      // Header rows
+      XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
+      XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)']], { origin: "A2" });
+      XLSX.utils.sheet_add_aoa(ws, [[formattedDate]], { origin: "A3" });
+      XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
+      XLSX.utils.sheet_add_aoa(ws, [['']], { origin: "A5" });
+
+      // Column headers
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']],
+        { origin: "A6" }
+      );
+
+      const data_for_sheet = [];
+      let totalSumFormulaRange = "";
+
+      items.forEach((item, index) => {
+        const itemDetails = allItemData.find(d => d.row === item.row);
+        const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+
+        // ItemBarcode format: 9900 + itemCode + 000000
+        let itemBarcode = "";
+        if (itemCode) {
+          itemBarcode = `9900${itemCode}000000`;
         }
-        
-        const localCart = loadLocalCart();
-        const items = Object.values(localCart);
-        
-        if (items.length === 0) {
-            alert('Cart is empty. Nothing to download.');
-            return;
+
+        const qty = item.qty;
+        const total = item.total;
+
+        let rateInc = 0;
+        let rateExcl = 0;
+
+        if (qty > 0) {
+          rateInc = total / qty;
+          rateExcl = rateInc / 1.05; // Assuming 5% VAT or similar
         }
-        
-        const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-GB'); 
-        
-        // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
-        const ws = XLSX.utils.json_to_sheet({});
-        
-        // 2. ഹെഡ്ഡർ ഡാറ്റാ ചേർക്കുന്നു (Row 1 മുതൽ Row 6 വരെ)
-        
-        // Row 1
-        XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
-        // Row 2
-        XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)']], { origin: "A2" });
-        // Row 3
-        XLSX.utils.sheet_add_aoa(ws, [[formattedDate]], { origin: "A3" });
-        // Row 4
-        XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
-        // Row 5 (ഒഴിവ് വരി)
-        XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A5" }); 
-        
-        // 🚨 Row 6: ഹെഡ്ഡർ മാറ്റുന്നു: TOTAL കഴിഞ്ഞ ശേഷം ItemBarCode ചേർക്കുന്നു. (A, B, C, D, E, F, G കോളങ്ങൾ)
-        XLSX.utils.sheet_add_aoa(ws, [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']], { origin: "A6" });
-        
-        
-        // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
-        
-        const data_for_sheet = [];
-        let totalSumFormula = "";
 
-        items.forEach((item, index) => {
-            const itemDetails = allItemData.find(d => d.row === item.row);
-            const itemCode = itemDetails ? String(itemDetails.code) : ''; 
-            
-            // ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
-            let itemBarcode = '';
-            if (itemCode) {
-                 itemBarcode = `9900${itemCode}000000`;
-            }
-            
-            const qty = item.qty;
-            const total = item.total;
-            
-            let rateInc = 0; 
-            let rateExcl = 0; 
-            
-            if (qty > 0) {
-                rateInc = total / qty;
-                rateExcl = rateInc / 1.05; 
-            }
+        const finalRateExcl = parseFloat(rateExcl.toFixed(3));
+        const finalRateInc = parseFloat(rateInc.toFixed(3));
 
-            const finalRateExcl = parseFloat(rateExcl.toFixed(3));
-            const finalRateInc = parseFloat(rateInc.toFixed(3));
+        data_for_sheet.push([
+          itemCode,           // CODE
+          item.item,          // ITEM NAME
+          qty,                // QTY
+          finalRateExcl,      // Rate (excl)
+          finalRateInc,       // RATE.inc
+          total,              // TOTAL
+          itemBarcode         // ItemBarCode
+        ]);
 
-            // ഡാറ്റാ വരി: CODE (A), ITEM NAME (B), QTY (C), Rate (D), RATE.inc (E), TOTAL (F), ItemBarCode (G)
-            data_for_sheet.push([
-                itemCode,           // A8: CODE (പഴയ സ്ഥാനത്ത്)
-                item.item,          // B8: ITEM NAME
-                qty,                // C8: QTY
-                finalRateExcl,      // D8: Rate
-                finalRateInc,       // E8: RATE.inc
-                total,              // F8: TOTAL
-                itemBarcode         // G8: ItemBarCode (പുതിയ സ്ഥാനം)
-            ]);
-            
-            // TOTAL ഫോർമുല F കോളത്തെ മാത്രം ആശ്രയിക്കുന്നു
-            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
-            
-            if (totalSumFormula === "") {
-                totalSumFormula = `F8:${totalCellRef}`;
-            } else {
-                totalSumFormula = `F8:${totalCellRef}`;
-            }
-        });
-        
-        // കാർട്ട് ഡാറ്റാ A8 എന്ന സെല്ലിൽ നിന്ന് തുടങ്ങുന്നു
-        XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
-        
-        // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
-        const grandTotalRow = 7 + items.length; 
-        
-        const footer_data = [
-            // GRAND TOTAL: A കോളത്തിൽ ടെക്സ്റ്റ്, F കോളത്തിൽ ഫോർമുല (F=5)
-            ['GRAND TOTAL:', null, null, null, null, {t:'f', f:`SUM(${totalSumFormula})`}] 
-        ];
+        // Track TOTAL cell range for SUM formula (column F = index 5)
+        const totalCellRef = XLSX.utils.encode_cell({ c: 5, r: 7 + index }); // Row 8 onwards
+        if (!totalSumFormulaRange) {
+          totalSumFormulaRange = `${totalCellRef}:${totalCellRef}`;
+        } else {
+          // Extend the range downwards
+          totalSumFormulaRange = `F8:${totalCellRef}`;
+        }
+      });
 
-        // A[grandTotalRow+1] ൽ നിന്ന് ഫൂട്ടർ ചേർക്കുന്നു
-        XLSX.utils.sheet_add_aoa(ws, footer_data, { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) });
-        
-        
-        // 5. വർക്ക്ബുക്ക് ഉണ്ടാക്കി ഡൗൺലോഡ് ചെയ്യുന്നു
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+      // Add data rows starting at A8
+      XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
 
-        const filename = `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+      // GRAND TOTAL row (after all items)
+      const grandTotalRow = 7 + items.length; // 0-based index
+      const footer_data = [
+        [
+          'GRAND TOTAL:',
+          null,
+          null,
+          null,
+          null,
+          { t: 'n', f: `SUM(${totalSumFormulaRange})` }
+        ]
+      ];
 
-        XLSX.writeFile(wb, filename);
-        
-        document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        footer_data,
+        { origin: XLSX.utils.encode_cell({ c: 0, r: grandTotalRow }) }
+      );
+
+      // Create workbook and save file
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+
+      const filename =
+        `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}` +
+        `${now.getDate().toString().padStart(2, '0')}_` +
+        `${now.getHours().toString().padStart(2, '0')}` +
+        `${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+
+      document.getElementById('message').textContent =
+        `${items.length} items downloaded as ${filename}.`;
     }
   </script>
 </body>
