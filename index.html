@@ -256,7 +256,7 @@
     function downloadLocalCartXLSX() {
         if (typeof XLSX === 'undefined') {
             console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
-            document.getElementById('message').textContent = 'ERROR: XLSX library failed to load. Check console (F12) for details.';
+            document.getElementById('message').textContent = 'ERROR: XLSX library failed to load.';
             alert("Error: XLSX download failed. Library not found.");
             return;
         }
@@ -275,9 +275,7 @@
         // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
         const ws = XLSX.utils.json_to_sheet({});
         
-        // 2. ഹെഡ്ഡർ ഡാറ്റാ (Row 1 മുതൽ Row 6 വരെ)
-        
-        // 🚨 തിരുത്തിയത്: ഹെഡ്ഡർ വരികൾ ഓരോന്നായി ചേർക്കുന്നു (ഇതാണ് ഏറ്റവും സുരക്ഷിതമായ മാർഗ്ഗം)
+        // 2. ഹെഡ്ഡർ ഡാറ്റാ ചേർക്കുന്നു (Row 1 മുതൽ Row 6 വരെ)
         
         // Row 1
         XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
@@ -327,7 +325,7 @@
                 total      
             ]);
             
-            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
+            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); 
             
             if (totalSumFormula === "") {
                 totalSumFormula = `F8:${totalCellRef}`;
@@ -342,17 +340,14 @@
         // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
         const grandTotalRow = 7 + items.length; 
         
-        // GRAND TOTAL: എന്ന ടെക്സ്റ്റ് A കോളത്തിൽ ചേർക്കുന്നു
-        XLSX.utils.sheet_add_aoa(ws, [
-            ['GRAND TOTAL:']
-        ], { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) }); 
-        
-        const totalFormulaCell = XLSX.utils.encode_cell({c: 5, r: grandTotalRow}); 
-        
-        // ഷീറ്റിൽ ഫോർമുല സെറ്റ് ചെയ്യുന്നു
-        XLSX.utils.sheet_add_aoa(ws, [
-            [{t:'f', f:`SUM(${totalSumFormula})`}] 
-        ], { origin: totalFormulaCell });
+        // 🚨 തിരുത്തിയത്: ഫൂട്ടർ ഡാറ്റാ ഒരു Array of Arrays ആയി ചേർക്കുന്നു
+        const footer_data = [
+            // GRAND TOTAL: A കോളത്തിൽ ടെക്സ്റ്റ്, F കോളത്തിൽ ഫോർമുല
+            ['GRAND TOTAL:', null, null, null, null, {t:'f', f:`SUM(${totalSumFormula})`}] 
+        ];
+
+        // A[grandTotalRow+1] ൽ നിന്ന് ഫൂട്ടർ ചേർക്കുന്നു
+        XLSX.utils.sheet_add_aoa(ws, footer_data, { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) });
         
         
         // 5. വർക്ക്ബുക്ക് ഉണ്ടാക്കി ഡൗൺലോഡ് ചെയ്യുന്നു
