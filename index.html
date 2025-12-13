@@ -1,4 +1,214 @@
-    // Save to Apps Script (Final Robust Fix)
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shop Invoice - kmart alraffa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* CSS Styles (മാറ്റമില്ല) */
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 400px; margin: auto; background: white; padding: 20px;
+      border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
+    button:hover:enabled { background-color: #45a049; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    h1 { text-align: center; color: #333; margin-bottom: 5px; }
+    h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
+    .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+    .search-area { position: relative; }
+    .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto;
+      position: absolute; width: 100%; background: white; z-index: 10; display: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+    .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+    .autocomplete-item:hover { background-color: #f0f0f0; }
+    .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
+    .download-button { background-color: #007bff; margin-top: 10px; }
+    .download-button:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body onload="loadItemData()">
+
+  <div class="container">
+    <h1>Shop Invoice</h1>
+    <h2>kmart alraffa</h2>
+
+    <button id="downloadXLSXButton" class="download-button" onclick="openDownloadLink()" disabled>
+      Download XLSX (Google Sheets export)
+    </button>
+
+    <hr>
+
+    <div class="search-area">
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME:</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="item code or name"
+        onkeyup="handleSearchInput()"
+        autocomplete="off">
+
+      <div id="autocompleteList" class="autocomplete-list"></div>
+    </div>
+
+    <button onclick="alert('Please select item from the dropdown list by clicking on it.')" id="searchButton" disabled>Search Item</button>
+    <hr>
+
+    <h3>Selection</h3>
+    <div id="resultDisplay" class="result-box" style="display: none;"></div>
+
+    <label for="qtyInput" class="label-style">2. QTY (Column C):</label>
+    <input
+      type="number"
+      id="qtyInput"
+      placeholder="Quantity"
+      inputmode="decimal"
+      oninput="formatQtyAndCalculateTotal()">
+
+    <label for="totalInput" class="label-style">3. TOTAL (Column E):</label>
+    <input
+      type="number"
+      id="totalInput"
+      placeholder="Total Amount"
+      inputmode="decimal">
+
+    <button onclick="saveData()" id="saveButton" disabled>Save</button>
+
+    <p id="message">Loading data ...</p>
+  </div>
+
+  <script>
+    // CONFIG: Apps Script URL ഉം Sheet ID ഉം ഉപയോഗിക്കുന്നു
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw7BKpUN9FGUTl-o8TtAqsH1Ee9_IBCGjjRza-Q2UbKLXGISypFP7nFd3gjMhwE-seBng/exec';
+    const SHEET_ID = '1N0oVO8AtfEdNR6DMwOYkpNJuUdYvdC3Bum9h5zETs10';
+
+    // STATE
+    let allItemData = [];
+    let currentRow = null;
+    let selectedItem = null;
+
+    // Set Google Sheets XLSX export direct link
+    function setDownloadLink() {
+      const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+      const btn = document.getElementById('downloadXLSXButton');
+      btn.disabled = false;
+      btn.setAttribute('data-link', downloadLink);
+      btn.textContent = 'Download XLSX (Google Sheets export)';
+    }
+
+    function openDownloadLink() {
+      const link = document.getElementById('downloadXLSXButton').getAttribute('data-link');
+      if (link) window.open(link, '_blank');
+    }
+
+    // Load items.json for search
+    async function loadItemData() {
+      setDownloadLink();
+      try {
+        const response = await fetch('./items.json');
+        allItemData = await response.json();
+        document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
+      } catch (e) {
+        console.error("Error loading items.json:", e);
+        document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
+      }
+    }
+
+    // Autocomplete + filtering (FIXED: Sets currentRow on click)
+    function handleSearchInput() {
+      const searchInput = document.getElementById('searchInput');
+      const listDiv = document.getElementById('autocompleteList');
+      const messageEl = document.getElementById('message');
+      const searchText = searchInput.value.trim().toLowerCase();
+
+      listDiv.style.display = 'none';
+      listDiv.innerHTML = '';
+
+      if (searchText.length < 3) {
+        messageEl.textContent = 'Type at least 3 characters.';
+        return;
+      }
+
+      const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+      const results = [];
+
+      for (const data of allItemData) {
+        const itemName = (data.item || '').toLowerCase();
+        const code = String(data.code || '');
+        const combined = `${itemName} ${code}`;
+        const match = searchParts.every(part => combined.includes(part));
+        if (match) {
+          results.push(data);
+          if (results.length >= 20) break;
+        }
+      }
+
+      if (results.length > 0) {
+        results.forEach(suggestion => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+          div.onclick = () => {
+            searchInput.value = `${suggestion.code} ${suggestion.item}`;
+            selectedItem = suggestion;
+            listDiv.style.display = 'none';
+            
+            // 🚨 പ്രധാന മാറ്റം: ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്യുന്നു
+            currentRow = selectedItem.row; 
+            showSelectedItem();
+          };
+          listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+      }
+      messageEl.textContent = `Found ${results.length} items.`;
+    }
+
+    // Finalize selection (അപ്രസക്തമാണ്, പക്ഷേ നിലനിർത്തുന്നു)
+    function performFinalSearch() {
+      if (selectedItem) {
+        currentRow = selectedItem.row; 
+        showSelectedItem();
+      } else {
+        document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
+        document.getElementById('resultDisplay').style.display = 'none';
+        document.getElementById('saveButton').disabled = true;
+        currentRow = null;
+      }
+    }
+
+    function showSelectedItem() {
+      if (selectedItem) {
+        // ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്തതിനാൽ, ഇത് ഡാറ്റാ ഡിസ്‌പ്ലേ ചെയ്യുന്നു
+        document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+        document.getElementById('resultDisplay').style.display = 'block';
+        document.getElementById('saveButton').disabled = false;
+        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+      }
+    }
+
+    // Qty/Total formatting
+    function formatQtyAndCalculateTotal() {
+      const qtyInput = document.getElementById('qtyInput');
+      const totalInput = document.getElementById('totalInput');
+
+      let qtyValue = qtyInput.value;
+
+      if (qtyValue === '') {
+        totalInput.value = '';
+        return;
+      }
+
+      const numQty = parseFloat(qtyValue);
+      if (isNaN(numQty)) return;
+
+      qtyInput.value = qtyValue;
+      totalInput.value = qtyValue;
+    }
+
+    // Save to Apps Script (Final Robust Fix for CORS and Validation)
     async function saveData() {
       const qtyInput = document.getElementById('qtyInput');
       const totalInput = document.getElementById('totalInput');
@@ -6,9 +216,9 @@
       
       const qty = qtyInput.value.trim();
       const total = totalInput.value.trim();
-
+      
+      // റോബസ്റ്റ് വാലിഡേഷൻ: currentRow നിർവചിച്ചിരിക്കണം, QTY/TOTAL എന്നിവ സാധുവായ സംഖ്യകളായിരിക്കണം
       if (!currentRow || isNaN(parseFloat(qty)) || isNaN(parseFloat(total))) {
-        // കൃത്യമായ പിശക് സന്ദേശം നൽകുന്നു
         messageEl.textContent = 'Error: Please select an item and ensure QTY/TOTAL are valid numbers.';
         return;
       }
@@ -24,9 +234,10 @@
 
 
       try {
+        // Apps Script-ലേക്ക് POST അഭ്യർത്ഥന അയയ്ക്കുന്നു
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
-          body: formParams // Form Data അയയ്ക്കുന്നു
+          body: formParams 
         });
         
         const result = await response.json();
@@ -50,3 +261,6 @@
         messageEl.textContent = 'An error occurred while saving data. Check network/AppScript URL.';
       }
     }
+  </script>
+</body>
+</html>
