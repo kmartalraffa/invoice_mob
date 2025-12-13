@@ -107,7 +107,6 @@
     async function loadItemData() {
       setDownloadLink();
       try {
-        // items.json അപ്‌ലോഡ് ചെയ്തിട്ടുണ്ടോ എന്ന് ഉറപ്പുവരുത്തുക
         const response = await fetch('./items.json');
         allItemData = await response.json();
         document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
@@ -118,7 +117,7 @@
       }
     }
 
-    // Autocomplete + filtering
+    // Autocomplete + filtering (UPDATED to set currentRow on click)
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
@@ -156,6 +155,9 @@
             searchInput.value = `${suggestion.code} ${suggestion.item}`;
             selectedItem = suggestion;
             listDiv.style.display = 'none';
+            
+            // 🚨 പ്രധാന മാറ്റം: ഇവിടെത്തന്നെ currentRow സെറ്റ് ചെയ്യുന്നു
+            currentRow = selectedItem.row; 
             showSelectedItem();
           };
           listDiv.appendChild(div);
@@ -168,6 +170,8 @@
     // Finalize selection
     function performFinalSearch() {
       if (selectedItem) {
+        // ക്ലിക്കിൽ തന്നെ currentRow സെറ്റ് ചെയ്തതിനാൽ, ഈ ഫംഗ്ഷൻ ഇവിടെ confirm ചെയ്യുന്നു
+        currentRow = selectedItem.row; 
         showSelectedItem();
       } else {
         document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
@@ -179,7 +183,7 @@
 
     function showSelectedItem() {
       if (selectedItem) {
-        currentRow = selectedItem.row; // row index from items.json
+        // currentRow ഇപ്പോൾ ക്ലിക്കിൽത്തന്നെ സെറ്റ് ചെയ്തിട്ടുണ്ട്, ഇത് ഇവിടെ വീണ്ടും സെറ്റ് ചെയ്യുന്നതിലെ പ്രശ്നം ഒഴിവാക്കുന്നു
         document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
         document.getElementById('resultDisplay').style.display = 'block';
         document.getElementById('saveButton').disabled = false;
@@ -215,7 +219,7 @@
       const qty = qtyInput.value.trim();
       const total = totalInput.value.trim();
       
-      // റോബസ്റ്റ് വാലിഡേഷൻ
+      // റോബസ്റ്റ് വാലിഡേഷൻ: currentRow നിർവചിച്ചിരിക്കണം, QTY/TOTAL എന്നിവ സാധുവായ സംഖ്യകളായിരിക്കണം
       if (!currentRow || isNaN(parseFloat(qty)) || isNaN(parseFloat(total))) {
         messageEl.textContent = 'Error: Please select an item and ensure QTY/TOTAL are valid numbers.';
         return;
