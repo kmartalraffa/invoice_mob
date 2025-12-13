@@ -260,53 +260,104 @@
             alert('Cart is empty. Nothing to download.');
             return;
         }
-
-        // വർക്ക്ഷീറ്റിനായുള്ള ഡാറ്റാ ഒരു Array of Arrays ആയി തയ്യാറാക്കുന്നു
-        // 🚨 ഇൻവോയ്സ് ഫോർമാറ്റ് അനുസരിച്ച് Header മാറ്റുന്നു
-        const ws_data = [
-            ['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL']
-        ];
         
-        // ഓരോ ഇനവും ഡാറ്റാ വരികളായി ചേർക്കുന്നു
-        items.forEach(item => {
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-US'); 
+        
+        // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
+        const ws = XLSX.utils.json_to_sheet({});
+        
+        // 2. ഹെഡ്ഡർ ഡാറ്റാ (ഇൻവോയ്സ് ഘടന) നേരിട്ട് ചേർക്കുന്നു
+        
+        // Row 1-5: ഇൻവോയ്സ് വിവരങ്ങൾ
+        XLSX.utils.sheet_add_aoa(ws, [
+            [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, formattedDate], // Date in Z27
+            ['Kmart Supermarket LLC'], 
+            ['Branch: Burdubai (al raffa)'], 
+            ['(Current date)'], 
+            ['VEGETABLE AND FRUITS INVOICE'] 
+        ], { origin: "A1" });
+        
+        // Row 6: ഹെഡ്ഡർ (CODE എന്നതിന് പകരം ItemBarCode)
+        XLSX.utils.sheet_add_aoa(ws, [
+            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL']
+        ], { origin: "A6" });
+        
+        // Row 7: ഒരു ഒഴിവ് വരി 
+        
+        // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
+        
+        const data_for_sheet = [];
+        let totalSumFormula = "";
+
+        items.forEach((item, index) => {
             const itemDetails = allItemData.find(d => d.row === item.row);
-            const itemCode = itemDetails ? itemDetails.code : '';
+            const itemCode = itemDetails ? String(itemDetails.code) : ''; // String ആയി എടുക്കുന്നു
+            
+            // 🚨 പുതിയ മാറ്റം: ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
+            let itemBarcode = '';
+            if (itemCode) {
+                 itemBarcode = `9900${itemCode}000000`;
+            }
             
             const qty = item.qty;
             const total = item.total;
             
-            let rateInc = 0; // Tax ഉൾപ്പെടെയുള്ള നിരക്ക്
-            let rateExcl = 0; // Tax ഇല്ലാത്ത നിരക്ക്
+            let rateInc = 0; 
+            let rateExcl = 0; 
             
             if (qty > 0) {
                 rateInc = total / qty;
-                // 5% VAT (സാധാരണ ഗൾഫ് രാജ്യങ്ങളിലെ നികുതി) അനുസരിച്ച് Rate (Tax Exclusive) കണക്കാക്കുന്നു
-                // IFERROR ന് സമാനമായി 0 വരാൻ if/else ഉപയോഗിക്കുന്നു
                 rateExcl = rateInc / 1.05; 
             }
 
-            ws_data.push([
-                itemCode, // CODE
-                item.item, // ITEM NAME
-                qty,       // QTY
-                parseFloat(rateExcl.toFixed(3)), // Rate (3 ദശാംശം)
-                parseFloat(rateInc.toFixed(3)),  // RATE.inc (3 ദശാംശം)
-                total      // TOTAL
+            // A8, B8, C8, D8, E8, F8 എന്നിവയിൽ നിന്ന് തുടങ്ങുന്നു
+            data_for_sheet.push([
+                itemBarcode, // 🚨 ItemBarcode ചേർത്തു
+                item.item, 
+                qty,       
+                parseFloat(rateExcl.toFixed(3)), 
+                parseFloat(rateInc.toFixed(3)),  
+                total      
             ]);
+            
+            // ടോട്ടൽ സം ഫോർമുല ഉണ്ടാക്കുന്നു
+            const totalCellRef = XLSX.utils.encode_cell({c: 5, r: 7 + index}); // F8, F9, F10...
+            
+            if (totalSumFormula === "") {
+                totalSumFormula = `F8:${totalCellRef}`;
+            } else {
+                totalSumFormula = `F8:${totalCellRef}`;
+            }
         });
-
-        // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
         
-        // 2. വർക്ക്ബുക്ക് ഉണ്ടാക്കുന്നു
+        // കാർട്ട് ഡാറ്റാ A8 എന്ന സെല്ലിൽ നിന്ന് തുടങ്ങുന്നു
+        XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
+        
+        // 4. ഫൂട്ടർ (GRAND TOTAL) ചേർക്കുന്നു
+        const grandTotalRow = 7 + items.length; 
+        
+        // GRAND TOTAL: എന്ന ടെക്സ്റ്റ് A കോളത്തിൽ ചേർക്കുന്നു
+        XLSX.utils.sheet_add_aoa(ws, [
+            ['GRAND TOTAL:']
+        ], { origin: XLSX.utils.encode_cell({c: 0, r: grandTotalRow}) }); 
+        
+        // GRAND TOTAL തുകയുടെ ഫോർമുല F കോളത്തിൽ ചേർക്കുന്നു
+        const totalFormulaCell = XLSX.utils.encode_cell({c: 5, r: grandTotalRow}); 
+        
+        // ഷീറ്റിൽ ഫോർമുല സെറ്റ് ചെയ്യുന്നു: (F11 സെല്ലിൽ) =SUM(F8:FXX)
+        XLSX.utils.sheet_add_aoa(ws, [
+            [{t:'f', f:`SUM(${totalSumFormula})`}] // 't'ype: 'f'ormula, 'f'ormula: SUM(...)
+        ], { origin: totalFormulaCell });
+        
+        
+        // 5. വർക്ക്ബുക്ക് ഉണ്ടാക്കി ഡൗൺലോഡ് ചെയ്യുന്നു
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "INVOICE"); // ഷീറ്റിൻ്റെ പേര് INVOICE എന്ന് നൽകുന്നു
+        XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
 
-        // 3. ഫയൽ ഡൗൺലോഡ് ചെയ്യുന്നു
-        const now = new Date();
         const filename = `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
 
-        XLSX.writeFile(wb, filename); // XLSX ലൈബ്രറി ഉപയോഗിച്ച് ഡൗൺലോഡ് ചെയ്യുന്നു
+        XLSX.writeFile(wb, filename);
         
         document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
     }
