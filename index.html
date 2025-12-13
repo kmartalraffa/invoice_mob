@@ -2,31 +2,36 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Shop Invoice - kmart alraffa</title>
+  <title>Shop Invoice - kmart alraffa (Local Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* CSS Styles (മാറ്റമില്ല) */
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
     .container { max-width: 400px; margin: auto; background: white; padding: 20px;
       border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
     input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-bottom: 15px;
       border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-    button { width: 100%; padding: 10px; background-color: #4CAF50; color: white;
-      border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
-    button:hover:enabled { background-color: #45a049; }
-    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    button { width: 100%; padding: 10px; color: white; border: none; border-radius: 4px; 
+      cursor: pointer; font-size: 16px; margin-bottom: 15px; }
+    button:hover:enabled { opacity: 0.9; }
+    button:disabled { background-color: #cccccc !important; cursor: not-allowed; }
     h1 { text-align: center; color: #333; margin-bottom: 5px; }
     h2 { text-align: center; color: #666; margin-top: 0; margin-bottom: 20px; font-size: 18px; }
     .result-box { background-color: #e0f7fa; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+    .cart-box { background-color: #fff3e0; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
     .search-area { position: relative; }
     .autocomplete-list { border: 1px solid #ccc; max-height: 200px; overflow-y: auto;
-      position: absolute; width: 100%; background: white; z-index: 10; display: none;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+      position: absolute; width: 100%; background: white; z-index: 10; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
     .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
     .autocomplete-item:hover { background-color: #f0f0f0; }
     .label-style { font-weight: bold; margin-bottom: 5px; display: block; }
-    .download-button { background-color: #007bff; margin-top: 10px; }
-    .download-button:hover { background-color: #0056b3; }
+
+    /* New Buttons */
+    #addButton { background-color: #4CAF50; }
+    #updateSheetButton { background-color: #007bff; margin-top: 20px; }
+    #downloadXLSXButton { background-color: #5cb85c; }
+    
+    .cart-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #ccc; font-size: 14px; }
+    .cart-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body onload="loadItemData()">
@@ -35,7 +40,7 @@
     <h1>Shop Invoice</h1>
     <h2>kmart alraffa</h2>
 
-    <button id="downloadXLSXButton" class="download-button" onclick="openDownloadLink()" disabled>
+    <button id="downloadXLSXButton" onclick="openDownloadLink()" disabled>
       Download XLSX (Google Sheets export)
     </button>
 
@@ -46,14 +51,13 @@
       <input
         type="text"
         id="searchInput"
-        placeholder="item code or name"
+        placeholder="Type to search and click an item"
         onkeyup="handleSearchInput()"
         autocomplete="off">
 
-      <div id="autocompleteList" class="autocomplete-list"></div>
+      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
     </div>
 
-    <button onclick="alert('Please select item from the dropdown list by clicking on it.')" id="searchButton" disabled>Search Item</button>
     <hr>
 
     <h3>Selection</h3>
@@ -64,8 +68,7 @@
       type="number"
       id="qtyInput"
       placeholder="Quantity"
-      inputmode="decimal"
-      oninput="formatQtyAndCalculateTotal()">
+      inputmode="decimal">
 
     <label for="totalInput" class="label-style">3. TOTAL (Column E):</label>
     <input
@@ -74,7 +77,15 @@
       placeholder="Total Amount"
       inputmode="decimal">
 
-    <button onclick="saveData()" id="saveButton" disabled>Save</button>
+    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
+
+    <hr>
+    
+    <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
+    <div id="localCartDisplay" class="cart-box">
+      </div>
+
+    <button onclick="updateGoogleSheet()" id="updateSheetButton" disabled>Update Google Sheet</button>
 
     <p id="message">Loading data ...</p>
   </div>
@@ -86,16 +97,15 @@
 
     // STATE
     let allItemData = [];
-    let currentRow = null;
     let selectedItem = null;
+    let localCart = {}; // { row: {row: 10, qty: 5, total: 5, item: 'Apple'}, ... }
 
-    // Set Google Sheets XLSX export direct link
+    // --- UTILITIES & INITIAL LOAD ---
     function setDownloadLink() {
       const downloadLink = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
       const btn = document.getElementById('downloadXLSXButton');
       btn.disabled = false;
       btn.setAttribute('data-link', downloadLink);
-      btn.textContent = 'Download XLSX (Google Sheets export)';
     }
 
     function openDownloadLink() {
@@ -103,25 +113,29 @@
       if (link) window.open(link, '_blank');
     }
 
-    // Load items.json for search
     async function loadItemData() {
       setDownloadLink();
       try {
         const response = await fetch('./items.json');
         allItemData = await response.json();
-        document.getElementById('message').textContent = 'Data loaded successfully. Ready to search.';
+        document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
       } catch (e) {
         console.error("Error loading items.json:", e);
         document.getElementById('message').textContent = 'Error loading item data. Check items.json file.';
       }
+      renderCart();
     }
 
-    // Autocomplete + filtering (FIXED: Sets currentRow on click)
+    // --- SEARCH AND SELECTION LOGIC ---
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
       const messageEl = document.getElementById('message');
       const searchText = searchInput.value.trim().toLowerCase();
+
+      selectedItem = null;
+      document.getElementById('resultDisplay').style.display = 'none';
+      document.getElementById('addButton').disabled = true;
 
       listDiv.style.display = 'none';
       listDiv.innerHTML = '';
@@ -154,9 +168,6 @@
             searchInput.value = `${suggestion.code} ${suggestion.item}`;
             selectedItem = suggestion;
             listDiv.style.display = 'none';
-            
-            // 🚨 പ്രധാന മാറ്റം: ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്യുന്നു
-            currentRow = selectedItem.row; 
             showSelectedItem();
           };
           listDiv.appendChild(div);
@@ -166,101 +177,124 @@
       messageEl.textContent = `Found ${results.length} items.`;
     }
 
-    // Finalize selection (അപ്രസക്തമാണ്, പക്ഷേ നിലനിർത്തുന്നു)
-    function performFinalSearch() {
-      if (selectedItem) {
-        currentRow = selectedItem.row; 
-        showSelectedItem();
-      } else {
-        document.getElementById('message').textContent = 'Please select an item from the dropdown list.';
-        document.getElementById('resultDisplay').style.display = 'none';
-        document.getElementById('saveButton').disabled = true;
-        currentRow = null;
-      }
-    }
-
     function showSelectedItem() {
       if (selectedItem) {
-        // ക്ലിക്കിൽത്തന്നെ currentRow സെറ്റ് ചെയ്തതിനാൽ, ഇത് ഡാറ്റാ ഡിസ്‌പ്ലേ ചെയ്യുന്നു
         document.getElementById('resultDisplay').innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
         document.getElementById('resultDisplay').style.display = 'block';
-        document.getElementById('saveButton').disabled = false;
+        document.getElementById('addButton').disabled = false;
         document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
       }
     }
-
-    // Qty/Total formatting
-    function formatQtyAndCalculateTotal() {
-      const qtyInput = document.getElementById('qtyInput');
-      const totalInput = document.getElementById('totalInput');
-
-      let qtyValue = qtyInput.value;
-
-      if (qtyValue === '') {
-        totalInput.value = '';
-        return;
-      }
-
-      const numQty = parseFloat(qtyValue);
-      if (isNaN(numQty)) return;
-
-      qtyInput.value = qtyValue;
-      totalInput.value = qtyValue;
-    }
-
-    // Save to Apps Script (Final Robust Fix for CORS and Validation)
-    async function saveData() {
-      const qtyInput = document.getElementById('qtyInput');
-      const totalInput = document.getElementById('totalInput');
-      const messageEl = document.getElementById('message');
-      
-      const qty = qtyInput.value.trim();
-      const total = totalInput.value.trim();
-      
-      // റോബസ്റ്റ് വാലിഡേഷൻ: currentRow നിർവചിച്ചിരിക്കണം, QTY/TOTAL എന്നിവ സാധുവായ സംഖ്യകളായിരിക്കണം
-      if (!currentRow || isNaN(parseFloat(qty)) || isNaN(parseFloat(total))) {
-        messageEl.textContent = 'Error: Please select an item and ensure QTY/TOTAL are valid numbers.';
-        return;
-      }
-
-      messageEl.textContent = 'Saving data ...';
-
-      // URL-encoded data ഉപയോഗിക്കുന്നു (CORS പരിഹാരത്തിനായി)
-      const formParams = new URLSearchParams({
-          row: currentRow,
-          qty: parseFloat(qty),
-          total: parseFloat(total)
-      }).toString();
-
-
-      try {
-        // Apps Script-ലേക്ക് POST അഭ്യർത്ഥന അയയ്ക്കുന്നു
-        const response = await fetch(WEB_APP_URL, {
-          method: 'POST',
-          body: formParams 
-        });
+    
+    // --- LOCAL CART LOGIC ---
+    
+    function renderCart() {
+        const cartDisplay = document.getElementById('localCartDisplay');
+        const cartCount = document.getElementById('cartCount');
+        const updateButton = document.getElementById('updateSheetButton');
         
-        const result = await response.json();
+        const items = Object.values(localCart);
+        cartCount.textContent = items.length;
+        updateButton.disabled = items.length === 0;
 
-        if (result.status === 'success') {
-          messageEl.textContent = 'Successfully Saved Data!';
-          // Reset fields
-          qtyInput.value = '';
-          totalInput.value = '';
-          document.getElementById('searchInput').value = '';
-          document.getElementById('saveButton').disabled = true;
-          document.getElementById('resultDisplay').style.display = 'none';
-          currentRow = null;
-          selectedItem = null;
-        } else {
-          // Apps Script-ൽ നിന്നുള്ള യഥാർത്ഥ പിശക് സന്ദേശം കാണിക്കുന്നു
-          messageEl.textContent = `Save Error: ${result.message || 'Unknown AppScript error'}`;
+        if (items.length === 0) {
+            cartDisplay.innerHTML = 'Cart is empty. Add items above.';
+            return;
         }
-      } catch (e) {
-        console.error(e);
-        messageEl.textContent = 'An error occurred while saving data. Check network/AppScript URL.';
-      }
+
+        cartDisplay.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'cart-item';
+            div.innerHTML = `
+                <span>${item.item} (${item.row})</span>
+                <span>Qty: ${item.qty} | Total: ${item.total}</span>
+            `;
+            cartDisplay.appendChild(div);
+        });
     }
+
+    function addItemToCart() {
+        if (!selectedItem) {
+            alert('Please select an item first.');
+            return;
+        }
+
+        const qty = document.getElementById('qtyInput').value.trim();
+        const total = document.getElementById('totalInput').value.trim();
+        const numQty = parseFloat(qty);
+        const numTotal = parseFloat(total);
+
+        if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+            alert('Please enter valid QTY and TOTAL values.');
+            return;
+        }
+        
+        // Add or update item in the local cart
+        const cartItem = {
+            row: selectedItem.row,
+            qty: numQty,
+            total: numTotal,
+            item: selectedItem.item 
+        };
+        
+        // Use row as the unique key
+        localCart[selectedItem.row] = cartItem;
+        
+        // Reset inputs and selection
+        document.getElementById('qtyInput').value = '';
+        document.getElementById('totalInput').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('resultDisplay').style.display = 'none';
+        document.getElementById('addButton').disabled = true;
+        selectedItem = null;
+        
+        renderCart();
+        document.getElementById('message').textContent = `Item added to local cart. (${cartItem.item})`;
+    }
+
+
+    // --- MASS UPDATE LOGIC (Send to Apps Script) ---
+
+    async function updateGoogleSheet() {
+        if (Object.keys(localCart).length === 0) {
+            document.getElementById('message').textContent = 'Cart is empty.';
+            return;
+        }
+        
+        const messageEl = document.getElementById('message');
+        const updateButton = document.getElementById('updateSheetButton');
+
+        updateButton.disabled = true;
+        messageEl.textContent = 'Pushing data to Google Sheet... This may take a moment.';
+
+        // Apps Script പ്രതീക്ഷിക്കുന്ന ഡാറ്റാ ഫോർമാറ്റിലേക്ക് മാറ്റുന്നു
+        const cartArray = Object.values(localCart);
+        const postData = JSON.stringify({ items: cartArray }); 
+        
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: postData 
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                messageEl.textContent = `SUCCESS: Updated ${result.updatedCount} items in Google Sheet.`;
+                localCart = {}; // Empty the cart on success
+            } else {
+                messageEl.textContent = `ERROR: Sheet update failed. ${result.message || 'Unknown error'}`;
+            }
+        } catch (e) {
+            console.error(e);
+            messageEl.textContent = 'An error occurred. Check network/AppScript URL.';
+        }
+        
+        updateButton.disabled = false;
+        renderCart();
+    }
+    
   </script>
 </body>
 </html>
