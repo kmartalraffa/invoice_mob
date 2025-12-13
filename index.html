@@ -262,28 +262,29 @@
         }
         
         const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-US'); 
+        // 🚨 Date ഫോർമാറ്റ് മാറ്റി: "14/12/2025" പോലെ ലഭിക്കാൻ
+        const formattedDate = now.toLocaleDateString('en-GB'); 
         
         // 1. വർക്ക്ഷീറ്റ് ഉണ്ടാക്കുന്നു
         const ws = XLSX.utils.json_to_sheet({});
         
         // 2. ഹെഡ്ഡർ ഡാറ്റാ (ഇൻവോയ്സ് ഘടന) നേരിട്ട് ചേർക്കുന്നു
         
-        // Row 1-5: ഇൻവോയ്സ് വിവരങ്ങൾ
+        // Row 1 (പഴയ Row 2): Kmart Supermarket LLC
+        // Row 2 (പഴയ Row 3): Branch: Burdubai (al raffa)
+        // Row 3 (പഴയ Row 4): ഇന്നത്തെ തീയതി
+        // Row 4 (പഴയ Row 5): VEGETABLE AND FRUITS INVOICE
+        
         XLSX.utils.sheet_add_aoa(ws, [
-            [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, formattedDate], // Date in Z27
             ['Kmart Supermarket LLC'], 
             ['Branch: Burdubai (al raffa)'], 
-            ['(Current date)'], 
-            ['VEGETABLE AND FRUITS INVOICE'] 
+            [formattedDate], // 🚨 തീയതി Row 3-ൽ ചേർക്കുന്നു
+            ['VEGETABLE AND FRUITS INVOICE'], 
+            [], // Row 5: ഒഴിവ് വരി (പുതിയ കണക്കിൽ Row 5 ഒഴിവാണ്)
+            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL'] // Row 6: ഹെഡ്ഡർ
         ], { origin: "A1" });
         
-        // Row 6: ഹെഡ്ഡർ (CODE എന്നതിന് പകരം ItemBarCode)
-        XLSX.utils.sheet_add_aoa(ws, [
-            ['ItemBarCode', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL']
-        ], { origin: "A6" });
-        
-        // Row 7: ഒരു ഒഴിവ് വരി 
+        // Row 7: ഒരു ഒഴിവ് വരി (ഡാറ്റാ തുടങ്ങുന്നത് Row 8-ൽ നിന്ന്)
         
         // 3. കാർട്ട് ഡാറ്റാ ചേർക്കുന്നു (A8-ൽ നിന്ന് തുടങ്ങുന്നു)
         
@@ -292,9 +293,9 @@
 
         items.forEach((item, index) => {
             const itemDetails = allItemData.find(d => d.row === item.row);
-            const itemCode = itemDetails ? String(itemDetails.code) : ''; // String ആയി എടുക്കുന്നു
+            const itemCode = itemDetails ? String(itemDetails.code) : ''; 
             
-            // 🚨 പുതിയ മാറ്റം: ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
+            // ItemBarcode സൃഷ്ടിക്കുന്നു: 9900 + itemCode + 000000
             let itemBarcode = '';
             if (itemCode) {
                  itemBarcode = `9900${itemCode}000000`;
@@ -313,7 +314,7 @@
 
             // A8, B8, C8, D8, E8, F8 എന്നിവയിൽ നിന്ന് തുടങ്ങുന്നു
             data_for_sheet.push([
-                itemBarcode, // 🚨 ItemBarcode ചേർത്തു
+                itemBarcode, 
                 item.item, 
                 qty,       
                 parseFloat(rateExcl.toFixed(3)), 
