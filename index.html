@@ -364,14 +364,10 @@
 
   const ws = XLSX.utils.json_to_sheet([]);
 
-  // -----------------------------
-  // HEADER ROWS
-  // -----------------------------
-  XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
-  XLSX.utils.sheet_add_aoa(ws, [["Branch: Burdubai (Al Raffa)"]], { origin: "A2" });
-  XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
-  XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: "A4" });
-  // -----------------------------
+  const ws = XLSX.utils.json_to_sheet([]);
+
+// ✅ ✅ PASTE HEADER BLOCK HERE
+// -----------------------------
 // HEADER ROWS + STYLES
 // -----------------------------
 XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
@@ -401,6 +397,23 @@ ws["A4"].s = {
   alignment: { horizontal: "center", vertical: "center" }
 };
 ws["A4"].t = "s";
+
+// ✅ MERGES COME AFTER THIS
+ws["!merges"] = [
+  { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+  { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+  { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+  { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
+];
+
+// ✅ ROW HEIGHTS COME AFTER MERGES
+ws["!rows"] = [
+  { hpt: 32 },
+  { hpt: 24 },
+  { hpt: 24 },
+  { hpt: 26 }
+];
+
 
 
   // -----------------------------
