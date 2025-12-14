@@ -306,7 +306,8 @@
         const TEMP_ITEM_TRIGGER_CODE = '1001';
         
         // !!! IMPORTANT: REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT URL !!!
-        const GAS_URL = "YOUR_GAS_WEB_APP_URL"; 
+        // Using a placeholder URL for now.
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec"; 
 
         // STATE
         let allItemData = [];
@@ -357,12 +358,10 @@
         // 1. INVOICE MODE FUNCTIONS 
         // -------------------------------------------------------------------
 
-        // (All Invoice Search, Cart, Add, Clear, XLSX functions are here - Unchanged from previous final block)
-
         function showSelectedItem() {
             if (selectedItem) {
                 const display = document.getElementById('resultDisplay');
-                display.innerHTML = CODE: ${selectedItem.code} | ITEM: ${selectedItem.item};
+                display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
                 display.style.display = 'block';
 
                 document.getElementById('addButton').disabled = false;
@@ -390,7 +389,7 @@
                 document.getElementById('tempItemCodeInput').value = TEMP_ITEM_TRIGGER_CODE;
                 document.getElementById('tempItemNameInput').value = '';
                 document.getElementById('tempItemNameInput').focus();
-                messageEl.textContent = Type Item Name and Code to add temporary item.;
+                messageEl.textContent = 'Type Item Name and Code to add temporary item.';
                 return;
             }
 
@@ -403,7 +402,7 @@
             for (const data of allItemData) {
                 const itemName = (data.item || "").toLowerCase();
                 const code = String(data.code || "");
-                const combined = ${itemName} ${code};
+                const combined = `${itemName} ${code}`;
                 const match = searchParts.every(part => combined.includes(part));
                 if (match) {
                     results.push(data);
@@ -415,9 +414,9 @@
                 results.forEach(suggestion => {
                     const div = document.createElement('div');
                     div.className = 'autocomplete-item';
-                    div.innerHTML = <strong>${suggestion.code}</strong> - ${suggestion.item};
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
                     div.onclick = () => {
-                        searchInput.value = ${suggestion.code} ${suggestion.item};
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
                         selectedItem = suggestion;
                         listDiv.style.display = 'none';
                         showSelectedItem();
@@ -427,7 +426,7 @@
                 listDiv.style.display = 'block';
             }
 
-            messageEl.textContent = Found ${results.length} items.;
+            messageEl.textContent = `Found ${results.length} items.`;
         }
 
         function saveTemporaryItem() {
@@ -445,18 +444,18 @@
 
             if (isNaN(numCode) || numCode < 1) { alert('Please enter a valid numeric Code.'); return; }
 
-            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) { alert(An item with Code ${code} or Name "${name}" already exists.); return; }
+            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) { alert(`An item with Code ${code} or Name "${name}" already exists.`); return; }
 
-            const tempRow = TEMP_${Date.now()};
+            const tempRow = `TEMP_${Date.now()}`;
             const newTempItem = { row: tempRow, code: numCode, item: name, rate: 0 };
             allItemData.push(newTempItem);
             
             selectedItem = newTempItem;
-            searchInput.value = ${newTempItem.code} ${newTempItem.item};
+            searchInput.value = `${newTempItem.code} ${newTempItem.item}`;
             
             tempTab.style.display = 'none';
             showSelectedItem(); 
-            messageEl.textContent = Temporary item "${name}" (Code: ${code}) added and selected.;
+            messageEl.textContent = `Temporary item "${name}" (Code: ${code}) added and selected.`;
         }
         
         function loadLocalCart() {
@@ -534,7 +533,7 @@
             selectedItem = null;
 
             renderCart();
-            document.getElementById('message').textContent = Item added to local storage. (${cartItem.item});
+            document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
             document.getElementById('searchInput').focus(); 
         }
 
@@ -547,7 +546,7 @@
             
             if (items.length === 0) { billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>"; billViewArea.style.display = 'block'; return; }
 
-            let tableHTML = <table class="bill-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME</th><th>QTY</th><th>PRICE (inc. VAT)</th><th>TOTAL</th></tr></thead><tbody>;
+            let tableHTML = `<table class="bill-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME</th><th>QTY</th><th>PRICE (inc. VAT)</th><th>TOTAL</th></tr></thead><tbody>`;
             let grandTotal = 0;
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
@@ -557,7 +556,7 @@
                 const rateInc = qty > 0 ? total / qty : 0;
                 grandTotal += total;
 
-                tableHTML += <tr><td>${itemCode}</td><td class="item-name">${item.item}</td><td>${qty.toFixed(2)}</td><td>${rateInc.toFixed(3)}</td><td>${total.toFixed(2)}</td></tr>;
+                tableHTML += `<tr><td>${itemCode}</td><td class="item-name">${item.item}</td><td>${qty.toFixed(2)}</td><td>${rateInc.toFixed(3)}</td><td>${total.toFixed(2)}</td></tr>`;
             });
             
             tableHTML += `<tr class="total-row"><td colspan="3" style="text-align: right;">GRAND TOTAL:</td><td colspan="2" style="text-align: center;">${grandTotal.toFixed(2)}</td></tr><tr><td colspan="5" style="height: 15px;"></td></tr></tbody></table><br>
@@ -574,7 +573,6 @@
         function downloadSimpleXLSX() {
             const XLSX = window.XLSX;
             if (!XLSX) { alert("XLSX library is not loaded."); return; }
-            // (XLSX logic remains here, unchanged)
             
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -589,7 +587,7 @@
                 const itemDetails = allItemData.find((d) => d.row === item.row);
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
                 const paddedCode = itemCode.padStart(4, '0');
-                const itemBarcode = itemCode ? 9900${paddedCode}000000 : "";
+                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
                 const qty = item.qty;
                 const total = item.total;
                 const rateInc = qty > 0 ? total / qty : 0;
@@ -603,31 +601,31 @@
             exportData.push(["", "", "", "", "", "", ""]);
             exportData.push([ "K MART SUPERMARKET" ]);
             exportData.push([ "Branch: Burdubai (Al Raffa)" ]);
-            exportData.push([ DATE : ${formattedDate} ]);
+            exportData.push([ `DATE : ${formattedDate}` ]);
             exportData.push([ "Vegetable and Fruits Invoice" ]);
 
             const ws = XLSX.utils.aoa_to_sheet(exportData);
             if (!ws['!merges']) ws['!merges'] = [];
             const grandTotalRowExcel = lastDataRowExcel + 1; 
-            ws['!merges'].push(XLSX.utils.decode_range(A${grandTotalRowExcel}:E${grandTotalRowExcel}));
-            ws['!merges'].push(XLSX.utils.decode_range(F${grandTotalRowExcel}:G${grandTotalRowExcel}));
+            ws['!merges'].push(XLSX.utils.decode_range(`A${grandTotalRowExcel}:E${grandTotalRowExcel}`));
+            ws['!merges'].push(XLSX.utils.decode_range(`F${grandTotalRowExcel}:G${grandTotalRowExcel}`));
 
-            const grandTotalCellAddress = F${grandTotalRowExcel};
-            const totalFormula = SUM(F2:F${lastDataRowExcel});
+            const grandTotalCellAddress = `F${grandTotalRowExcel}`;
+            const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
             
             XLSX.utils.sheet_add_aoa(ws, [
                 [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
             ], { origin: grandTotalCellAddress });
 
-            const labelCell = ws[A${grandTotalRowExcel}];
+            const labelCell = ws[`A${grandTotalRowExcel}`];
             if (labelCell) { labelCell.s = { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' } }; }
             
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Invoice");
-            const filename = INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx;
+            const filename = `INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
             XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = Downloaded: ${filename}.;
+            document.getElementById('message').textContent = `Downloaded: ${filename}.`;
         }
         
         // -------------------------------------------------------------------
@@ -662,7 +660,7 @@
             for (const data of allItemData) {
                 const itemName = (data.item || "").toLowerCase();
                 const code = String(data.code || "");
-                const combined = ${itemName} ${code};
+                const combined = `${itemName} ${code}`;
                 const match = searchParts.every(part => combined.includes(part));
                 if (match) { results.push(data); if (results.length >= 20) break; }
             }
@@ -671,9 +669,9 @@
                 results.forEach(suggestion => {
                     const div = document.createElement('div');
                     div.className = 'autocomplete-item';
-                    div.innerHTML = <strong>${suggestion.code}</strong> - ${suggestion.item};
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
                     div.onclick = () => {
-                        searchInput.value = ${suggestion.code} ${suggestion.item};
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
                         selectedOrderItem = suggestion;
                         listDiv.style.display = 'none';
                         showSelectedOrderItem();
@@ -681,13 +679,13 @@
                     listDiv.appendChild(div);
                 });
                 listDiv.style.display = 'block';
-            } else { messageEl.textContent = Found 0 items.; }
+            } else { messageEl.textContent = 'Found 0 items.'; }
         }
 
         function showSelectedOrderItem() {
             if (selectedOrderItem) {
                 const display = document.getElementById('orderResultDisplay');
-                display.innerHTML = CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item};
+                display.innerHTML = `CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item}`;
                 display.style.display = 'block';
 
                 document.getElementById('addOrderItemButton').disabled = false;
@@ -766,12 +764,12 @@
             selectedOrderItem = null;
 
             renderOrderList();
-            document.getElementById('orderMessage').textContent = Item added to order list. (${newItem.item});
+            document.getElementById('orderMessage').textContent = `Item added to order list. (${newItem.item})`;
             document.getElementById('orderSearchInput').focus();
         }
 
         function removeOrderItem(index) {
-            if (confirm(Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?)) {
+            if (confirm(`Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?`)) {
                 orderList.splice(index, 1);
                 renderOrderList();
             }
@@ -792,7 +790,7 @@
             
             if (orderList.length === 0) { orderContent.innerHTML = "<p>Order list is empty. Add items above.</p>"; billViewArea.style.display = 'block'; return; }
 
-            let tableHTML = <table class="order-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME / DETAILS</th><th>QTY</th><th>TYPE</th></tr></thead><tbody>;
+            let tableHTML = `<table class="order-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME / DETAILS</th><th>QTY</th><th>TYPE</th></tr></thead><tbody>`;
             
             orderList.forEach((item) => {
                 let nameDisplay = item.item;
@@ -803,7 +801,7 @@
                     rowClass = 'offer-item-row';
                 }
 
-                tableHTML += <tr class="${rowClass}"><td>${item.code}</td><td class="item-name">${nameDisplay}</td><td>${item.qty}</td><td>${item.type.toUpperCase()}</td></tr>;
+                tableHTML += `<tr class="${rowClass}"><td>${item.code}</td><td class="item-name">${nameDisplay}</td><td>${item.qty}</td><td>${item.type.toUpperCase()}</td></tr>`;
             });
             
             tableHTML += `</tbody></table><br>
@@ -822,8 +820,8 @@
                 return;
             }
             
-            if (GAS_URL === "Yhttps://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec") {
-                 alert("ERROR: Google Apps Script URL not configured. Please replace 'https://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec' in the JavaScript code.");
+            if (GAS_URL === "YOUR_GAS_WEB_APP_URL") {
+                 alert("ERROR: Google Apps Script URL not configured. Please replace 'YOUR_GAS_WEB_APP_URL' with your actual URL in the JavaScript code.");
                  return;
             }
             
@@ -883,7 +881,7 @@
                     const exactMatch = allItemData.find(item => String(item.code) === searchText);
                     if (exactMatch) {
                         selectedItem = exactMatch;
-                        searchInput.value = ${exactMatch.code} ${exactMatch.item};
+                        searchInput.value = `${exactMatch.code} ${exactMatch.item}`;
                         document.getElementById('autocompleteList').style.display = 'none';
                         showSelectedItem(); 
                     } else {
