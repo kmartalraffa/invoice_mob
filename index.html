@@ -446,7 +446,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ FINAL CORRECTED UTILITY FUNCTION (Includes Row Metadata Fix)
+        // ✅ FINAL CORRECTED UTILITY FUNCTION (Includes Row & MERGE Fix)
         // -------------------------------------------------------------------
         function shiftTemplateRows(ws, itemsCount) {
             
@@ -538,12 +538,12 @@
             const blankRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
             const blankMergeRange = `A${blankRowIndex + 1}:G${blankRowIndex + 1}`; 
             
-            // Push the merge as a decoded range object
+            // Push the new merge as a DECODED range object (contains 's')
             ws['!merges'].push(XLSX.utils.decode_range(blankMergeRange));
 
 
             originalMerges.forEach(mergeRange => {
-                // FIX: Ensure the merge object is decoded before manipulation
+                // Ensure the merge object is decoded before manipulation
                 const rangeAddress = typeof mergeRange === 'object' ? XLSX.utils.encode_range(mergeRange) : mergeRange;
                 const range = XLSX.utils.decode_range(rangeAddress);
                 
@@ -556,8 +556,8 @@
                     range.e.r += footerDetailShiftAmount;
                 }
                 
-                // Push the shifted merge
-                ws['!merges'].push(XLSX.utils.encode_range(range));
+                // **CRITICAL FIX: PUSH THE DECODED OBJECT (range), which contains the 's' property**
+                ws['!merges'].push(range); 
             });
 
 
