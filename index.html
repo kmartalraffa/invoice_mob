@@ -182,7 +182,7 @@
         let allItemData = [];
         let selectedItem = null;
 
-        // --- LOCAL STORAGE UTILITIES ---
+        // --- LOCAL STORAGE UTILITIES (Unchanged) ---
         function loadLocalCart() {
             const storedCart = localStorage.getItem(CART_STORAGE_KEY);
             return storedCart ? JSON.parse(storedCart) : {};
@@ -192,7 +192,7 @@
             localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
         }
 
-        // --- INITIAL LOAD ---
+        // --- INITIAL LOAD (Unchanged) ---
         async function loadItemData() {
             try {
                 const itemResponse = await fetch('./items.json'); 
@@ -438,7 +438,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ NEW: Simple Self Excel Creation Function (Array-Based)
+        // ✅ UPDATED: Simple Self Excel Creation Function (Array-Based with Merges/Custom Footer)
         // -------------------------------------------------------------------
         function downloadSimpleXLSX() {
             const XLSX = window.XLSX;
@@ -456,11 +456,12 @@
 
             let grandTotal = 0;
             const now = new Date();
+            const formattedDate = now.toLocaleDateString("en-GB");
             
             // 1. Define the entire data structure as an Array of Arrays (AoA)
             const exportData = [];
             
-            // --- 1st Row: Headings ---
+            // --- Row 1: Headings (Array Index 0) ---
             exportData.push([
                 "CODE",
                 "ITEM NAME",
@@ -471,7 +472,7 @@
                 "ItemBarCode"
             ]);
 
-            // --- 2nd Row to N: Item Data ---
+            // --- Row 2 to N: Item Data ---
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
@@ -499,56 +500,66 @@
             // Calculate the last item row index (for Grand Total formula)
             const lastDataRowExcel = exportData.length; // Excel rows start at 1
 
-            // --- (N+1) Row: Grand Total ---
-            // We use a blank cell for F (Total) and then add the formula post-AoA conversion
+            // --- Row N+1: Grand Total ---
+            // This row is indexed lastDataRowExcel in the array (0-based)
             exportData.push([
-                "GRAND TOTAL:",
-                "",
-                "",
-                "",
-                "",
-                "", // This will hold the formula
-                ""
+                "GRAND TOTAL:", // A[N+1]
+                null, // B[N+1] (Merged)
+                null, // C[N+1] (Merged)
+                null, // D[N+1] (Merged)
+                null, // E[N+1] (Merged)
+                "", // F[N+1] (Will hold the formula)
+                null  // G[N+1] (Merged with F)
             ]);
             
-            // --- (N+2) Row: Blank Row ---
+            // --- Row N+2: Blank Row ---
             exportData.push(["", "", "", "", "", "", ""]);
 
-            // --- (N+3) to (N+6) Rows: Footer Details ---
-            exportData.push([
-                "KMART SUPERMARKET LLC",
-                "Branch: Burdubai (Al Raffa)",
-                `Date: ${now.toLocaleDateString("en-GB")}`,
-                "Vegetable and Fruits Invoice",
-                "", "", "" // Padding to make it a 7-column array
-            ]);
+            // --- Rows N+3 to N+6: Footer Details (in separate rows, starting from column A) ---
+            exportData.push([ "K MART SUPERMARKET" ]);
+            exportData.push([ "Branch: Burdubai (Al Raffa)" ]);
+            exportData.push([ `DATE : ${formattedDate}` ]);
+            exportData.push([ "Vegetable and Fruits Invoice" ]);
 
 
             // 2. Convert AoA to Worksheet
             const ws = XLSX.utils.aoa_to_sheet(exportData);
+            
+            // Initialize merges array
+            if (!ws['!merges']) ws['!merges'] = [];
 
-            // 3. Add the Grand Total Formula to the correct cell (F column)
-            const grandTotalRowIndex = lastDataRowExcel; // 0-indexed
-            const grandTotalCellAddress = XLSX.utils.encode_cell({ r: grandTotalRowIndex, c: 5 }); // F column (index 5)
+            // 3. Apply Merges and Formula for Grand Total
+            const grandTotalRowExcel = lastDataRowExcel + 1; 
+
+            // --- Merge A:E (GRAND TOTAL: label) ---
+            ws['!merges'].push(XLSX.utils.decode_range(`A${grandTotalRowExcel}:E${grandTotalRowExcel}`));
+
+            // --- Merge F:G (Grand Total Value) ---
+            ws['!merges'].push(XLSX.utils.decode_range(`F${grandTotalRowExcel}:G${grandTotalRowExcel}`));
+
+
+            // 4. Update the Grand Total Formula cell (F[N+1])
+            const grandTotalCellAddress = `F${grandTotalRowExcel}`;
 
             // F2:F[lastDataRowExcel] is the range of item totals
             const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
             
-            // Find the cell created by aoa_to_sheet and update it
-            if (ws[grandTotalCellAddress]) {
-                ws[grandTotalCellAddress].f = totalFormula;
-                ws[grandTotalCellAddress].t = 'n'; // Ensure type is number for formula
-                ws[grandTotalCellAddress].v = grandTotal; // Set current value as fallback
-                ws[grandTotalCellAddress].z = "#,##0.00"; // Format the cell
-            } else {
-                // If it wasn't created (e.g., if array had sparse data), create it
-                XLSX.utils.sheet_add_aoa(ws, [
-                    [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
-                ], { origin: grandTotalCellAddress });
+            // Set up the cell with the formula and formatting
+            XLSX.utils.sheet_add_aoa(ws, [
+                [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
+            ], { origin: grandTotalCellAddress });
+
+            // 5. Apply basic alignment/style to Grand Total row for visibility
+            // Ensure the merged label (A[N+1]) is bold and right-aligned
+            const labelCell = ws[`A${grandTotalRowExcel}`];
+            if (labelCell) {
+                labelCell.s = {
+                    font: { bold: true },
+                    alignment: { horizontal: 'right', vertical: 'center' }
+                };
             }
-
-
-            // 4. Create Workbook and Download
+            
+            // 6. Create Workbook and Download
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Invoice");
 
@@ -556,7 +567,7 @@
                 `INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
             XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = `Downloaded: ${filename}. Simple XLSX file created successfully.`;
+            document.getElementById('message').textContent = `Downloaded: ${filename}. Simple XLSX file created with merges and custom footer.`;
         }
     </script>
 </body>
