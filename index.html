@@ -1,271 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Invoice - kmart alraffa</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMart POS Invoice Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* BASE STYLES & TYPOGRAPHY (Better UI CSS) */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 15px;
-            background-color: #f0f2f5;
-            color: #333;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
         }
         .container {
-            max-width: 450px;
-            margin: 20px auto;
+            max-width: 900px;
+            margin: auto;
             background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            text-align: center;
-            color: #007bff;
-            margin-bottom: 5px;
-        }
-        h2 {
-            text-align: center;
-            color: #6c757d;
-            margin-top: 0;
-            margin-bottom: 25px;
-            font-size: 18px;
-        }
-        h3 {
-            margin-top: 20px;
-            margin-bottom: 12px;
+        h2, h3 {
             color: #333;
-            border-bottom: 1px solid #eee;
+            border-bottom: 2px solid #eee;
             padding-bottom: 5px;
         }
-        .input-group, .selection-fields {
-            margin-bottom: 15px;
-        }
-        .label-style {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        input[type="text"],
-        input[type="number"] {
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
             width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
             box-sizing: border-box;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        input[type="text"]:focus,
-        input[type="number"]:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-        .selection-fields {
-            display: flex;
-            gap: 15px;
-        }
-        .field-item {
-            flex: 1;
-            min-width: 45%;
         }
         button {
-            width: 100%;
-            padding: 12px;
+            background-color: #007bff;
             color: white;
-            border: none;
-            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 10px;
-            transition: background-color 0.3s, opacity 0.3s;
+            border: none;
+            transition: background-color 0.3s;
         }
-        button:hover:enabled {
-            opacity: 0.9;
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
         }
         button:disabled {
-            background-color: #e9ecef !important;
-            color: #6c757d !important;
+            background-color: #aaa;
             cursor: not-allowed;
         }
-        #addButton {
-            background-color: #28a745;
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
         }
-        #downloadXLSXButton {
-            background-color: #007bff;
+        .input-group > div {
+            flex: 1;
         }
-        #viewBillButton {
-            background-color: #ffc107;
-            color: #212529;
+        .autocomplete-list {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 22px);
+            z-index: 1000;
         }
-        #clearCartButton {
-            background-color: #dc3545;
-        }
-        .result-box {
-            background-color: #e0f7fa;
-            color: #005662;
+        .autocomplete-item {
             padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
         }
-        .cart-box {
-            background-color: #f8f9fa;
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+        #resultDisplay {
             padding: 10px;
+            background-color: #e9ecef;
             border-radius: 4px;
-            min-height: 50px;
+            margin-top: 10px;
+            display: none;
+        }
+        #message {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+        }
+        #localCartDisplay {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
         }
         .cart-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dotted #ccc;
-            font-size: 15px;
-        }
-        .cart-item span:first-child {
-            font-weight: 500;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
         }
         .cart-item:last-child {
             border-bottom: none;
         }
-        .message-status {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #6c757d;
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
         }
-        .search-area {
-            position: relative;
-        }
-        .autocomplete-list {
-            border: 1px solid #ced4da;
-            max-height: 180px;
-            overflow-y: auto;
-            position: absolute;
-            width: 100%;
-            background: white;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-radius: 0 0 6px 6px;
-        }
-        .autocomplete-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            font-size: 15px;
-        }
-        .autocomplete-item:hover {
-            background-color: #f0f8ff;
-        }
-        .autocomplete-list:empty {
-            display: none !important;
-        }
-        /* Bill View Styling (Simplified and Modernized) */
         .bill-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14pt;
             margin-top: 20px;
-            background-color: #fff;
+            font-size: 14px;
+        }
+        .bill-table th, .bill-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
         .bill-table th {
-            font-size: 12pt;
-            border-bottom: 2px solid #333;
-            padding: 8px;
-            text-align: center;
             background-color: #f2f2f2;
-        }
-        .bill-table td {
-            padding: 8px;
-            text-align: center;
-            border-bottom: 1px dashed #e9ecef;
         }
         .bill-table .item-name {
             text-align: left;
         }
-        .bill-table .total-row td {
+        .total-row td {
             font-weight: bold;
-            border-top: 2px solid #333;
-            font-size: 14pt;
-            padding-top: 10px;
+            background-color: #e0e0e0;
         }
         .footer-text-html {
             text-align: center;
             font-weight: bold;
-            padding: 5px;
-            margin-top: 10px;
             font-size: 16pt;
+            margin-top: 5px;
         }
     </style>
 </head>
-
 <body onload="loadItemData()">
-    <div class="container">
-        <h1>Shop Invoice</h1>
-        <h2>kmart alraffa (Offline Cart)</h2>
-        <hr>
 
-        <div class="search-area input-group">
-            <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Type to search and click an item"
-                onkeyup="handleSearchInput()"
-                autocomplete="off">
+    <div class="container">
+        <h2>🛍️ KMart Vegetable POS Utility</h2>
+        <div id="message">Loading item data...</div>
+
+        <h3>Add Item to Cart</h3>
+        <div style="position: relative;">
+            <input type="text" id="searchInput" placeholder="Search by Code or Item Name" oninput="handleSearchInput()">
             <div id="autocompleteList" class="autocomplete-list"></div>
         </div>
-
-        <h3>Selection Details</h3>
-        <div id="resultDisplay" class="result-box" style="display: none;"></div>
-
-        <div class="selection-fields">
-            <div class="field-item">
-                <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
-                <input
-                    type="number"
-                    id="qtyInput"
-                    placeholder="Quantity"
-                    inputmode="decimal">
-            </div>
-            <div class="field-item">
-                <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
-                <input
-                    type="number"
-                    id="totalInput"
-                    placeholder="Total Amount"
-                    inputmode="decimal">
-            </div>
+        <div id="resultDisplay"></div>
+        
+        <div class="input-group">
+            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)"></div>
+            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)"></div>
         </div>
 
-        <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
+        <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
 
-        <hr>
+        <h3>Current Cart (Items: <span id="cartCount">0</span>)</h3>
+        <div id="localCartDisplay"></div>
+        
+        <div class="action-buttons">
+            <button onclick="clearLocalCart()" style="background-color: #dc3545;">Clear Cart</button>
+            <button id="viewBillButton" onclick="viewLocalCartHTML()" disabled style="background-color: #ffc107; color: #333;">View Bill (On Screen)</button>
+        </div>
+        
+        <button id="downloadXLSXButton" onclick="downloadLocalCartXLSX()" disabled style="background-color: #28a745; margin-top: 10px;">Download Cart as XLSX</button>
 
-        <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
-        <div id="localCartDisplay" class="cart-box"></div>
-
-        <button onclick="viewLocalCartHTML()" id="viewBillButton" disabled>
-            View Bill (On Screen)
-        </button>
-        <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
-            Download Cart as XLSX
-        </button>
-        <button onclick="clearLocalCart()" id="clearCartButton">
-            Clear Local Cart / New Invoice
-        </button>
-
-        <p id="message" class="message-status">Loading data ...</p>
+        <div id="billViewArea" style="display: none; margin-top: 30px;">
+            <h3>Bill Preview</h3>
+            <div id="billContent"></div>
+        </div>
     </div>
-
-    <div id="billViewArea" class="container" style="display: none; max-width: 90%; margin-top: 20px;">
-        <h3>Generated Bill Preview</h3>
-        <div id="billContent"></div>
-    </div>
-
 
     <script>
         // CONFIG
@@ -289,18 +196,16 @@
         // --- INITIAL LOAD ---
         async function loadItemData() {
             try {
-                // NOTE: This assumes 'items.json' exists alongside this HTML file
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
 
-                // Check if template exists
                 const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
                 if (!checkTemplate.ok) {
                     document.getElementById('message').textContent = 'Error: template.xlsx not found!';
                     return;
                 }
                 
-                document.getElementById('message').textContent = 'Data loaded. Template ready.';
+                document.getElementById('message').textContent = 'Data loaded. Template ready. Add items to cart.';
             } catch (e) {
                 console.error("Error loading JSON files or template:", e);
                 document.getElementById('message').textContent =
@@ -523,6 +428,8 @@
                         <td style="text-align: center;">${grandTotal.toFixed(2)}</td>
                         <td></td>
                     </tr>
+                    <tr>
+                        <td colspan="7" style="height: 15px;"></td> </tr>
                     </tbody>
                 </table>
                 <br>
@@ -539,26 +446,33 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ CORRECTED UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS
+        // ✅ CORRECTED UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS (Error Fix, Blank Row Added and Merged)
         // -------------------------------------------------------------------
         function shiftTemplateRows(ws, itemsCount) {
-            // Define the range of template rows to be moved.
-            // Based on your template: Footer starts at Row 3 (0-indexed row 2) and ends at Row 7 (0-indexed row 6)
-            const START_ROW_TO_SHIFT = 2; // Row 3 in Excel (GRAND TOTAL)
-            const END_ROW_TO_SHIFT = 6; // Row 7 in Excel (Vegetable and Fruits Invoice)
             
-            const shiftAmount = itemsCount; 
-            if (shiftAmount === 0) return;
+            // Row 3 in Excel (0-indexed 2)
+            const START_ROW_TO_SHIFT = 2; 
+            // Row 7 in Excel (0-indexed 6)
+            const END_ROW_TO_SHIFT = 6; 
+            
+            // Shift for Grand Total
+            const grandTotalShiftAmount = itemsCount;
+            // Shift for Footer Details (+1 for the blank row)
+            const footerDetailShiftAmount = itemsCount + 1; 
+
+            if (itemsCount === 0) return;
 
             const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-            const originalMerges = ws['!merges'] || [];
             
-            // 1. Shift the cells and their styles/merges from bottom up
-            for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT; r--) {
-                const originalRowExcel = r + 1;
-                const newRowExcel = r + 1 + shiftAmount;
+            // CRITICAL FIX: Get original merges (they come in as objects)
+            let originalMerges = ws['!merges'] || [];
+            
 
-                // Move Cell Contents
+            // --- 1. Shift the Footer Details Block (Rows 4-7) ---
+            for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT + 1; r--) {
+                const originalRowExcel = r + 1; 
+                const newRowExcel = r + 1 + footerDetailShiftAmount;
+
                 colsToMove.forEach(col => {
                     const originalCellAddress = col + originalRowExcel;
                     const newCellAddress = col + newRowExcel;
@@ -566,45 +480,85 @@
                     const originalCell = ws[originalCellAddress];
                     if (originalCell) {
                         ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
+                        delete ws[originalCellAddress];
                     }
                 });
 
-                // Move Row Heights (if they exist)
                 if (ws['!rows'] && ws['!rows'][r]) {
-                    if (!ws['!rows'][r + shiftAmount]) ws['!rows'][r + shiftAmount] = {};
-                    Object.assign(ws['!rows'][r + shiftAmount], ws['!rows'][r]);
-                }
-            }
-
-            // 2. Clear the original footer rows to make way for new data insertion
-            for (let r = START_ROW_TO_SHIFT; r <= END_ROW_TO_SHIFT; r++) {
-                const originalRowExcel = r + 1;
-                colsToMove.forEach(col => {
-                    delete ws[col + originalRowExcel];
-                });
-                if (ws['!rows'] && ws['!rows'][r]) {
+                    if (!ws['!rows'][r + footerDetailShiftAmount]) ws['!rows'][r + footerDetailShiftAmount] = {};
+                    Object.assign(ws['!rows'][r + footerDetailShiftAmount], ws['!rows'][r]);
                     delete ws['!rows'][r];
                 }
             }
 
 
-            // 3. Rebuild Merges with shifted rows
-            ws['!merges'] = [];
-            originalMerges.forEach(mergeRange => {
-                const range = XLSX.utils.decode_range(mergeRange);
-                // Only shift merges that originally started on or after Row 3 (0-indexed row 2)
-                if (range.s.r >= START_ROW_TO_SHIFT) {
-                    range.s.r += shiftAmount;
-                    range.e.r += shiftAmount;
+            // --- 2. Shift the Grand Total Row (Row 3) ---
+            {
+                const r = START_ROW_TO_SHIFT;
+                const originalRowExcel = r + 1; 
+                const newRowExcel = r + 1 + grandTotalShiftAmount;
+
+                colsToMove.forEach(col => {
+                    const originalCellAddress = col + originalRowExcel;
+                    const newCellAddress = col + newRowExcel;
+
+                    const originalCell = ws[originalCellAddress];
+                    if (originalCell) {
+                        ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
+                        delete ws[originalCellAddress];
+                    }
+                });
+
+                if (ws['!rows'] && ws['!rows'][r]) {
+                    if (!ws['!rows'][r + grandTotalShiftAmount]) ws['!rows'][r + grandTotalShiftAmount] = {};
+                    Object.assign(ws['!rows'][r + grandTotalShiftAmount], ws['!rows'][r]);
+                    delete ws['!rows'][r];
                 }
+            }
+
+
+            // 3. Clear the original footer rows (Rows 3-7)
+            for (let r = START_ROW_TO_SHIFT; r <= END_ROW_TO_SHIFT; r++) {
+                const originalRowExcel = r + 1;
+                colsToMove.forEach(col => {
+                    delete ws[col + originalRowExcel];
+                });
+            }
+
+            // 4. Rebuild Merges with shifted rows AND add the new BLANK ROW merge
+            ws['!merges'] = [];
+            
+            // *** ADD MERGE FOR THE BLANK ROW ***
+            // The blank row is immediately after the shifted Grand Total.
+            const blankRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
+            const blankMergeRange = `A${blankRowIndex + 1}:G${blankRowIndex + 1}`; 
+            
+            // Push the merge as a decoded range object
+            ws['!merges'].push(XLSX.utils.decode_range(blankMergeRange));
+
+
+            originalMerges.forEach(mergeRange => {
+                // *** THE CRITICAL FIX FOR TYPE ERROR: Convert object merge to string address ***
+                let rangeAddress = typeof mergeRange === 'object' ? XLSX.utils.encode_range(mergeRange) : mergeRange;
+                
+                const range = XLSX.utils.decode_range(rangeAddress);
+                
+                if (range.s.r === START_ROW_TO_SHIFT) { // Grand Total merge (Row 3)
+                    range.s.r += grandTotalShiftAmount;
+                    range.e.r += grandTotalShiftAmount;
+                } else if (range.s.r >= START_ROW_TO_SHIFT + 1) { // Footer Detail merges (Rows 4-7)
+                    range.s.r += footerDetailShiftAmount;
+                    range.e.r += footerDetailShiftAmount;
+                }
+                
+                // Push the shifted merge
                 ws['!merges'].push(XLSX.utils.encode_range(range));
             });
 
 
-            // 4. Update the Grand Total Formula 
-            // The Grand Total is now at row (Row 3 + shiftAmount - 1) which is 0-indexed row (2 + shiftAmount)
-            const grandTotalRowIndex = START_ROW_TO_SHIFT + shiftAmount; 
-            const grandTotalCellAddress = `F${grandTotalRowIndex + 1}`; // F column, 1-indexed Excel row
+            // 5. Update the Grand Total Formula 
+            const grandTotalRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
+            const grandTotalCellAddress = `F${grandTotalRowIndex + 1}`; 
 
             if (ws[grandTotalCellAddress]) {
                 const lastDataRowExcel = 1 + itemsCount;
@@ -613,9 +567,9 @@
                 ws[grandTotalCellAddress].z = "#,##0.00";
             }
 
-            // 5. Update the worksheet's dimensions
+            // 6. Update the worksheet's dimensions
             const range = XLSX.utils.decode_range(ws['!ref']);
-            const finalRowIndex = END_ROW_TO_SHIFT + shiftAmount;
+            const finalRowIndex = END_ROW_TO_SHIFT + footerDetailShiftAmount;
             if (finalRowIndex > range.e.r) {
                 range.e.r = finalRowIndex;
                 ws['!ref'] = XLSX.utils.encode_range(range);
@@ -624,7 +578,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (Using new shiftTemplateRows)
+        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION 
         // -------------------------------------------------------------------
         async function downloadLocalCartXLSX() {
             const XLSX = window.XLSX;
