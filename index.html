@@ -344,7 +344,7 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
- function downloadLocalCartXLSX() {
+  function downloadLocalCartXLSX() {
   const XLSX = window.XLSX; // must be xlsx-style
 
   if (!XLSX) {
@@ -364,7 +364,7 @@
 
   const ws = XLSX.utils.json_to_sheet([]);
 
-// ✅ HEADER ROWS + STYLES
+// ✅ HEADER ROWS + STYLES 
 // --------------------------------------------------
 XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
 ws["A1"].s = {
@@ -395,7 +395,7 @@ ws["A4"].s = {
 ws["A4"].t = "s";
 
 
-// ✅ MERGE HEADER CELLS (ONLY ONCE)
+// ✅ MERGE HEADER CELLS 
 // --------------------------------------------------
 ws["!merges"] = [
   { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
@@ -405,7 +405,7 @@ ws["!merges"] = [
 ];
 
 
-// ✅ ROW HEIGHTS (ONLY ONCE)
+// ✅ ROW HEIGHTS 
 // --------------------------------------------------
 ws["!rows"] = [
   { hpt: 32 }, // Row 1
@@ -415,7 +415,7 @@ ws["!rows"] = [
 ];
 
 
-// ✅ COLUMN WIDTHS (ONLY ONCE)
+// ✅ COLUMN WIDTHS 
 // --------------------------------------------------
 ws["!cols"] = [
   { wch: 12 }, // CODE
@@ -459,7 +459,8 @@ ws["!cols"] = [
 
     const qty = item.qty;
     const total = item.total;
-    const rateInc = qty > 0 ? total / qty : 0;
+    // Assuming 5% VAT (1.05)
+    const rateInc = qty > 0 ? total / qty : 0; 
     const rateExcl = rateInc / 1.05;
 
     dataRows.push([
@@ -474,9 +475,40 @@ ws["!cols"] = [
   });
 
   XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A7" });
+  
+  // ✅ FIX: Apply styling (font size 12) to all data rows
+  const startRow = 7;
+  const endRow = startRow + items.length - 1; 
+
+  for (let r = startRow; r <= endRow; r++) {
+    // Iterate through columns A to G (index 0 to 6)
+    for (let c = 0; c <= 6; c++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
+      const cell = ws[cellAddress];
+
+      if (cell && cell.v !== undefined) {
+        // Set default style for data cells
+        cell.s = {
+          font: { name: "Calibri", sz: 12 }, 
+          alignment: { vertical: "center" }
+        };
+
+        // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
+        if (c === 0 || c === 2 || c === 5 || c === 6) {
+           cell.s.alignment.horizontal = "center";
+        }
+        
+        // Ensure that numeric types retain their number format
+        if (cell.t === 'n' && (c === 3 || c === 4 || c === 5)) {
+             cell.s.numFmt = cell.z; 
+        }
+      }
+    }
+  }
+
 
   // -----------------------------
-  // GRAND TOTAL
+  // GRAND TOTAL (FIXED)
   // -----------------------------
   const lastRow = 7 + items.length;
 
@@ -489,30 +521,33 @@ ws["!cols"] = [
         null,
         null,
         null,
-        { t: "n", f: `SUM(F8:F${lastRow})`, z: "#,##0.00" }
+        // FIX: Formula starts from F7
+        { t: "n", f: `SUM(F7:F${lastRow -1 })`, z: "#,##0.00" } 
       ]
     ],
-    { origin: `A${lastRow + 1}` }
+    // FIX: Grand total is on the next available row (lastRow)
+    { origin: `A${lastRow}` } 
   );
 
+  // FIX: Merge cells for the row where Grand Total label appears
   ws["!merges"].push({
-    s: { r: lastRow, c: 0 },
-    e: { r: lastRow, c: 4 }
+    s: { r: lastRow - 1, c: 0 },
+    e: { r: lastRow - 1, c: 4 }
   });
 
-  ws[`A${lastRow + 1}`].s = {
+  ws[`A${lastRow}`].s = {
     font: { bold: true, sz: 16 },
     alignment: { horizontal: "center", vertical: "center" }
   };
-  ws[`A${lastRow + 1}`].t = "s";
+  ws[`A${lastRow}`].t = "s";
 
-  ws[`F${lastRow + 1}`].s = {
+  ws[`F${lastRow}`].s = {
     font: { bold: true, sz: 16 },
     alignment: { horizontal: "center", vertical: "center" }
   };
 
   // -----------------------------
-  // SAVE FILE
+  // SAVE FILE 
   // -----------------------------
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
@@ -522,6 +557,7 @@ ws["!cols"] = [
 
   XLSX.writeFile(wb, filename);
 }
+
 
 
 
