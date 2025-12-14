@@ -344,7 +344,7 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-  function downloadLocalCartXLSX() {
+ function downloadLocalCartXLSX() {
   const XLSX = window.XLSX; // must be xlsx-style
 
   if (!XLSX) {
@@ -393,27 +393,17 @@
   ];
 
   // -----------------------------
-  // ✅ HEADER STYLES
+  // ✅ HEADER STYLES + TYPE FIX
   // -----------------------------
-  ws["A1"].s = {
-    font: { name: "Calibri", sz: 18, bold: true },
+  const headerStyle = (size) => ({
+    font: { name: "Calibri", sz: size, bold: true },
     alignment: { horizontal: "center", vertical: "center" }
-  };
+  });
 
-  ws["A2"].s = {
-    font: { name: "Calibri", sz: 14, bold: true },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
-
-  ws["A3"].s = {
-    font: { name: "Calibri", sz: 14, bold: true },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
-
-  ws["A4"].s = {
-    font: { name: "Calibri", sz: 16, bold: true },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
+  ws["A1"].s = headerStyle(18); ws["A1"].t = "s";
+  ws["A2"].s = headerStyle(14); ws["A2"].t = "s";
+  ws["A3"].s = headerStyle(14); ws["A3"].t = "s";
+  ws["A4"].s = headerStyle(16); ws["A4"].t = "s";
 
   // -----------------------------
   // ✅ COLUMN WIDTHS
@@ -437,14 +427,15 @@
     { origin: "A6" }
   );
 
-  // Style table header
-  const headerCells = ["A6","B6","C6","D6","E6","F6","G6"];
-  headerCells.forEach(cell => {
+  // ✅ Style table header
+  const tableHeaderCells = ["A6","B6","C6","D6","E6","F6","G6"];
+  tableHeaderCells.forEach(cell => {
     ws[cell].s = {
       font: { bold: true, sz: 12 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { fgColor: { rgb: "FFF2F2F2" } }
     };
+    ws[cell].t = "s";
   });
 
   // -----------------------------
@@ -503,6 +494,7 @@
     font: { bold: true, sz: 16 },
     alignment: { horizontal: "center", vertical: "center" }
   };
+  ws[`A${lastRow + 1}`].t = "s";
 
   ws[`F${lastRow + 1}`].s = {
     font: { bold: true, sz: 16 },
@@ -520,6 +512,7 @@
 
   XLSX.writeFile(wb, filename);
 }
+
 
 
 
