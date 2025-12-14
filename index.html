@@ -408,8 +408,6 @@
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'cart-item';
-                // Note: The item object in the cart does not currently store the CODE, 
-                // but only the row index and item name.
                 div.innerHTML = `
                     <span>${item.item} (Row: ${item.row})</span>
                     <span>Qty: ${item.qty} | Total: ${item.total}</span>
@@ -555,72 +553,91 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ UTILITY FUNCTION: MOVES AND UPDATES GRAND TOTAL ROW
+        // ✅ NEW UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS
         // -------------------------------------------------------------------
-        function moveGrandTotalRow(ws, itemsCount) {
-            // The original Grand Total row in the template is assumed to be Row 3 (1-indexed)
-            const originalGtRowIndex = 2; // 0-indexed row number (Row 3 in Excel)
-            // The new Grand Total row will be immediately after the last data row (Row 2 + itemsCount)
-            const newGtRowIndex = 1 + itemsCount + 1; // 0-indexed row number 
-            const finalGtAddress = `F${newGtRowIndex + 1}`; // F column, 1-indexed row for the formula
-
-            if (itemsCount === 0) return;
+        function shiftTemplateRows(ws, itemsCount) {
+            // Define the range of template rows to be moved.
+            // Based on your template, the footer structure starts at Row 3 (0-indexed row 2)
+            // and includes the Grand Total, KMART, Branch, Date, and Invoice Type.
+            // Template Rows 3, 4, 5, 6, 7 (0-indexed rows 2 through 6) need to be shifted.
+            const START_ROW_TO_SHIFT = 2; // Row 3 in Excel
+            const END_ROW_TO_SHIFT = 6; // Row 7 in Excel (adjust based on your template's end)
+            
+            // The number of rows to insert/shift down is equal to the number of cart items.
+            const shiftAmount = itemsCount; 
+            
+            if (shiftAmount === 0) return;
 
             const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+            const originalMerges = ws['!merges'] || [];
+            ws['!merges'] = []; // Clear and rebuild merges
 
-            // 1. Copy cells from the original row (Row 3) to the new row
-            colsToMove.forEach(col => {
-                const originalCellAddress = col + (originalGtRowIndex + 1);
-                const newCellAddress = col + (newGtRowIndex + 1);
+            // 1. Shift the cells and their styles/merges
+            for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT; r--) {
+                const originalRowExcel = r + 1;
+                const newRowExcel = r + 1 + shiftAmount;
 
-                const originalCell = ws[originalCellAddress];
-                if (originalCell) {
-                    ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
-                } else {
-                    delete ws[newCellAddress];
+                // Move Cell Contents
+                colsToMove.forEach(col => {
+                    const originalCellAddress = col + originalRowExcel;
+                    const newCellAddress = col + newRowExcel;
+
+                    const originalCell = ws[originalCellAddress];
+                    if (originalCell) {
+                        ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
+                        delete ws[originalCellAddress];
+                    } else {
+                        delete ws[newCellAddress];
+                    }
+                });
+
+                // Move Row Heights (if they exist)
+                if (ws['!rows'] && ws['!rows'][r]) {
+                    if (!ws['!rows'][r + shiftAmount]) ws['!rows'][r + shiftAmount] = {};
+                    Object.assign(ws['!rows'][r + shiftAmount], ws['!rows'][r]);
+                    delete ws['!rows'][r];
                 }
+            }
+
+            // 2. Adjust Merges
+            originalMerges.forEach(mergeRange => {
+                const range = XLSX.utils.decode_range(mergeRange);
+                // Only shift merges that started on or after the shift point
+                if (range.s.r >= START_ROW_TO_SHIFT) {
+                    range.s.r += shiftAmount;
+                    range.e.r += shiftAmount;
+                }
+                ws['!merges'].push(XLSX.utils.encode_range(range));
             });
 
-            // 2. Clear the original Grand Total row's cells (A3:G3)
-            colsToMove.forEach(col => {
-                const originalCellAddress = col + (originalGtRowIndex + 1);
-                delete ws[originalCellAddress];
-            });
 
-            // 3. Update the Grand Total Formula in the new location (F column)
-            if (ws[finalGtAddress]) {
+            // 3. Update the Grand Total Formula 
+            // The Grand Total is now at row (Row 3 + shiftAmount - 1) which is 0-indexed row (2 + shiftAmount)
+            const grandTotalRowIndex = START_ROW_TO_SHIFT + shiftAmount; 
+            const grandTotalCellAddress = `F${grandTotalRowIndex + 1}`; // F column, 1-indexed Excel row
+
+            if (ws[grandTotalCellAddress]) {
+                // The data ends at row 'lastDataRowExcel' (1-indexed Excel row is 1 + itemsCount)
                 const lastDataRowExcel = 1 + itemsCount;
-                ws[finalGtAddress].f = `SUM(F2:F${lastDataRowExcel})`;
-                ws[finalGtAddress].t = 'n';
-                ws[finalGtAddress].z = "#,##0.00";
+                // Formula is SUM(F2:F_lastDataRow)
+                ws[grandTotalCellAddress].f = `SUM(F2:F${lastDataRowExcel})`;
+                // Ensure proper formatting remains
+                ws[grandTotalCellAddress].t = 'n';
+                ws[grandTotalCellAddress].z = "#,##0.00";
             }
 
             // 4. Update the worksheet's dimensions to include the new row
             const range = XLSX.utils.decode_range(ws['!ref']);
-            if (newGtRowIndex > range.e.r) {
-                range.e.r = newGtRowIndex;
+            const finalRowIndex = END_ROW_TO_SHIFT + shiftAmount;
+            if (finalRowIndex > range.e.r) {
+                range.e.r = finalRowIndex;
                 ws['!ref'] = XLSX.utils.encode_range(range);
-            }
-            
-            // 5. Update Merges for the Grand Total row (A to E)
-            const mergeRange = `A${newGtRowIndex + 1}:E${newGtRowIndex + 1}`;
-            if (!ws['!merges']) ws['!merges'] = [];
-            ws['!merges'].push(XLSX.utils.decode_range(mergeRange));
-
-            // 6. Remove the old merge (A3:E3)
-            const oldMergeRange = `A${originalGtRowIndex + 1}:E${originalGtRowIndex + 1}`;
-            const oldMergeIndex = ws['!merges'].findIndex(m => {
-                const encoded = XLSX.utils.encode_range(m);
-                return encoded === oldMergeRange;
-            });
-            if (oldMergeIndex > -1) {
-                ws['!merges'].splice(oldMergeIndex, 1);
             }
         }
 
 
         // -------------------------------------------------------------------
-        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION
+        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (Using new shiftTemplateRows)
         // -------------------------------------------------------------------
         async function downloadLocalCartXLSX() {
             const XLSX = window.XLSX;
@@ -682,19 +699,22 @@
                 ]);
             });
 
-            // 4. Add new data to the worksheet starting from A2
+            // 4. Shift the existing footer rows down BEFORE inserting data
+            shiftTemplateRows(ws, items.length);
+
+            // 5. Add new data to the worksheet starting from A2 (Row 2, which is now empty)
             XLSX.utils.sheet_add_aoa(
                 ws,
                 dataRows,
                 {
                     origin: "A2",
                     skipHeader: true,
-                    cellStyles: true
+                    cellStyles: true // Retains styles from Row 2 of the template
                 }
             );
 
-            // 5. DEFINE AND APPLY ROBUST STYLE FOR NEW DATA ROWS
-            const startRow = 2;
+            // 6. DEFINE AND APPLY ROBUST STYLE for the newly inserted data
+            const startRow = 2; // Excel row 2 is 0-indexed row 1
             const lastDataRow = 1 + items.length;
 
             const baseCellStyle = {
@@ -709,7 +729,7 @@
                 const rowIdx = r - 1; 
 
                 if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
-                ws['!rows'][rowIdx].hpt = 22;
+                ws['!rows'][rowIdx].hpt = 22; // Set row height for visibility
 
                 for (let c = 0; c <= 6; c++) {
                     const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
@@ -718,6 +738,7 @@
                     if (cell) {
                         let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
 
+                        // Set horizontal alignment
                         if (c === 0 || c === 2 || c === 6) { 
                             currentStyle.alignment.horizontal = "center";
                         } else if (c === 1) { 
@@ -726,6 +747,7 @@
                             currentStyle.alignment.horizontal = "center";
                         }
 
+                        // Set number formats
                         if (cell.t === 'n') {
                             if (c === 3 || c === 4) { 
                                 currentStyle.numFmt = "0.000";
@@ -744,15 +766,12 @@
             }
 
 
-            // 6. MOVE AND UPDATE GRAND TOTAL ROW (The core fix)
-            moveGrandTotalRow(ws, items.length);
-
             // 7. Write/Download the new file
             const filename =
                 `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
             XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = `Downloaded: ${filename}. Please check if the final styling has applied.`;
+            document.getElementById('message').textContent = `Downloaded: ${filename}. Check if the Excel structure is correct now.`;
         }
     </script>
 </body>
