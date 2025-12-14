@@ -436,19 +436,7 @@ ws["!rows"] = [
     { hpt: 26 }  // Row 4
   ];
 
-  // -----------------------------
-  // ✅ HEADER STYLES + TYPE FIX
-  // -----------------------------
-  const headerStyle = (size) => ({
-    font: { name: "Calibri", sz: size, bold: true },
-    alignment: { horizontal: "center", vertical: "center" }
-  });
-
-  ws["A1"].s = headerStyle(18); ws["A1"].t = "s";
-  ws["A2"].s = headerStyle(14); ws["A2"].t = "s";
-  ws["A3"].s = headerStyle(14); ws["A3"].t = "s";
-  ws["A4"].s = headerStyle(16); ws["A4"].t = "s";
-
+  
   // -----------------------------
   // ✅ COLUMN WIDTHS
   // -----------------------------
