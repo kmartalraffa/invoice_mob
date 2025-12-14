@@ -18,7 +18,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            position: relative; /* Needed for keyboard positioning */
+            position: relative; /* Needed for keyboard positioning and temporary tab */
         }
         h2, h3 {
             color: #333;
@@ -138,6 +138,34 @@
             margin-top: 5px;
         }
 
+        /* --- TEMPORARY ITEM TAB STYLES --- */
+        #tempItemTab {
+            position: absolute;
+            top: 100%; /* Position right below the search input */
+            left: 0;
+            width: 100%;
+            background: #e6f7ff;
+            border: 2px solid #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            display: none;
+            box-sizing: border-box;
+        }
+        #tempItemTab h4 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 1px solid #b3d9ff;
+            padding-bottom: 5px;
+        }
+        #tempItemTab .input-group > div {
+            flex: 1;
+        }
+        #tempItemTab button {
+            background-color: #28a745;
+        }
+
         /* --- VIRTUAL KEYPAD STYLES --- */
         #numericKeyboard {
             display: none;
@@ -195,9 +223,18 @@
 
         <h3>Add Item to Cart</h3>
         <div style="position: relative;">
-            <input type="text" id="searchInput" placeholder="Search by Code or Item Name" oninput="handleSearchInput()">
+            <input type="text" id="searchInput" placeholder="Search by Code or Item Name (Type 1001 to add a temporary item)" oninput="handleSearchInput()">
             <div id="autocompleteList" class="autocomplete-list"></div>
-        </div>
+            
+            <div id="tempItemTab">
+                <h4>➕ Add Temporary/New Item (Code 1001 Activated)</h4>
+                <div class="input-group">
+                    <div><input type="number" id="tempItemCodeInput" placeholder="Custom Code (e.g., 999 or 1001)" value="1001" onfocus="toggleNumericKeyboard(this)"></div>
+                    <div><input type="text" id="tempItemNameInput" placeholder="Item Name (e.g., New Apple)"></div>
+                </div>
+                <button onclick="saveTemporaryItem()">Save Temporary Item & Continue</button>
+            </div>
+            </div>
         <div id="resultDisplay"></div>
         
         <div class="input-group">
@@ -250,6 +287,7 @@
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
+        const TEMP_ITEM_TRIGGER_CODE = '1001';
 
         // STATE
         let allItemData = [];
@@ -261,12 +299,9 @@
             const keyboard = document.getElementById('numericKeyboard');
             
             if (inputElement) {
-                // Show keyboard and link it to the focused input
                 activeInput = inputElement;
                 keyboard.style.display = 'grid';
             } else {
-                // This runs after a small delay (onblur), allowing button clicks to register
-                // Only hide if the input is no longer active
                 if (!keyboard.contains(document.activeElement)) {
                     activeInput = null;
                     keyboard.style.display = 'none';
@@ -280,7 +315,6 @@
             const currentVal = activeInput.value;
             let newVal = currentVal;
             
-            // Prevent focusing on the keyboard, keep focus on the input field
             activeInput.focus(); 
 
             switch (value) {
@@ -297,25 +331,20 @@
                     } else if (activeInput.id === 'totalInput') {
                         if (!document.getElementById('addButton').disabled) {
                             addItemToCart();
-                            // Move to search input after successful add
                             document.getElementById('searchInput').focus(); 
                         }
                     }
-                    return; // Stop here, we don't update the value for enter
+                    return; 
                 case '.':
-                    // Only allow one decimal point
                     if (currentVal.includes('.')) return;
                     newVal = currentVal + value;
                     break;
                 default:
-                    // Only allow numeric input
                     newVal = currentVal + value;
                     break;
             }
 
             activeInput.value = newVal;
-
-            // Trigger the native input event to ensure any calculations/validations (if added later) run
             activeInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
         // --- END VIRTUAL KEYPAD LOGIC ---
@@ -330,9 +359,10 @@
             localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
         }
 
-        // --- INITIAL LOAD (Updated to call setupEventListeners) ---
+        // --- INITIAL LOAD ---
         async function loadItemData() {
             try {
+                // Ensure items.json is present in the same directory for this line to work
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
                 
@@ -346,26 +376,41 @@
             setupEventListeners();
         }
         
-        // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
+        // --- SEARCH AND SELECTION LOGIC (MODIFIED for 1001) ---
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
             const messageEl = document.getElementById('message');
-            const searchText = searchInput.value.trim().toLowerCase();
+            const tempTab = document.getElementById('tempItemTab');
+            const searchText = searchInput.value.trim();
 
+            // Reset state
             selectedItem = null;
             document.getElementById('resultDisplay').style.display = 'none';
             document.getElementById('addButton').disabled = true;
-
             listDiv.style.display = 'none';
             listDiv.innerHTML = "";
+            tempTab.style.display = 'none'; // Hide temp tab by default
 
-            if (searchText.length < 3) {
+            if (searchText === TEMP_ITEM_TRIGGER_CODE) {
+                // *** New Logic: Show temporary item input tab ***
+                tempTab.style.display = 'block';
+                document.getElementById('tempItemCodeInput').value = TEMP_ITEM_TRIGGER_CODE;
+                document.getElementById('tempItemNameInput').value = '';
+                document.getElementById('tempItemNameInput').focus();
+                messageEl.textContent = `Type Item Name and Code to add temporary item.`;
+                return;
+            }
+
+            // Continue with normal search logic
+            const lowerSearchText = searchText.toLowerCase();
+            
+            if (lowerSearchText.length < 3) {
                 messageEl.textContent = 'Type at least 3 characters.';
                 return;
             }
 
-            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+            const searchParts = lowerSearchText.split(/\s+/).filter(p => p.length > 0);
             const results = [];
 
             for (const data of allItemData) {
@@ -410,8 +455,61 @@
                 document.getElementById('qtyInput').focus(); 
             }
         }
+
+        // --- NEW FUNCTION: SAVE TEMPORARY ITEM ---
+        function saveTemporaryItem() {
+            const codeInput = document.getElementById('tempItemCodeInput');
+            const nameInput = document.getElementById('tempItemNameInput');
+            const searchInput = document.getElementById('searchInput');
+            const tempTab = document.getElementById('tempItemTab');
+            const messageEl = document.getElementById('message');
+            
+            const code = codeInput.value.trim();
+            const name = nameInput.value.trim();
+
+            if (!code || !name) {
+                alert('Please enter both a Code and an Item Name for the temporary item.');
+                return;
+            }
+
+            const numCode = parseInt(code);
+
+            if (isNaN(numCode) || numCode < 1) {
+                alert('Please enter a valid numeric Code.');
+                return;
+            }
+
+            // Check if the code or name already exists in the master list
+            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) {
+                alert(`An item with Code ${code} or Name "${name}" already exists in the list. Please choose a different code/name or use the existing item.`);
+                return;
+            }
+
+            // Create unique temporary row identifier
+            const tempRow = `TEMP_${Date.now()}`;
+            
+            const newTempItem = {
+                row: tempRow,
+                code: numCode,
+                item: name,
+                rate: 0 // Placeholder rate
+            };
+
+            // Add the temporary item to the in-memory data array
+            allItemData.push(newTempItem);
+            
+            // Auto-select the newly added item and prepare for checkout
+            selectedItem = newTempItem;
+            searchInput.value = `${newTempItem.code} ${newTempItem.item}`;
+            
+            // Hide the tab
+            tempTab.style.display = 'none';
+
+            showSelectedItem(); // Display the item and enable the Add button
+            messageEl.textContent = `Temporary item "${name}" (Code: ${code}) successfully added and selected. Enter Qty/Total.`;
+        }
         
-        // --- Keyboard Event Setup (Simplified by using onfocus/onblur for QTY/TOTAL) ---
+        // --- Keyboard Event Setup (Unchanged) ---
         function setupEventListeners() {
             const searchInput = document.getElementById('searchInput');
             const qtyInput = document.getElementById('qtyInput');
@@ -424,6 +522,12 @@
                     e.preventDefault();
                     const searchText = searchInput.value.trim();
                     
+                    if (searchText === TEMP_ITEM_TRIGGER_CODE && document.getElementById('tempItemTab').style.display === 'block') {
+                        // If 1001 is typed and tab is open, focus on name input
+                        document.getElementById('tempItemNameInput').focus();
+                        return;
+                    }
+
                     const exactMatch = allItemData.find(item => String(item.code) === searchText);
 
                     if (exactMatch) {
@@ -456,7 +560,6 @@
                 }
             });
             
-            // Add handler for physical backspace key (to hide keyboard if backspace pressed on empty field)
             qtyInput.addEventListener('focus', () => toggleNumericKeyboard(qtyInput));
             totalInput.addEventListener('focus', () => toggleNumericKeyboard(totalInput));
         }
@@ -532,8 +635,9 @@
                 total: numTotal,
                 item: selectedItem.item
             };
-
-            localCart[selectedItem.row] = cartItem;
+            
+            // Overwrite existing item if the row ID matches, effectively editing the cart item
+            localCart[selectedItem.row] = cartItem; 
             saveLocalCart(localCart);
 
             document.getElementById('qtyInput').value = "";
@@ -546,6 +650,8 @@
             renderCart();
             document.getElementById('message').textContent =
                 `Item added to local storage. (${cartItem.item})`;
+            
+            document.getElementById('searchInput').focus(); // Move focus back to search
         }
 
         // --- VIEW BILL (ON SCREEN) (Unchanged) ---
@@ -580,6 +686,7 @@
             
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
+                // Fallback for temporary items which might not have a code in the original JSON
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
 
                 const qty = item.qty;
