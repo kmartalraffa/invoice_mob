@@ -402,7 +402,7 @@
     }
 
     // -------------------------------------------------------------------
-    // ✅ NEW FUNCTION: VIEW BILL (ON SCREEN) (Confirmed working)
+    // ✅ NEW FUNCTION: VIEW BILL (ON SCREEN) (Unchanged, confirmed working)
     // -------------------------------------------------------------------
     function viewLocalCartHTML() {
         const localCart = loadLocalCart();
@@ -554,25 +554,9 @@
             } 
         ); 
 
-        // 5. DEFINE AND APPLY ROBUST STYLE, ROW HEIGHT, AND COLUMN WIDTHS
-        
-        // 5.1 FORCE COLUMN WIDTHS (ITEM NAME (B) is set to 40 for ample space)
-        if (!ws['!cols']) ws['!cols'] = [];
-        
-        ws['!cols'] = [
-            { wch: 10 }, // A: CODE
-            { wch: 40 }, // 🎯 B: ITEM NAME (Increased width for long names)
-            { wch: 10 }, // C: QTY
-            { wch: 12 }, // D: Rate
-            { wch: 12 }, // E: RATE.inc
-            { wch: 15 }, // F: TOTAL
-            { wch: 18 }  // G: ItemBarCode
-        ];
-
-
-        // 5.2 APPLY ROBUST STYLE & ROW HEIGHT
+        // 5. DEFINE AND APPLY ROBUST STYLE FOR NEW DATA ROWS
         const startRow = 2; 
-        const lastDataRow = 1 + items.length; 
+        const lastDataRow = 1 + items.length; // The last row number of the inserted data
 
         // Define a base style object (16pt font)
         const baseCellStyle = {
@@ -580,6 +564,7 @@
             alignment: { vertical: "center" }
         };
         
+        // Ensure row objects exist for height setting
         if (!ws['!rows']) ws['!rows'] = [];
 
 
@@ -595,6 +580,7 @@
                 const cell = ws[cellAddress];
 
                 if (cell) {
+                    // Create a style object based on the base style
                     let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
                     
                     // Apply specific number formats and horizontal alignment based on column
@@ -641,7 +627,7 @@
         `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
         XLSX.writeFile(wb, filename);
-        document.getElementById('message').textContent = `Downloaded: ${filename}. Please check final styling.`;
+        document.getElementById('message').textContent = `Downloaded: ${filename}. Please check if the final styling has applied.`;
     }
   </script>
 </body>
