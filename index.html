@@ -344,7 +344,7 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-   function downloadLocalCartXLSX() {
+  function downloadLocalCartXLSX() {
   const XLSX = window.XLSX; // must be xlsx-style
 
   if (!XLSX) {
@@ -372,58 +372,60 @@
   XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
   XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: "A4" });
 
-  // Merge A1–G1, A2–G2, A3–G3, A4–G4
-ws["!merges"] = [
-  { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-  { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-  { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-  { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
-];
-
-// ✅ ADD THIS BLOCK
-ws["!rows"] = [
-  { hpt: 32 },
-  { hpt: 24 },
-  { hpt: 24 },
-  { hpt: 26 }
-];
-
+  // -----------------------------
+  // MERGE HEADER CELLS
+  // -----------------------------
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
+  ];
 
   // -----------------------------
-  // HEADER STYLES (xlsx-style ONLY)
+  // ✅ ROW HEIGHTS (IMPORTANT)
+  // -----------------------------
+  ws["!rows"] = [
+    { hpt: 32 }, // Row 1
+    { hpt: 24 }, // Row 2
+    { hpt: 24 }, // Row 3
+    { hpt: 26 }  // Row 4
+  ];
+
+  // -----------------------------
+  // ✅ HEADER STYLES
   // -----------------------------
   ws["A1"].s = {
     font: { name: "Calibri", sz: 18, bold: true },
-    alignment: { horizontal: "center" }
+    alignment: { horizontal: "center", vertical: "center" }
   };
 
   ws["A2"].s = {
-    font: { name: "Calibri", sz: 12, bold: true },
-    alignment: { horizontal: "center" }
+    font: { name: "Calibri", sz: 14, bold: true },
+    alignment: { horizontal: "center", vertical: "center" }
   };
 
   ws["A3"].s = {
     font: { name: "Calibri", sz: 14, bold: true },
-    alignment: { horizontal: "center" }
+    alignment: { horizontal: "center", vertical: "center" }
   };
 
   ws["A4"].s = {
-    font: { name: "Calibri", sz: 14, bold: true },
-    alignment: { horizontal: "center" }
+    font: { name: "Calibri", sz: 16, bold: true },
+    alignment: { horizontal: "center", vertical: "center" }
   };
 
   // -----------------------------
-  // COLUMN WIDTHS FOR FIRST 4 ROWS
+  // ✅ COLUMN WIDTHS
   // -----------------------------
   ws["!cols"] = [
-    { wch: 30 }, // Row 1 width
-    { wch: 15 }, // Row 2 width
-    { wch: 15 }, // Row 3 width
-    { wch: 20 }, // Row 4 width
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 15 },
-    { wch: 20 }
+    { wch: 12 }, // CODE
+    { wch: 35 }, // ITEM NAME
+    { wch: 8  }, // QTY
+    { wch: 12 }, // Rate
+    { wch: 12 }, // RATE.inc
+    { wch: 15 }, // TOTAL
+    { wch: 18 }  // ItemBarCode
   ];
 
   // -----------------------------
@@ -434,6 +436,16 @@ ws["!rows"] = [
     [["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]],
     { origin: "A6" }
   );
+
+  // Style table header
+  const headerCells = ["A6","B6","C6","D6","E6","F6","G6"];
+  headerCells.forEach(cell => {
+    ws[cell].s = {
+      font: { bold: true, sz: 12 },
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "FFF2F2F2" } }
+    };
+  });
 
   // -----------------------------
   // DATA ROWS
@@ -466,6 +478,7 @@ ws["!rows"] = [
   // GRAND TOTAL
   // -----------------------------
   const lastRow = 7 + items.length;
+
   XLSX.utils.sheet_add_aoa(
     ws,
     [
@@ -486,6 +499,16 @@ ws["!rows"] = [
     e: { r: lastRow, c: 4 }
   });
 
+  ws[`A${lastRow + 1}`].s = {
+    font: { bold: true, sz: 16 },
+    alignment: { horizontal: "center", vertical: "center" }
+  };
+
+  ws[`F${lastRow + 1}`].s = {
+    font: { bold: true, sz: 16 },
+    alignment: { horizontal: "center", vertical: "center" }
+  };
+
   // -----------------------------
   // SAVE FILE
   // -----------------------------
@@ -497,6 +520,7 @@ ws["!rows"] = [
 
   XLSX.writeFile(wb, filename);
 }
+
 
 
   </script>
