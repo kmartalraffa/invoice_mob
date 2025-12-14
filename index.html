@@ -344,128 +344,93 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-    // --- DOWNLOAD XLSX LOGIC ---
     function downloadLocalCartXLSX() {
-      if (typeof XLSX === 'undefined') {
-        console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
-        document.getElementById('message').textContent =
-          'ERROR: XLSX library failed to load.';
-        alert("Error: XLSX download failed. Library not found.");
-        return;
-      }
+  if (typeof XLSX === 'undefined') {
+    console.error("FATAL ERROR: XLSX library not loaded.");
+    document.getElementById('message').textContent = 'ERROR: XLSX library failed to load.';
+    alert("Error: XLSX download failed. Library not found.");
+    return;
+  }
 
-      const localCart = loadLocalCart();
-      const items = Object.values(localCart);
+  const localCart = loadLocalCart();
+  const items = Object.values(localCart);
 
-      if (items.length === 0) {
-        alert('Cart is empty. Nothing to download.');
-        return;
-      }
+  if (items.length === 0) {
+    alert('Cart is empty. Nothing to download.');
+    return;
+  }
 
-      const now = new Date();
-      const formattedDate = now.toLocaleDateString('en-GB');
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString('en-GB');
 
-      // Create a new sheet with an empty base
-      const ws = XLSX.utils.json_to_sheet([]);
+  const ws = XLSX.utils.json_to_sheet([]);
 
-      // Header rows
-      XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
-      XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)']], { origin: "A2" });
-      XLSX.utils.sheet_add_aoa(ws, [[formattedDate]], { origin: "A3" });
-      XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
-      XLSX.utils.sheet_add_aoa(ws, [['']], { origin: "A5" });
+  // Header rows
+  XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
+  XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)', '', '', '', '', 'Date:', formattedDate]], { origin: "A2" });
+  XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
 
-      // Column headers
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']],
-        { origin: "A6" }
-      );
+  // Merge header cells
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }  // A4:G4
+  ];
 
-      const data_for_sheet = [];
-      let totalSumFormulaRange = "";
+  // Column headers
+  XLSX.utils.sheet_add_aoa(ws, [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']], { origin: "A6" });
 
-      items.forEach((item, index) => {
-        const itemDetails = allItemData.find(d => d.row === item.row);
-        const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+  const data_for_sheet = [];
+  items.forEach((item, index) => {
+    const itemDetails = allItemData.find(d => d.row === item.row);
+    const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+    const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
 
-        // ItemBarcode format: 9900 + itemCode + 000000
-        let itemBarcode = "";
-        if (itemCode) {
-          itemBarcode = `9900${itemCode}000000`;
-        }
+    const qty = item.qty;
+    const total = item.total;
 
-        const qty = item.qty;
-        const total = item.total;
+    let rateInc = qty > 0 ? total / qty : 0;
+    let rateExcl = rateInc / 1.05;
 
-        let rateInc = 0;
-        let rateExcl = 0;
+    data_for_sheet.push([
+      itemCode,
+      item.item,
+      qty,
+      { v: parseFloat(rateExcl.toFixed(3)), t: 'n', z: '0.000' },
+      { v: parseFloat(rateInc.toFixed(3)), t: 'n', z: '0.000' },
+      { v: total, t: 'n', z: '#,##0.00' },
+      itemBarcode
+    ]);
+  });
 
-        if (qty > 0) {
-          rateInc = total / qty;
-          rateExcl = rateInc / 1.05; // Assuming 5% VAT or similar
-        }
+  XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A7" });
 
-        const finalRateExcl = parseFloat(rateExcl.toFixed(3));
-        const finalRateInc = parseFloat(rateInc.toFixed(3));
+  const grandTotalRow = 7 + items.length;
+  XLSX.utils.sheet_add_aoa(ws, [
+    ['GRAND TOTAL:', null, null, null, null, { t: 'n', f: `SUM(F8:F${grandTotalRow})`, z: '#,##0.00' }]
+  ], { origin: `A${grandTotalRow + 1}` });
 
-        data_for_sheet.push([
-          itemCode,           // CODE
-          item.item,          // ITEM NAME
-          qty,                // QTY
-          finalRateExcl,      // Rate (excl)
-          finalRateInc,       // RATE.inc
-          total,              // TOTAL
-          itemBarcode         // ItemBarCode
-        ]);
+  ws['!merges'].push({ s: { r: grandTotalRow, c: 0 }, e: { r: grandTotalRow, c: 4 } });
 
-        // Track TOTAL cell range for SUM formula (column F = index 5)
-        const totalCellRef = XLSX.utils.encode_cell({ c: 5, r: 7 + index }); // Row 8 onwards
-        if (!totalSumFormulaRange) {
-          totalSumFormulaRange = `${totalCellRef}:${totalCellRef}`;
-        } else {
-          // Extend the range downwards
-          totalSumFormulaRange = `F8:${totalCellRef}`;
-        }
-      });
+  // Column widths
+  ws['!cols'] = [
+    { wch: 10 }, // CODE
+    { wch: 30 }, // ITEM NAME
+    { wch: 8 },  // QTY
+    { wch: 12 }, // Rate
+    { wch: 12 }, // RATE.inc
+    { wch: 15 }, // TOTAL
+    { wch: 20 }  // ItemBarCode
+  ];
 
-      // Add data rows starting at A8
-      XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
 
-      // GRAND TOTAL row (after all items)
-      const grandTotalRow = 7 + items.length; // 0-based index
-      const footer_data = [
-        [
-          'GRAND TOTAL:',
-          null,
-          null,
-          null,
-          null,
-          { t: 'n', f: `SUM(${totalSumFormulaRange})` }
-        ]
-      ];
+  const filename = `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+  XLSX.writeFile(wb, filename);
 
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        footer_data,
-        { origin: XLSX.utils.encode_cell({ c: 0, r: grandTotalRow }) }
-      );
+  document.getElementById('message').textContent = `${items.length} items downloaded as ${filename}.`;
+}
 
-      // Create workbook and save file
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
-
-      const filename =
-        `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}` +
-        `${now.getDate().toString().padStart(2, '0')}_` +
-        `${now.getHours().toString().padStart(2, '0')}` +
-        `${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
-
-      XLSX.writeFile(wb, filename);
-
-      document.getElementById('message').textContent =
-        `${items.length} items downloaded as ${filename}.`;
-    }
   </script>
 </body>
 </html>
