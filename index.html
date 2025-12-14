@@ -1,4 +1,182 @@
-<script>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    /* CSS remains the same */
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    button:hover:enabled {
+      opacity: 0.9;
+    }
+    button:disabled {
+      background-color: #cccccc !important;
+      cursor: not-allowed;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    h2 {
+      text-align: center;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    h3 {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+    .result-box {
+      background-color: #e0f7fa;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .cart-box {
+      background-color: #fff3e0;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .search-area {
+      position: relative;
+    }
+    .autocomplete-list {
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      background: white;
+      z-index: 10;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+    .label-style {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    /* Buttons */
+    #addButton {
+      background-color: #4CAF50;
+    }
+    #downloadXLSXButton {
+      background-color: #007bff;
+      margin-bottom: 15px;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #ccc;
+      font-size: 14px;
+    }
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+
+<body onload="loadItemData()">
+  <div class="container">
+    <h1>Shop Invoice</h1>
+    <h2>kmart alraffa</h2>
+    <hr>
+
+    <div class="search-area">
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Type to search and click an item"
+        onkeyup="handleSearchInput()"
+        autocomplete="off">
+      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
+    </div>
+
+    <hr>
+
+    <h3>Selection</h3>
+    <div id="resultDisplay" class="result-box" style="display: none;"></div>
+
+    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
+    <input
+      type="number"
+      id="qtyInput"
+      placeholder="Quantity"
+      inputmode="decimal">
+
+    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
+    <input
+      type="number"
+      id="totalInput"
+      placeholder="Total Amount"
+      inputmode="decimal">
+
+    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
+
+    <hr>
+
+    <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
+    <div id="localCartDisplay" class="cart-box"></div>
+
+    <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
+      Download Cart as XLSX (Template based)
+    </button>
+
+    <p id="message">Loading data ...</p>
+  </div>
+
+  <script>
     // CONFIG
     const CART_STORAGE_KEY = 'kmartLocalCart';
     const TEMPLATE_FILE = './template.xlsx'; // Path to your template file
@@ -7,7 +185,7 @@
     let allItemData = [];
     let selectedItem = null;
 
-    // --- LOCAL STORAGE UTILITIES (Unchanged) ---
+    // --- LOCAL STORAGE UTILITIES ---
     function loadLocalCart() {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
       return storedCart ? JSON.parse(storedCart) : {};
@@ -17,12 +195,13 @@
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
     }
 
-    // --- INITIAL LOAD (Unchanged) ---
+    // --- INITIAL LOAD ---
     async function loadItemData() {
       try {
         const itemResponse = await fetch('./items.json');
         allItemData = await itemResponse.json();
 
+        // Check if template exists
         const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
         if (!checkTemplate.ok) {
             document.getElementById('message').textContent = 'Error: template.xlsx not found!';
@@ -38,7 +217,7 @@
       renderCart();
     }
     
-    // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
+    // --- SEARCH AND SELECTION LOGIC ---
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
@@ -173,7 +352,7 @@
 
 
   // -------------------------------------------------------------------
-  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (MODIFIED)
+  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION
   // -------------------------------------------------------------------
   async function downloadLocalCartXLSX() {
     const XLSX = window.XLSX; 
@@ -236,25 +415,29 @@
     });
 
     // 4. Add new data to the worksheet starting from A2
-    // ✅ FIX: Use skipHeader: true to prevent adding item array header
     XLSX.utils.sheet_add_aoa(
         ws, 
         dataRows, 
         { 
             origin: "A2", 
-            skipHeader: true, // This skips the automatic header creation
-            cellStyles: true 
+            skipHeader: true, // Skips automatic header creation
+            cellStyles: true // Retains styles from template (Row 2 styles the data)
         } 
     ); 
 
     // 5. Update the Grand Total Formula
-    const newLastDataRow = 1 + items.length;
-    const assumedGtRow = newLastDataRow + 1;
+    const newLastDataRow = 1 + items.length; // Row number of the last item 
     
-    // Update the GT formula based on the new last row (F column)
-    const gtAddress = `F${assumedGtRow}`; 
-    if (ws[gtAddress]) {
-        ws[gtAddress].f = `SUM(F2:F${newLastDataRow})`;
+    // We assume the GT row is directly after the last inserted data row,
+    // which in the template structure means Row 3 + (new items added)
+    const shift = items.length - 1; // Number of rows inserted after original Row 2
+    const finalGtRow = 3 + shift; // Original GT row (3) + shift
+
+    const finalGtAddress = `F${finalGtRow}`; 
+    
+    // Update the formula to sum the range from F2 to the last data row (F[newLastDataRow])
+    if (ws[finalGtAddress]) {
+        ws[finalGtAddress].f = `SUM(F2:F${newLastDataRow})`;
     }
     
     // 6. Write/Download the new file
@@ -265,3 +448,5 @@
     document.getElementById('message').textContent = `Downloaded: ${filename}`;
   }
   </script>
+</body>
+</html>
