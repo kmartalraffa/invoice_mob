@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMart POS Invoice Generator</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <title>KMart POS Invoice Generator (Web Only)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -166,8 +165,6 @@
             <button id="viewBillButton" onclick="viewLocalCartHTML()" disabled style="background-color: #ffc107; color: #333;">View Bill (On Screen)</button>
         </div>
         
-        <button id="downloadXLSXButton" onclick="downloadLocalCartXLSX()" disabled style="background-color: #28a745; margin-top: 10px;">Download Cart as XLSX</button>
-
         <div id="billViewArea" style="display: none; margin-top: 30px;">
             <h3>Bill Preview</h3>
             <div id="billContent"></div>
@@ -177,7 +174,7 @@
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
-        const TEMPLATE_FILE = './template.xlsx'; // Path to your template file
+        // Removed: const TEMPLATE_FILE = './template.xlsx';
 
         // STATE
         let allItemData = [];
@@ -199,17 +196,13 @@
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
 
-                const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
-                if (!checkTemplate.ok) {
-                    document.getElementById('message').textContent = 'Error: template.xlsx not found!';
-                    return;
-                }
-                
-                document.getElementById('message').textContent = 'Data loaded. Template ready. Add items to cart.';
+                // Removed: Template check logic
+
+                document.getElementById('message').textContent = 'Data loaded. Add items to cart.';
             } catch (e) {
-                console.error("Error loading JSON files or template:", e);
+                console.error("Error loading JSON file:", e);
                 document.getElementById('message').textContent =
-                    'Error loading item data or template. Check files.';
+                    'Error loading item data. Check items.json file.';
             }
             renderCart();
         }
@@ -284,11 +277,11 @@
             const items = Object.values(localCart);
             const cartDisplay = document.getElementById('localCartDisplay');
             const cartCount = document.getElementById('cartCount');
-            const downloadButton = document.getElementById('downloadXLSXButton');
+            // const downloadButton = document.getElementById('downloadXLSXButton'); // Removed
             const viewBillButton = document.getElementById('viewBillButton');
 
             cartCount.textContent = items.length;
-            downloadButton.disabled = (items.length === 0);
+            // downloadButton.disabled = (items.length === 0); // Removed
             viewBillButton.disabled = (items.length === 0);
 
             if (items.length === 0) {
@@ -445,279 +438,9 @@
         }
 
 
-        // -------------------------------------------------------------------
-        // ✅ FINAL CORRECTED UTILITY FUNCTION (Includes Row & MERGE Fix)
-        // -------------------------------------------------------------------
-        function shiftTemplateRows(ws, itemsCount) {
-            
-            // Row 3 in Excel (0-indexed 2)
-            const START_ROW_TO_SHIFT = 2; 
-            // Row 7 in Excel (0-indexed 6)
-            const END_ROW_TO_SHIFT = 6; 
-            
-            // Shift for Grand Total
-            const grandTotalShiftAmount = itemsCount;
-            // Shift for Footer Details (+1 for the blank row)
-            const footerDetailShiftAmount = itemsCount + 1; 
+        // Removed: shiftTemplateRows function
+        // Removed: downloadLocalCartXLSX function (including all XLSX logic)
 
-            if (itemsCount === 0) return;
-
-            const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-            
-            let originalMerges = ws['!merges'] || [];
-            
-            // Ensure !rows is initialized for metadata manipulation
-            if (!ws['!rows']) ws['!rows'] = [];
-
-            
-            // --- 1. Shift the Footer Details Block (Rows 4-7) ---
-            for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT + 1; r--) {
-                const originalRowExcel = r + 1; 
-                const newRowExcel = r + 1 + footerDetailShiftAmount;
-
-                colsToMove.forEach(col => {
-                    const originalCellAddress = col + originalRowExcel;
-                    const newCellAddress = col + newRowExcel;
-
-                    const originalCell = ws[originalCellAddress];
-                    if (originalCell) {
-                        ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
-                        delete ws[originalCellAddress];
-                    }
-                });
-
-                // --- FIX: Transfer and DELETE old row metadata for cleanliness ---
-                if (ws['!rows'][r]) {
-                    // Transfer the row metadata (e.g., height)
-                    if (!ws['!rows'][r + footerDetailShiftAmount]) ws['!rows'][r + footerDetailShiftAmount] = {};
-                    Object.assign(ws['!rows'][r + footerDetailShiftAmount], ws['!rows'][r]);
-                    // Delete the original metadata entry to prevent 's' error
-                    delete ws['!rows'][r]; 
-                }
-            }
-
-
-            // --- 2. Shift the Grand Total Row (Row 3) ---
-            {
-                const r = START_ROW_TO_SHIFT;
-                const originalRowExcel = r + 1; 
-                const newRowExcel = r + 1 + grandTotalShiftAmount;
-
-                colsToMove.forEach(col => {
-                    const originalCellAddress = col + originalRowExcel;
-                    const newCellAddress = col + newRowExcel;
-
-                    const originalCell = ws[originalCellAddress];
-                    if (originalCell) {
-                        ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
-                        delete ws[originalCellAddress];
-                    }
-                });
-                
-                // --- FIX: Transfer and DELETE old row metadata for cleanliness ---
-                if (ws['!rows'][r]) {
-                    if (!ws['!rows'][r + grandTotalShiftAmount]) ws['!rows'][r + grandTotalShiftAmount] = {};
-                    Object.assign(ws['!rows'][r + grandTotalShiftAmount], ws['!rows'][r]);
-                    delete ws['!rows'][r]; // Delete the original metadata entry
-                }
-            }
-
-
-            // 3. Clear the original footer cell data (Rows 3-7) 
-            for (let r = START_ROW_TO_SHIFT; r <= END_ROW_TO_SHIFT; r++) {
-                const originalRowExcel = r + 1;
-                colsToMove.forEach(col => {
-                    delete ws[col + originalRowExcel];
-                });
-            }
-
-            // 4. Rebuild Merges with shifted rows AND add the new BLANK ROW merge
-            ws['!merges'] = [];
-            
-            // *** ADD MERGE FOR THE BLANK ROW ***
-            const blankRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
-            const blankMergeRange = `A${blankRowIndex + 1}:G${blankRowIndex + 1}`; 
-            
-            // Push the new merge as a DECODED range object (contains 's')
-            ws['!merges'].push(XLSX.utils.decode_range(blankMergeRange));
-
-
-            originalMerges.forEach(mergeRange => {
-                // Ensure the merge object is decoded before manipulation
-                const rangeAddress = typeof mergeRange === 'object' ? XLSX.utils.encode_range(mergeRange) : mergeRange;
-                const range = XLSX.utils.decode_range(rangeAddress);
-                
-                // Apply the correct shift
-                if (range.s.r === START_ROW_TO_SHIFT) { // Grand Total merge (Row 3)
-                    range.s.r += grandTotalShiftAmount;
-                    range.e.r += grandTotalShiftAmount;
-                } else if (range.s.r >= START_ROW_TO_SHIFT + 1 && range.s.r <= END_ROW_TO_SHIFT) { // Footer Detail merges (Rows 4-7)
-                    range.s.r += footerDetailShiftAmount;
-                    range.e.r += footerDetailShiftAmount;
-                }
-                
-                // **CRITICAL FIX: PUSH THE DECODED OBJECT (range), which contains the 's' property**
-                ws['!merges'].push(range); 
-            });
-
-
-            // 5. Update the Grand Total Formula 
-            const grandTotalRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
-            const grandTotalCellAddress = `F${grandTotalRowIndex + 1}`; 
-
-            if (ws[grandTotalCellAddress]) {
-                const lastDataRowExcel = 1 + itemsCount;
-                ws[grandTotalCellAddress].f = `SUM(F2:F${lastDataRowExcel})`;
-                ws[grandTotalCellAddress].t = 'n';
-                ws[grandTotalCellAddress].z = "#,##0.00";
-            }
-
-            // 6. Update the worksheet's dimensions
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            const finalRowIndex = END_ROW_TO_SHIFT + footerDetailShiftAmount;
-            if (finalRowIndex > range.e.r) {
-                range.e.r = finalRowIndex;
-                ws['!ref'] = XLSX.utils.encode_range(range);
-            }
-        }
-
-
-        // -------------------------------------------------------------------
-        // TEMPLATE-BASED DOWNLOAD FUNCTION 
-        // -------------------------------------------------------------------
-        async function downloadLocalCartXLSX() {
-            const XLSX = window.XLSX;
-
-            if (!XLSX) {
-                alert("XLSX library not loaded");
-                return;
-            }
-
-            const localCart = loadLocalCart();
-            const items = Object.values(localCart);
-            if (items.length === 0) {
-                alert("Cart is empty");
-                return;
-            }
-
-            // 1. Fetch the template file
-            let rawData;
-            try {
-                const response = await fetch(TEMPLATE_FILE);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch template: ${response.statusText}`);
-                }
-                rawData = await response.arrayBuffer();
-            } catch (e) {
-                alert("Error loading template.xlsx. Please ensure the file exists and is uploaded as a proper XLSX file.");
-                console.error(e);
-                return;
-            }
-
-            // 2. Read the template Workbook
-            const wb = XLSX.read(rawData, { type: 'array' });
-            const sheetName = wb.SheetNames[0];
-            const ws = wb.Sheets[sheetName];
-
-            // 3. Prepare the new data
-            const dataRows = [];
-
-            items.forEach((item) => {
-                const itemDetails = allItemData.find((d) => d.row === item.row);
-                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-                const paddedCode = itemCode.padStart(4, '0');
-                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
-
-                const qty = item.qty;
-                const total = item.total;
-                const rateInc = qty > 0 ? total / qty : 0;
-                const rateExcl = rateInc / 1.05;
-
-                dataRows.push([
-                    itemCode,
-                    item.item,
-                    qty,
-                    { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
-                    { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
-                    { v: total, t: "n", z: "#,##0.00" },
-                    itemBarcode
-                ]);
-            });
-
-            // 4. Shift the existing footer rows down BEFORE inserting data
-            shiftTemplateRows(ws, items.length);
-
-            // 5. Add new data to the worksheet starting from A2 (Row 2, which is now empty)
-            XLSX.utils.sheet_add_aoa(
-                ws,
-                dataRows,
-                {
-                    origin: "A2",
-                    skipHeader: true,
-                    cellStyles: true 
-                }
-            );
-
-            // 6. Apply robust style to inserted data (ensuring row height and formatting are consistent)
-            const startRow = 2;
-            const lastDataRow = 1 + items.length;
-
-            const baseCellStyle = {
-                font: { sz: 16, name: "Arial" },
-                alignment: { vertical: "center" }
-            };
-
-            if (!ws['!rows']) ws['!rows'] = [];
-
-            for (let r = startRow; r <= lastDataRow; r++) {
-                const rowIdx = r - 1; 
-
-                if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
-                ws['!rows'][rowIdx].hpt = 22; // Set standard row height
-
-                for (let c = 0; c <= 6; c++) {
-                    const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
-                    const cell = ws[cellAddress];
-
-                    if (cell) {
-                        let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
-
-                        // Alignment logic
-                        if (c === 0 || c === 2 || c === 6) { 
-                            currentStyle.alignment.horizontal = "center";
-                        } else if (c === 1) { 
-                            currentStyle.alignment.horizontal = "left";
-                        } else { 
-                            currentStyle.alignment.horizontal = "center";
-                        }
-
-                        // Number formatting logic
-                        if (cell.t === 'n') {
-                            if (c === 3 || c === 4) { 
-                                currentStyle.numFmt = "0.000";
-                            } else if (c === 5) { 
-                                currentStyle.numFmt = "#,##0.00";
-                            } else {
-                                currentStyle.numFmt = cell.z || "General";
-                            }
-                        } else {
-                            delete currentStyle.numFmt;
-                        }
-
-                        cell.s = currentStyle;
-                    }
-                }
-            }
-
-
-            // 7. Write/Download the new file
-            const now = new Date();
-            const filename =
-                `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
-
-            XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = `Downloaded: ${filename}. Please confirm the Excel structure is perfect now.`;
-        }
     </script>
 </body>
 </html>
