@@ -371,6 +371,37 @@
   XLSX.utils.sheet_add_aoa(ws, [["Branch: Burdubai (Al Raffa)"]], { origin: "A2" });
   XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
   XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: "A4" });
+  // -----------------------------
+// HEADER ROWS + STYLES
+// -----------------------------
+XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
+ws["A1"].s = {
+  font: { name: "Calibri", sz: 18, bold: true },
+  alignment: { horizontal: "center", vertical: "center" }
+};
+ws["A1"].t = "s";
+
+XLSX.utils.sheet_add_aoa(ws, [["Branch: Burdubai (Al Raffa)"]], { origin: "A2" });
+ws["A2"].s = {
+  font: { name: "Calibri", sz: 14, bold: true },
+  alignment: { horizontal: "center", vertical: "center" }
+};
+ws["A2"].t = "s";
+
+XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
+ws["A3"].s = {
+  font: { name: "Calibri", sz: 14, bold: true },
+  alignment: { horizontal: "center", vertical: "center" }
+};
+ws["A3"].t = "s";
+
+XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: "A4" });
+ws["A4"].s = {
+  font: { name: "Calibri", sz: 16, bold: true },
+  alignment: { horizontal: "center", vertical: "center" }
+};
+ws["A4"].t = "s";
+
 
   // -----------------------------
   // MERGE HEADER CELLS
