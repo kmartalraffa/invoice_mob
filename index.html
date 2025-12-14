@@ -7,11 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* BASE STYLES & TYPOGRAPHY */
+        /* BASE STYLES & TYPOGRAPHY (Better UI CSS) */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 15px;
-            background-color: #f0f2f5; /* Light gray background */
+            background-color: #f0f2f5;
             color: #333;
         }
         .container {
@@ -20,11 +20,11 @@
             background: white;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         h1 {
             text-align: center;
-            color: #007bff; /* Primary blue color */
+            color: #007bff;
             margin-bottom: 5px;
         }
         h2 {
@@ -41,8 +41,6 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
         }
-
-        /* INPUTS & FIELDS */
         .input-group, .selection-fields {
             margin-bottom: 15px;
         }
@@ -67,8 +65,6 @@
             border-color: #007bff;
             outline: none;
         }
-
-        /* FLEX LAYOUT FOR QTY/TOTAL */
         .selection-fields {
             display: flex;
             gap: 15px;
@@ -77,8 +73,6 @@
             flex: 1;
             min-width: 45%;
         }
-
-        /* BUTTONS */
         button {
             width: 100%;
             padding: 12px;
@@ -99,20 +93,18 @@
             cursor: not-allowed;
         }
         #addButton {
-            background-color: #28a745; /* Green */
+            background-color: #28a745;
         }
         #downloadXLSXButton {
-            background-color: #007bff; /* Blue */
+            background-color: #007bff;
         }
         #viewBillButton {
-            background-color: #ffc107; /* Yellow/Orange */
+            background-color: #ffc107;
             color: #212529;
         }
         #clearCartButton {
-            background-color: #dc3545; /* Red */
+            background-color: #dc3545;
         }
-
-        /* FEEDBACK & CART DISPLAY */
         .result-box {
             background-color: #e0f7fa;
             color: #005662;
@@ -145,8 +137,6 @@
             font-size: 14px;
             color: #6c757d;
         }
-
-        /* Autocomplete List */
         .search-area {
             position: relative;
         }
@@ -171,10 +161,8 @@
             background-color: #f0f8ff;
         }
         .autocomplete-list:empty {
-             /* Hide the box entirely if no results are shown */
             display: none !important;
         }
-
         /* Bill View Styling (Simplified and Modernized) */
         .bill-table {
             width: 100%;
@@ -321,7 +309,7 @@
             renderCart();
         }
         
-        // --- SEARCH AND SELECTION LOGIC ---
+        // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -385,7 +373,7 @@
             }
         }
 
-        // --- LOCAL CART LOGIC ---
+        // --- LOCAL CART LOGIC (Unchanged) ---
         function renderCart() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -471,9 +459,7 @@
                 `Item added to local storage. (${cartItem.item})`;
         }
 
-        // -------------------------------------------------------------------
-        // ✅ FUNCTION: VIEW BILL (ON SCREEN)
-        // -------------------------------------------------------------------
+        // --- VIEW BILL (ON SCREEN) (Unchanged) ---
         function viewLocalCartHTML() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -553,26 +539,21 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ NEW UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS
+        // ✅ CORRECTED UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS
         // -------------------------------------------------------------------
         function shiftTemplateRows(ws, itemsCount) {
             // Define the range of template rows to be moved.
-            // Based on your template, the footer structure starts at Row 3 (0-indexed row 2)
-            // and includes the Grand Total, KMART, Branch, Date, and Invoice Type.
-            // Template Rows 3, 4, 5, 6, 7 (0-indexed rows 2 through 6) need to be shifted.
-            const START_ROW_TO_SHIFT = 2; // Row 3 in Excel
-            const END_ROW_TO_SHIFT = 6; // Row 7 in Excel (adjust based on your template's end)
+            // Based on your template: Footer starts at Row 3 (0-indexed row 2) and ends at Row 7 (0-indexed row 6)
+            const START_ROW_TO_SHIFT = 2; // Row 3 in Excel (GRAND TOTAL)
+            const END_ROW_TO_SHIFT = 6; // Row 7 in Excel (Vegetable and Fruits Invoice)
             
-            // The number of rows to insert/shift down is equal to the number of cart items.
             const shiftAmount = itemsCount; 
-            
             if (shiftAmount === 0) return;
 
             const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
             const originalMerges = ws['!merges'] || [];
-            ws['!merges'] = []; // Clear and rebuild merges
-
-            // 1. Shift the cells and their styles/merges
+            
+            // 1. Shift the cells and their styles/merges from bottom up
             for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT; r--) {
                 const originalRowExcel = r + 1;
                 const newRowExcel = r + 1 + shiftAmount;
@@ -585,9 +566,6 @@
                     const originalCell = ws[originalCellAddress];
                     if (originalCell) {
                         ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
-                        delete ws[originalCellAddress];
-                    } else {
-                        delete ws[newCellAddress];
                     }
                 });
 
@@ -595,14 +573,26 @@
                 if (ws['!rows'] && ws['!rows'][r]) {
                     if (!ws['!rows'][r + shiftAmount]) ws['!rows'][r + shiftAmount] = {};
                     Object.assign(ws['!rows'][r + shiftAmount], ws['!rows'][r]);
+                }
+            }
+
+            // 2. Clear the original footer rows to make way for new data insertion
+            for (let r = START_ROW_TO_SHIFT; r <= END_ROW_TO_SHIFT; r++) {
+                const originalRowExcel = r + 1;
+                colsToMove.forEach(col => {
+                    delete ws[col + originalRowExcel];
+                });
+                if (ws['!rows'] && ws['!rows'][r]) {
                     delete ws['!rows'][r];
                 }
             }
 
-            // 2. Adjust Merges
+
+            // 3. Rebuild Merges with shifted rows
+            ws['!merges'] = [];
             originalMerges.forEach(mergeRange => {
                 const range = XLSX.utils.decode_range(mergeRange);
-                // Only shift merges that started on or after the shift point
+                // Only shift merges that originally started on or after Row 3 (0-indexed row 2)
                 if (range.s.r >= START_ROW_TO_SHIFT) {
                     range.s.r += shiftAmount;
                     range.e.r += shiftAmount;
@@ -611,22 +601,19 @@
             });
 
 
-            // 3. Update the Grand Total Formula 
+            // 4. Update the Grand Total Formula 
             // The Grand Total is now at row (Row 3 + shiftAmount - 1) which is 0-indexed row (2 + shiftAmount)
             const grandTotalRowIndex = START_ROW_TO_SHIFT + shiftAmount; 
             const grandTotalCellAddress = `F${grandTotalRowIndex + 1}`; // F column, 1-indexed Excel row
 
             if (ws[grandTotalCellAddress]) {
-                // The data ends at row 'lastDataRowExcel' (1-indexed Excel row is 1 + itemsCount)
                 const lastDataRowExcel = 1 + itemsCount;
-                // Formula is SUM(F2:F_lastDataRow)
                 ws[grandTotalCellAddress].f = `SUM(F2:F${lastDataRowExcel})`;
-                // Ensure proper formatting remains
                 ws[grandTotalCellAddress].t = 'n';
                 ws[grandTotalCellAddress].z = "#,##0.00";
             }
 
-            // 4. Update the worksheet's dimensions to include the new row
+            // 5. Update the worksheet's dimensions
             const range = XLSX.utils.decode_range(ws['!ref']);
             const finalRowIndex = END_ROW_TO_SHIFT + shiftAmount;
             if (finalRowIndex > range.e.r) {
@@ -675,7 +662,6 @@
 
             // 3. Prepare the new data
             const dataRows = [];
-            const now = new Date();
 
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
@@ -709,12 +695,12 @@
                 {
                     origin: "A2",
                     skipHeader: true,
-                    cellStyles: true // Retains styles from Row 2 of the template
+                    cellStyles: true 
                 }
             );
 
-            // 6. DEFINE AND APPLY ROBUST STYLE for the newly inserted data
-            const startRow = 2; // Excel row 2 is 0-indexed row 1
+            // 6. Apply robust style to inserted data (similar to previous version)
+            const startRow = 2;
             const lastDataRow = 1 + items.length;
 
             const baseCellStyle = {
@@ -724,12 +710,11 @@
 
             if (!ws['!rows']) ws['!rows'] = [];
 
-
             for (let r = startRow; r <= lastDataRow; r++) {
                 const rowIdx = r - 1; 
 
                 if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
-                ws['!rows'][rowIdx].hpt = 22; // Set row height for visibility
+                ws['!rows'][rowIdx].hpt = 22;
 
                 for (let c = 0; c <= 6; c++) {
                     const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
@@ -738,7 +723,6 @@
                     if (cell) {
                         let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
 
-                        // Set horizontal alignment
                         if (c === 0 || c === 2 || c === 6) { 
                             currentStyle.alignment.horizontal = "center";
                         } else if (c === 1) { 
@@ -747,7 +731,6 @@
                             currentStyle.alignment.horizontal = "center";
                         }
 
-                        // Set number formats
                         if (cell.t === 'n') {
                             if (c === 3 || c === 4) { 
                                 currentStyle.numFmt = "0.000";
@@ -767,11 +750,12 @@
 
 
             // 7. Write/Download the new file
+            const now = new Date();
             const filename =
                 `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
             XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = `Downloaded: ${filename}. Check if the Excel structure is correct now.`;
+            document.getElementById('message').textContent = `Downloaded: ${filename}. Please confirm the Excel structure is perfect now.`;
         }
     </script>
 </body>
