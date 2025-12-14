@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMart POS Invoice Generator (Web Only)</title>
+    <title>KMart POS Invoice Generator (Simple Excel)</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -165,6 +166,8 @@
             <button id="viewBillButton" onclick="viewLocalCartHTML()" disabled style="background-color: #ffc107; color: #333;">View Bill (On Screen)</button>
         </div>
         
+        <button id="downloadXLSXButton" onclick="downloadSimpleXLSX()" disabled style="background-color: #28a745; margin-top: 10px;">Download Cart as Simple XLSX</button>
+
         <div id="billViewArea" style="display: none; margin-top: 30px;">
             <h3>Bill Preview</h3>
             <div id="billContent"></div>
@@ -174,7 +177,6 @@
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
-        // Removed: const TEMPLATE_FILE = './template.xlsx';
 
         // STATE
         let allItemData = [];
@@ -195,9 +197,7 @@
             try {
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
-
-                // Removed: Template check logic
-
+                
                 document.getElementById('message').textContent = 'Data loaded. Add items to cart.';
             } catch (e) {
                 console.error("Error loading JSON file:", e);
@@ -207,7 +207,7 @@
             renderCart();
         }
         
-        // --- SEARCH AND SELECTION LOGIC ---
+        // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -271,17 +271,17 @@
             }
         }
 
-        // --- LOCAL CART LOGIC ---
+        // --- LOCAL CART LOGIC (Unchanged) ---
         function renderCart() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
             const cartDisplay = document.getElementById('localCartDisplay');
             const cartCount = document.getElementById('cartCount');
-            // const downloadButton = document.getElementById('downloadXLSXButton'); // Removed
+            const downloadButton = document.getElementById('downloadXLSXButton');
             const viewBillButton = document.getElementById('viewBillButton');
 
             cartCount.textContent = items.length;
-            // downloadButton.disabled = (items.length === 0); // Removed
+            downloadButton.disabled = (items.length === 0);
             viewBillButton.disabled = (items.length === 0);
 
             if (items.length === 0) {
@@ -314,7 +314,6 @@
                 document.getElementById('billViewArea').style.display = 'none';
             }
         }
-
 
         function addItemToCart() {
             if (!selectedItem) {
@@ -357,7 +356,7 @@
                 `Item added to local storage. (${cartItem.item})`;
         }
 
-        // --- VIEW BILL (ON SCREEN) ---
+        // --- VIEW BILL (ON SCREEN) (Unchanged) ---
         function viewLocalCartHTML() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -438,9 +437,127 @@
         }
 
 
-        // Removed: shiftTemplateRows function
-        // Removed: downloadLocalCartXLSX function (including all XLSX logic)
+        // -------------------------------------------------------------------
+        // ✅ NEW: Simple Self Excel Creation Function (Array-Based)
+        // -------------------------------------------------------------------
+        function downloadSimpleXLSX() {
+            const XLSX = window.XLSX;
+            if (!XLSX) {
+                alert("XLSX library is not loaded.");
+                return;
+            }
 
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            if (items.length === 0) {
+                alert("Cart is empty");
+                return;
+            }
+
+            let grandTotal = 0;
+            const now = new Date();
+            
+            // 1. Define the entire data structure as an Array of Arrays (AoA)
+            const exportData = [];
+            
+            // --- 1st Row: Headings ---
+            exportData.push([
+                "CODE",
+                "ITEM NAME",
+                "QTY",
+                "Rate",
+                "RATE.inc",
+                "TOTAL",
+                "ItemBarCode"
+            ]);
+
+            // --- 2nd Row to N: Item Data ---
+            items.forEach((item) => {
+                const itemDetails = allItemData.find((d) => d.row === item.row);
+                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+                const paddedCode = itemCode.padStart(4, '0');
+                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
+
+                const qty = item.qty;
+                const total = item.total;
+                const rateInc = qty > 0 ? total / qty : 0;
+                const rateExcl = rateInc / 1.05;
+
+                grandTotal += total;
+
+                exportData.push([
+                    itemCode,
+                    item.item,
+                    qty,
+                    Number(rateExcl.toFixed(3)),
+                    Number(rateInc.toFixed(3)),
+                    total,
+                    itemBarcode
+                ]);
+            });
+
+            // Calculate the last item row index (for Grand Total formula)
+            const lastDataRowExcel = exportData.length; // Excel rows start at 1
+
+            // --- (N+1) Row: Grand Total ---
+            // We use a blank cell for F (Total) and then add the formula post-AoA conversion
+            exportData.push([
+                "GRAND TOTAL:",
+                "",
+                "",
+                "",
+                "",
+                "", // This will hold the formula
+                ""
+            ]);
+            
+            // --- (N+2) Row: Blank Row ---
+            exportData.push(["", "", "", "", "", "", ""]);
+
+            // --- (N+3) to (N+6) Rows: Footer Details ---
+            exportData.push([
+                "KMART SUPERMARKET LLC",
+                "Branch: Burdubai (Al Raffa)",
+                `Date: ${now.toLocaleDateString("en-GB")}`,
+                "Vegetable and Fruits Invoice",
+                "", "", "" // Padding to make it a 7-column array
+            ]);
+
+
+            // 2. Convert AoA to Worksheet
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // 3. Add the Grand Total Formula to the correct cell (F column)
+            const grandTotalRowIndex = lastDataRowExcel; // 0-indexed
+            const grandTotalCellAddress = XLSX.utils.encode_cell({ r: grandTotalRowIndex, c: 5 }); // F column (index 5)
+
+            // F2:F[lastDataRowExcel] is the range of item totals
+            const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
+            
+            // Find the cell created by aoa_to_sheet and update it
+            if (ws[grandTotalCellAddress]) {
+                ws[grandTotalCellAddress].f = totalFormula;
+                ws[grandTotalCellAddress].t = 'n'; // Ensure type is number for formula
+                ws[grandTotalCellAddress].v = grandTotal; // Set current value as fallback
+                ws[grandTotalCellAddress].z = "#,##0.00"; // Format the cell
+            } else {
+                // If it wasn't created (e.g., if array had sparse data), create it
+                XLSX.utils.sheet_add_aoa(ws, [
+                    [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
+                ], { origin: grandTotalCellAddress });
+            }
+
+
+            // 4. Create Workbook and Download
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+
+            const filename =
+                `INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            document.getElementById('message').textContent = `Downloaded: ${filename}. Simple XLSX file created successfully.`;
+        }
     </script>
 </body>
 </html>
