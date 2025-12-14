@@ -2,486 +2,469 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>KMART AL RAFFA - Invoice</title>
+  <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- XLSX library for Excel export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
-    body { font-family: Arial, sans-serif; padding:20px; background:#f4f4f4; }
-    .container { max-width:420px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 0 8px rgba(0,0,0,0.1); }
-    h1,h2 { text-align:center; margin:5px 0; }
-    input, button { width:100%; padding:10px; margin-bottom:10px; font-size:16px; box-sizing:border-box; }
-    input { border: 1px solid #ccc; border-radius:4px; }
-    button { border:none; border-radius:4px; color:#fff; cursor:pointer; }
-    button:disabled { background:#ccc; cursor:not-allowed; }
-    #addButton { background:#28a745; }
-    #downloadXLSXButton {background:#007bff; }
-
-    .autocomplete-list { position:relative; }
-    .autocomplete-box {
-      position:absolute; top:100%; left:0; right:0;
-      background:#fff; border:1px solid #ccc;
-      max-height:200px; overflow-y:auto; z-index:10; display:none;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
     }
-    .autocomplete-item { padding:8px 10px; border-bottom:1px solid #eee; cursor:pointer; }
-    .autocomplete-item:hover { background:#f0f0f0; }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    button:hover:enabled {
+      opacity: 0.9;
+    }
+    button:disabled {
+      background-color: #cccccc !important;
+      cursor: not-allowed;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    h2 {
+      text-align: center;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+    h3 {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+    .result-box {
+      background-color: #e0f7fa;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .cart-box {
+      background-color: #fff3e0;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .search-area {
+      position: relative;
+    }
+    .autocomplete-list {
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      background: white;
+      z-index: 10;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .autocomplete-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+    .label-style {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
 
-    #selectedBox { background:#e0f7fa; padding:8px 10px; border-radius:4px; margin-bottom:10px; display:none; }
+    /* Buttons */
+    #addButton {
+      background-color: #4CAF50;
+    }
+    #downloadXLSXButton {
+      background-color: #007bff;
+      margin-bottom: 15px;
+    }
 
-    #cartBox { background:#fff3e0; padding:8px 10px; border-radius:4px; min-height:40px; }
-    .cart-item { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #ccc; font-size:14px; }
-    .cart-item:last-child { border-bottom:none; }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #ccc;
+      font-size: 14px;
+    }
+    .cart-item:last-child {
+      border-bottom: none;
+    }
   </style>
 </head>
-<body>
+
+<body onload="loadItemData()">
   <div class="container">
-    <h1>KMART SUPERMARKET LLC</h1>
-    <h2>AL RAFFA - VEGETABLE &amp; FRUITS</h2>
+    <h1>Shop Invoice</h1>
+    <h2>kmart alraffa</h2>
     <hr>
 
-    <label>1. ITEM CODE OR NAME</label>
-    <div class="autocomplete-list">
-      <input type="text" id="searchInput" placeholder="Type code or name"
-             onkeyup="handleSearch()" autocomplete="off">
-      <div id="autocompleteBox" class="autocomplete-box"></div>
+    <div class="search-area">
+      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Type to search and click an item"
+        onkeyup="handleSearchInput()"
+        autocomplete="off">
+      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
     </div>
 
-    <div id="selectedBox"></div>
+    <hr>
 
-    <label>2. QTY</label>
-    <input type="number" id="qtyInput" inputmode="decimal" placeholder="Enter quantity">
-    <label>3. TOTAL</label>
-    <input type="number" id="totalInput" inputmode="decimal" placeholder="Enter total amount">
+    <h3>Selection</h3>
+    <div id="resultDisplay" class="result-box" style="display: none;"></div>
 
-    <button id="addButton" onclick="addToCart()" disabled>Add to Cart</button>
+    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
+    <input
+      type="number"
+      id="qtyInput"
+      placeholder="Quantity"
+      inputmode="decimal">
+
+    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
+    <input
+      type="number"
+      id="totalInput"
+      placeholder="Total Amount"
+      inputmode="decimal">
+
+    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
 
     <hr>
-    <h3>Cart (<span id="cartCount">0</span> items)</h3>
-    <div id="cartBox">Cart is empty.</div>
 
-    <button id="downloadXLSXButton" onclick="downloadXLSX()" disabled>Download XLSX</button>
+    <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
+    <div id="localCartDisplay" class="cart-box"></div>
+
+    <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
+      Download Cart as XLSX
+    </button>
+
+    <p id="message">Loading data ...</p>
   </div>
 
   <script>
-    // ====== ITEMS ARRAY (sample – replace with full list) ======
-    const allItemData = [
-      { code: 205, item: "AMLA", row: 2 },
-      { code: 198, item: "ARAVI CHINA", row: 3 },
-      { code: 191, item: "BABY CORN", row: 4 },
-      { code: 185, item: "BANANAGREEN", row: 5 },
-      { code: 119, item: "BEANS", row: 6 },
-      { code: 111, item: "BEETROOT", row: 7 },
-      { code: 129, item: "BIGON BIG", row: 8 },
-      { code: 134, item: "BIGON GR LONG", row: 9 },
-      { code: 133, item: "BIGON GREEN", row: 10 },
-      { "code": 132, "item": "BIGON LONG", "row": 11 },
-      { "code": 128, "item": "BIGON SMALL", "row": 12 },
-      { "code": 130, "item": "BIGON STAR", "row": 13 },
-      { "code": 131, "item": "BIGON SUPER", "row": 14 },
-      { "code": 118, "item": "BINDI", "row": 15 },
-      { "code": 188, "item": "BROCOLI", "row": 16 },
-      { "code": 122, "item": "CABAGE", "row": 17 },
-      { "code": 325, "item": "CAPSICUM MIX", "row": 18 },
-      { "code": 124, "item": "CAPSICUM GRE", "row": 19 },
-      { "code": 125, "item": "CAPSICUM RED", "row": 20 },
-      { "code": 126, "item": "CAPSICUM YELO", "row": 21 },
-      { "code": 194, "item": "CARROT CHINA", "row": 22 },
-      { "code": 196, "item": "CARROT INDIA", "row": 23 },
-      { "code": 195, "item": "CARROT PAK", "row": 24 },
-      { "code": 309, "item": "CELERY LEAVES", "row": 25 },
-      { "code": 175, "item": "CHENA", "row": 26 },
-      { "code": 152, "item": "CHILLY INDIA", "row": 27 },
-      { "code": 151, "item": "CHILLY LOCAL", "row": 28 },
-      { "code": 355, "item": "CHINES CABAGE", "row": 29 },
-      { "code": 165, "item": "COCONUT WHOLE", "row": 30 },
-      { "code": 142, "item": "CUCUMBER", "row": 31 },
-      { "code": 184, "item": "CURRY LEAF", "row": 32 },
-      { "code": 193, "item": "DRUMSTICK", "row": 33 },
-      { "code": 144, "item": "FLOWER", "row": 34 },
-      { "code": 192, "item": "FRESH CORN", "row": 35 },
-      { "code": 319, "item": "FRESH TAMRINT", "row": 36 },
-      { "code": 155, "item": "GARLIC CHINA", "row": 37 },
-      { "code": 322, "item": "GARLIC FIELD", "row": 38 },
-      { "code": 158, "item": "GARLIC INDIA", "row": 39 },
-      { "code": 156, "item": "GARLIC PKT", "row": 40 },
-      { "code": 160, "item": "GINGER CHAINA", "row": 41 },
-      { "code": 159, "item": "GINGER IND", "row": 42 },
-      { "code": 150, "item": "GOVAROILLY", "row": 43 },
-      { "code": 335, "item": "GREN CHILY THAI", "row": 44 },
-      { "code": 140, "item": "ICE BERG", "row": 45 },
-      { "code": 360, "item": "K LEAF LULU", "row": 46 },
-      { "code": 135, "item": "KADU LONG", "row": 47 },
-      { "code": 136, "item": "KADU ROUND", "row": 48 },
-      { "code": 176, "item": "KAPPA", "row": 49 },
-      { "code": 116, "item": "KARELA", "row": 50 },
-      { "code": 141, "item": "KASS", "row": 51 },
-      { "code": 202, "item": "KAKROL", "row": 52 },
-      { "code": 190, "item": "KOORKA", "row": 53 },
-      { "code": 138, "item": "KOOSA", "row": 54 },
-      { "code": 173, "item": "KUMBALAM", "row": 55 },
-      { "code": 187, "item": "LEAF ALL ", "row": 56 },
-      { "code": 146, "item": "LEMON BIG", "row": 57 },
-      { "code": 352, "item": "LEMON BIG AFRC", "row": 58 },
-      { "code": 147, "item": "LEMON GRASS", "row": 59 },
-      { "code": 145, "item": "LEMON IND", "row": 60 },
-      { "code": 127, "item": "LONG BEANS", "row": 61 },
-      { "code": 163, "item": "MANGO GREEN", "row": 62 },
-      { "code": 179, "item": "MASHROOM", "row": 63 },
-      { "code": 171, "item": "MATHAN ROUND", "row": 64 },
-      { "code": 169, "item": "MATHAN YELLOW", "row": 65 },
-      { "code": 162, "item": "MOOLY CHAINA", "row": 66 },
-      { "code": 374, "item": "MURINGA LEAF", "row": 67 },
-      { "code": 161, "item": "MUTTER", "row": 68 },
-      { "code": 101, "item": "ONION", "row": 69 },
-      { "code": 168, "item": "PADAVALAM", "row": 70 },
-      { "code": 207, "item": "PAPAYA GREEN", "row": 71 },
-      { "code": 356, "item": "PAPDI", "row": 72 },
-      { "code": 105, "item": "POTATO", "row": 73 },
-      { "code": 109, "item": "POTATO PAK", "row": 74 },
-      { "code": 106, "item": "POTATO SMALL", "row": 75 },
-      { "code": 107, "item": "POTATO SWEET", "row": 76 },
-      { "code": 354, "item": "PUSHEK", "row": 77 },
-      { "code": 336, "item": "RED CHILLY THAI", "row": 78 },
-      { "code": 174, "item": "SHELGUM", "row": 79 },
-      { "code": 103, "item": "SMALL ONION", "row": 80 },
-      { "code": 357, "item": "SPROUT BEANS ", "row": 81 },
-      { "code": 166, "item": "TENDER COCONUT", "row": 82 },
-      { "code": 177, "item": "THURAI IND", "row": 83 },
-      { "code": 149, "item": "TINDLY", "row": 84 },
-      { "code": 112, "item": "TOMATO", "row": 85 },
-      { "code": 115, "item": "TOMATO BABY", "row": 86 },
-      { "code": 114, "item": "TOMATO IND", "row": 87 },
-      { "code": 178, "item": "VELLARI", "row": 88 },
-      { "code": 104, "item": "WHITE ONION", "row": 89 },
-      { "code": 189, "item": "PARVAR", "row": 90 },
-      { "code": 180, "item": "BANANA LEAF", "row": 91 },
-      { "code": 148, "item": "LEMON VIATNAM", "row": 92 },
-      { "code": 206, "item": "LEAF", "row": 93 },
-      { "code": 347, "item": "ONION EGYPT", "row": 94 },
-      { "code": 348, "item": "ANJEER IRAN", "row": 95 },
-      { "code": 10122, "item": "THOOFU", "row": 96 },
-      { "code": 153, "item": "BAJI MULAK", "row": 97 },
-      { "code": 203, "item": "LOTHI", "row": 98 },
-      { "code": 772, "item": "DATES KALASI", "row": 99 },
-      { "code": 200, "item": "KADACHKKA", "row": 100 },
-      { "code": 365, "item": "KONNAPPOO", "row": 101 },
-      { "code": 192, "item": "SWEET CORN", "row": 102 },
-      { "code": 204, "item": "KOCHU", "row": 103 },
-      { "code": 1104, "item": "NEW ITEM 1104", "row": 104 },
-      { "code": 1105, "item": "NEW ITEM 1105", "row": 105 },
-      { "code": 1106, "item": "NEW ITEM 1106", "row": 106 },
-      { "code": 1107, "item": "NEW ITEM 1107", "row": 107 },
-      { "code": 1108, "item": "NEW ITEM 1108", "row": 108 },
-      { "code": 1109, "item": "NEW ITEM 1109", "row": 109 },
-      { "code": 1110, "item": "NEW ITEM 1110", "row": 110 },
-      { "code": 1111, "item": "NEW ITEM 1111", "row": 111 },
-      { "code": 1112, "item": "NEW ITEM 1112", "row": 112 },
-      { "code": 1113, "item": "NEW ITEM 1113", "row": 113 },
-      { "code": 1114, "item": "NEW ITEM 1114", "row": 114 },
-      { "code": 1115, "item": "NEW ITEM 1115", "row": 115 },
-      { "code": 1116, "item": "NEW ITEM 1116", "row": 116 },
-      { "code": 1117, "item": "NEW ITEM 1117", "row": 117 },
-      { "code": 1118, "item": "NEW ITEM 1118", "row": 118 },
-      { "code": 1119, "item": "NEW ITEM 1119", "row": 119 },
-      { "code": 1120, "item": "NEW ITEM 1120", "row": 120 },
-      { "code": 1121, "item": "NEW ITEM 1121", "row": 121 },
-      { "code": 1122, "item": "NEW ITEM 1122", "row": 122 },
-      { "code": 1123, "item": "NEW ITEM 1123", "row": 123 },
-      { "code": 1124, "item": "NEW ITEM 1124", "row": 124 },
-      { "code": 1125, "item": "NEW ITEM 1125", "row": 125 },
-      { "code": 1126, "item": "NEW ITEM 1126", "row": 126 },
-      { "code": 1127, "item": "NEW ITEM 1127", "row": 127 },
-      { "code": 1128, "item": "NEW ITEM 1128", "row": 128 },
-      { "code": 219, "item": "ANAR EGYPT", "row": 129 },
-      { "code": 218, "item": "ANAR IND ", "row": 130 },
-      { "code": 222, "item": "APPLE AFRICA", "row": 131 },
-      { "code": 229, "item": "APPLE BABY", "row": 132 },
-      { "code": 225, "item": "APPLE GREEN", "row": 133 },
-      { "code": 224, "item": "APPLE IRAN", "row": 134 },
-      { "code": 221, "item": "APPLE GALA RED", "row": 135 },
-      { "code": 223, "item": "APPLE USA", "row": 136 },
-      { "code": 321, "item": "APRICOT", "row": 137 },
-      { "code": 277, "item": "AVACADO", "row": 138 },
-      { "code": 212, "item": "BANANA BIG", "row": 139 },
-      { "code": 788, "item": "DRY DATES BLACK", "row": 140 },
-      { "code": 216, "item": "BANANA PHILIPI", "row": 141 },
-      { "code": 213, "item": "BANANAS SML", "row": 142 },
-      { "code": 312, "item": "BLACK BERRY", "row": 143 },
-      { "code": 316, "item": "BLUE BERRY", "row": 144 },
-      { "code": 297, "item": "CRANBERRY", "row": 145 },
-      { "code": 294, "item": "CUSTARD APPLE", "row": 146 },
-      { "code": 298, "item": "DRAGON FRUIT", "row": 147 },
-      { "code": 370, "item": "GRAPE GLOB BOX", "row": 148 },
-      { "code": 231, "item": "GRAPE GR BOX", "row": 149 },
-      { "code": 209, "item": "GRAPE GR IRAN", "row": 150 },
-      { "code": 230, "item": "GRAPE GR LOOSE", "row": 151 },
-      { "code": 233, "item": "GRAPE RED BOX", "row": 152 },
-      { "code": 232, "item": "GRAPE RED LOSE", "row": 153 },
-      { "code": 324, "item": "GRAPE SEED LESS", "row": 154 },
-      { "code": 237, "item": "GRP BLACK BOX", "row": 155 },
-      { "code": 236, "item": "GRP BLACK LOOS", "row": 156 },
-      { "code": 243, "item": "GUAVA BIG", "row": 157 },
-      { "code": 242, "item": "GUAVA SMAL", "row": 158 },
-      { "code": 293, "item": "KAKA FRUIT", "row": 159 },
-      { "code": 353, "item": "KAKA FRUIT TRY", "row": 160 },
-      { "code": 244, "item": "KIWI", "row": 161 },
-      { "code": 253, "item": "MANGO JASMINE", "row": 162 },
-      { "code": 334, "item": "MANGOSTEN", "row": 163 },
-      { "code": 291, "item": "NUTRIN", "row": 164 },
-      { "code": 331, "item": "PINE APPLE BABAY", "row": 165 },
-      { "code": 266, "item": "ORANGE BABY", "row": 166 },
-      { "code": 375, "item": "ORANGE MED", "row": 167 },
-      { "code": 257, "item": "ORANGE NAVEL", "row": 168 },
-      { "code": 259, "item": "ORANGE SANDRA", "row": 169 },
-      { "code": 258, "item": "ORANGE VALAN", "row": 170 },
-      { "code": 288, "item": "PAPAYA YELLOW", "row": 171 },
-      { "code": 290, "item": "PEACH LOOSE", "row": 172 },
-      { "code": 269, "item": "PEAR CHINA", "row": 173 },
-      { "code": 270, "item": "PEARS GREEN", "row": 174 },
-      { "code": 271, "item": "PINEAPPLE IND", "row": 175 },
-      { "code": 272, "item": "PINEAPPLE PHILI", "row": 176 },
-      { "code": 273, "item": "PLUMS RED", "row": 177 },
-      { "code": 281, "item": "RAMBOOTTAN", "row": 178 },
-      { "code": 296, "item": "RASPBERRY", "row": 179 },
-      { "code": 317, "item": "CHERRY APPLE", "row": 180 },
-      { "code": 234, "item": "RED GLOBE LOOSE", "row": 181 },
-      { "code": 306, "item": "ROCK MELON", "row": 182 },
-      { "code": 366, "item": "S SEEDLESS", "row": 183 },
-      { "code": 283, "item": "SHAMAM YELO", "row": 184 },
-      { "code": 235, "item": "SMAL GLOB BOX", "row": 185 },
-      { "code": 286, "item": "STRAWBRY BOX", "row": 186 },
-      { "code": 284, "item": "WATER MELON", "row": 187 },
-      { "code": 251, "item": "MANGO KAIZ", "row": 188 },
-      { "code": 254, "item": "MAGO PAK", "row": 189 },
-      { "code": 250, "item": "MANGO BADAMI", "row": 190 },
-      { "code": 279, "item": "CHERRY", "row": 191 },
-      { "code": 234, "item": "GRAPE RED GLOBE", "row": 192 },
-      { "code": 226, "item": "APPLE GOLDEN", "row": 193 },
-      { "code": 871, "item": "MANGO NEW", "row": 194 },
-      { "code": 772, "item": "DATES IRAQI", "row": 195 },
-      { "code": 220, "item": "APPLE FUJI", "row": 196 },
-      { "code": 359, "item": "LONGAN FRUIT", "row": 197 },
-      { "code": 252, "item": "MANGO Local UAE", "row": 198 },
-      { "code": 280, "item": "CHIKKU", "row": 199 },
-      { "code": 310, "item": "MANGO Neelam", "row": 200 },
-      { "code": 253, "item": "MANGO JASMIN", "row": 201 },
-      { "code": 229, "item": "APPLE ROYAL GALA BABY", "row": 202 },
-      { "code": 256, "item": "MANGO KENIYA", "row": 203 },
-      { "code": 255, "item": "MANGO CHOSA", "row": 204 },
-      { "code": 227, "item": "APPLE NEWZILANAD", "row": 205 },
-      { "code": 307, "item": "FRESH DATES YELOW", "row": 206 },
-      { "code": 308, "item": "FRESH DATES RED", "row": 207 },
-      { "code": 247, "item": "LICHI", "row": 208 },
-      { "code": 186, "item": "MANGO RATTA", "row": 209 },
-      { "code": 1210, "item": "NEW ITEM 1210", "row": 210 },
-      { "code": 1211, "item": "NEW ITEM 1211", "row": 211 },
-      { "code": 1212, "item": "NEW ITEM 1212", "row": 212 },
-      { "code": 1213, "item": "NEW ITEM 1213", "row": 213 },
-      { "code": 1214, "item": "NEW ITEM 1214", "row": 214 }
-    ];
-      // ... ഇവിടെ നിന്നു നീ നിന്റെ മുഴുവൻ 214 items paste cheyyam ...
-    ];
+    // CONFIG
+    const CART_STORAGE_KEY = 'kmartLocalCart';
 
+    // STATE
+    let allItemData = [];
     let selectedItem = null;
-    const cart = {}; // key = row, value = { row, code, item, qty, total }
 
-    // ====== SEARCH + AUTOCOMPLETE ======
-    function handleSearch() {
-      const input = document.getElementById('searchInput');
-      const list = document.getElementById('autocompleteBox');
-      const text = input.value.trim().toLowerCase();
+    // --- LOCAL STORAGE UTILITIES ---
+    function loadLocalCart() {
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      return storedCart ? JSON.parse(storedCart) : {};
+    }
 
-      list.innerHTML = "";
-      list.style.display = 'none';
+    function saveLocalCart(cartData) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+    }
+
+    // --- INITIAL LOAD ---
+    async function loadItemData() {
+      try {
+        const response = await fetch('./items.json');
+        allItemData = await response.json();
+        document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
+      } catch (e) {
+        console.error("Error loading items.json:", e);
+        document.getElementById('message').textContent =
+          'Error loading item data. Check items.json file.';
+      }
+      renderCart();
+    }
+
+    // --- SEARCH AND SELECTION LOGIC ---
+    function handleSearchInput() {
+      const searchInput = document.getElementById('searchInput');
+      const listDiv = document.getElementById('autocompleteList');
+      const messageEl = document.getElementById('message');
+      const searchText = searchInput.value.trim().toLowerCase();
+
+      // Reset selection state
       selectedItem = null;
-      document.getElementById('selectedBox').style.display = 'none';
+      document.getElementById('resultDisplay').style.display = 'none';
       document.getElementById('addButton').disabled = true;
 
-      if (text.length < 2) return;
+      listDiv.style.display = 'none';
+      listDiv.innerHTML = "";
 
-      const parts = text.split(/\s+/).filter(x => x);
+      if (searchText.length < 3) {
+        messageEl.textContent = 'Type at least 3 characters.';
+        return;
+      }
+
+      const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
       const results = [];
 
-      for (const it of allItemData) {
-        const name = (it.item || "").toLowerCase();
-        const code = String(it.code || "");
-        const combined = name + " " + code;
-        const ok = parts.every(p => combined.includes(p));
-        if (ok) {
-          results.push(it);
+      for (const data of allItemData) {
+        const itemName = (data.item || "").toLowerCase();
+        const code = String(data.code || "");
+        const combined = `${itemName} ${code}`;
+
+        const match = searchParts.every(part => combined.includes(part));
+        if (match) {
+          results.push(data);
           if (results.length >= 20) break;
         }
       }
 
-      if (!results.length) return;
+      if (results.length > 0) {
+        results.forEach(suggestion => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+          div.onclick = () => {
+            searchInput.value = `${suggestion.code} ${suggestion.item}`;
+            selectedItem = suggestion;
+            listDiv.style.display = 'none';
+            showSelectedItem();
+          };
+          listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+      }
 
-      results.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'autocomplete-item';
-        div.innerHTML = `<b>${r.code}</b> - ${r.item}`;
-        div.onclick = () => {
-          selectedItem = r;
-          input.value = `${r.code} ${r.item}`;
-          list.style.display = 'none';
-          showSelected();
-        };
-        list.appendChild(div);
-      });
-      list.style.display = 'block';
+      messageEl.textContent = `Found ${results.length} items.`;
     }
 
-    function showSelected() {
-      if (!selectedItem) return;
-      const box = document.getElementById('selectedBox');
-      box.innerHTML = `Selected: <b>${selectedItem.code}</b> - ${selectedItem.item}`;
-      box.style.display = 'block';
-      document.getElementById('addButton').disabled = false;
+    function showSelectedItem() {
+      if (selectedItem) {
+        const display = document.getElementById('resultDisplay');
+        display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+        display.style.display = 'block';
+
+        document.getElementById('addButton').disabled = false;
+        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+      }
     }
 
-    // ====== CART RENDER ======
+    // --- LOCAL CART LOGIC ---
     function renderCart() {
-      const box = document.getElementById('cartBox');
-      const items = Object.values(cart);
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+      const cartDisplay = document.getElementById('localCartDisplay');
+      const cartCount = document.getElementById('cartCount');
+      const downloadButton = document.getElementById('downloadXLSXButton');
 
-      document.getElementById('cartCount').textContent = items.length;
-      document.getElementById('downloadXLSXButton').disabled = items.length === 0;
+      cartCount.textContent = items.length;
+      downloadButton.disabled = (items.length === 0);
 
-      if (!items.length) {
-        box.textContent = 'Cart is empty.';
+      if (items.length === 0) {
+        cartDisplay.innerHTML = 'Cart is empty. Add items above.';
         return;
       }
 
-      box.innerHTML = "";
-      items.forEach(it => {
+      cartDisplay.innerHTML = "";
+      items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'cart-item';
-        div.innerHTML = `<span>${it.item}</span><span>${it.qty} | ${it.total}</span>`;
-        box.appendChild(div);
+        div.innerHTML = `
+          <span>${item.item} (Row: ${item.row})</span>
+          <span>Qty: ${item.qty} | Total: ${item.total}</span>
+        `;
+        cartDisplay.appendChild(div);
       });
     }
 
-    // ====== ADD TO CART ======
-    function addToCart() {
+    function addItemToCart() {
       if (!selectedItem) {
-        alert('Please select an item.');
-        return;
-      }
-      const qty = parseFloat(document.getElementById('qtyInput').value);
-      const total = parseFloat(document.getElementById('totalInput').value);
-      if (!(qty > 0) || !(total > 0)) {
-        alert('Enter valid QTY and TOTAL.');
+        alert('Please select an item first.');
         return;
       }
 
-      cart[selectedItem.row] = {
+      const qtyStr = document.getElementById('qtyInput').value.trim();
+      const totalStr = document.getElementById('totalInput').value.trim();
+
+      const numQty = parseFloat(qtyStr);
+      const numTotal = parseFloat(totalStr);
+
+      if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+        alert('Please enter valid QTY and TOTAL values.');
+        return;
+      }
+
+      const localCart = loadLocalCart();
+
+      const cartItem = {
         row: selectedItem.row,
-        code: selectedItem.code,
-        item: selectedItem.item,
-        qty,
-        total
+        qty: numQty,
+        total: numTotal,
+        item: selectedItem.item
       };
 
+      // Use row as key so each row is unique in the cart
+      localCart[selectedItem.row] = cartItem;
+      saveLocalCart(localCart);
+
+      // Reset inputs and selection
       document.getElementById('qtyInput').value = "";
       document.getElementById('totalInput').value = "";
       document.getElementById('searchInput').value = "";
-      document.getElementById('selectedBox').style.display = 'none';
-      selectedItem = null;
+      document.getElementById('resultDisplay').style.display = 'none';
       document.getElementById('addButton').disabled = true;
+      selectedItem = null;
 
       renderCart();
+      document.getElementById('message').textContent =
+        `Item added to local storage. (${cartItem.item})`;
     }
 
-    // ====== XLSX DOWNLOAD ======
-    function downloadXLSX() {
-      const items = Object.values(cart);
-      if (!items.length) return;
+    // --- DOWNLOAD XLSX LOGIC ---
+    function downloadLocalCartXLSX() {
+      if (typeof XLSX === 'undefined') {
+        console.error("FATAL ERROR: XLSX library not loaded. Check CDN link and internet connection.");
+        document.getElementById('message').textContent =
+          'ERROR: XLSX library failed to load.';
+        alert("Error: XLSX download failed. Library not found.");
+        return;
+      }
+
+      const localCart = loadLocalCart();
+      const items = Object.values(localCart);
+
+      if (items.length === 0) {
+        alert('Cart is empty. Nothing to download.');
+        return;
+      }
 
       const now = new Date();
-      const dd = String(now.getDate()).padStart(2,'0');
-      const mm = String(now.getMonth()+1).padStart(2,'0');
-      const yyyy = now.getFullYear();
-      const dateText = `${dd}/${mm}/${yyyy}`;
-      const fileDate = `${dd}-${mm}-${yyyy}`;
+      const formattedDate = now.toLocaleDateString('en-GB');
 
-      const wb = XLSX.utils.book_new();
-      const ws = {};
+      // Create a new sheet with an empty base
+      const ws = XLSX.utils.json_to_sheet([]);
 
-      ws['!cols'] = [
-        { wch: 10 }, { wch: 30 }, { wch: 10 },
-        { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 10 }
-      ];
+      // Header rows
+      XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
+      XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)']], { origin: "A2" });
+      XLSX.utils.sheet_add_aoa(ws, [[formattedDate]], { origin: "A3" });
+      XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
+      XLSX.utils.sheet_add_aoa(ws, [['']], { origin: "A5" });
 
-      ws['!merges'] = [
-        { s: { r:0, c:0 }, e: { r:0, c:6 } },
-        { s: { r:1, c:0 }, e: { r:1, c:6 } },
-        { s: { r:2, c:0 }, e: { r:2, c:6 } }
-      ];
-
-      const border = {
-        top:{style:"thin"}, bottom:{style:"thin"},
-        left:{style:"thin"}, right:{style:"thin"}
-      };
-      const center = { horizontal:"center", vertical:"center" };
-
-      ws['A1'] = { v:"KMART SUPERMARKET LLC [AL RAFFA]", s:{ font:{sz:18,bold:true}, alignment:center, border:border } };
-      ws['A2'] = { v:"VEGETABLE AND FRUITS INVOICE",    s:{ font:{sz:14,bold:true}, alignment:center, border:border } };
-      ws['A3'] = { v:`DATE: ${dateText}`,                s:{ font:{sz:14,bold:true}, alignment:center, border:border } };
-
-      const headers = ["CODE","ITEM NAME","QTY","RATE INC","TOTAL","ItemBarCode","Rate"];
-      headers.forEach((h,i) => {
-        ws[XLSX.utils.encode_cell({r:3,c:i})] = {
-          v:h,
-          s:{
-            font:{bold:true},
-            alignment:center,
-            border:border,
-            fill:{ fgColor:{rgb:"FFF2F2F2"} }
-          }
-        };
-      });
-
-      let row = 4;
-      let grand = 0;
-
-      items.forEach(it => {
-        const rateInc = it.total / it.qty;
-        const rateEx = rateInc / 1.05;
-        const barcode = `9900${it.code}000000`;
-        const rowData = [
-          it.code,
-          it.item,
-          it.qty,
-          rateInc.toFixed(3),
-          it.total,
-          barcode,
-          rateEx.toFixed(3)
-        ];
-        rowData.forEach((v,i) => {
-          ws[XLSX.utils.encode_cell({r:row,c:i})] = {
-            v,
-            s:{ alignment:center, border:border, font:{sz:12} }
-          };
-        });
-        grand += it.total;
-        row++;
-      });
-
-      ws['!merges'].push(
-        { s:{r:row,   c:0}, e:{r:row,   c:3} },
-        { s:{r:row,   c:4}, e:{r:row,   c:6} }
+      // Column headers
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']],
+        { origin: "A6" }
       );
 
-      ws['A' + (row+1)] = {
-        v:"GRAND TOTAL",
-        s:{ font:{sz:18,bold:true}, alignment:center, border:border }
-      };
+      const data_for_sheet = [];
+      let totalSumFormulaRange = "";
 
-      ws['E' + (row+1)] = {
-        v:grand,
-        s:{ font:{sz:18,bold:true}, alignment:center, border:border }
-      };
+      items.forEach((item, index) => {
+        const itemDetails = allItemData.find(d => d.row === item.row);
+        const itemCode = itemDetails ? String(itemDetails.code || "") : "";
 
+        // ItemBarcode format: 9900 + itemCode + 000000
+        let itemBarcode = "";
+        if (itemCode) {
+          itemBarcode = `9900${itemCode}000000`;
+        }
+
+        const qty = item.qty;
+        const total = item.total;
+
+        let rateInc = 0;
+        let rateExcl = 0;
+
+        if (qty > 0) {
+          rateInc = total / qty;
+          rateExcl = rateInc / 1.05; // Assuming 5% VAT or similar
+        }
+
+        const finalRateExcl = parseFloat(rateExcl.toFixed(3));
+        const finalRateInc = parseFloat(rateInc.toFixed(3));
+
+        data_for_sheet.push([
+          itemCode,           // CODE
+          item.item,          // ITEM NAME
+          qty,                // QTY
+          finalRateExcl,      // Rate (excl)
+          finalRateInc,       // RATE.inc
+          total,              // TOTAL
+          itemBarcode         // ItemBarCode
+        ]);
+
+        // Track TOTAL cell range for SUM formula (column F = index 5)
+        const totalCellRef = XLSX.utils.encode_cell({ c: 5, r: 7 + index }); // Row 8 onwards
+        if (!totalSumFormulaRange) {
+          totalSumFormulaRange = `${totalCellRef}:${totalCellRef}`;
+        } else {
+          // Extend the range downwards
+          totalSumFormulaRange = `F8:${totalCellRef}`;
+        }
+      });
+
+      // Add data rows starting at A8
+      XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A8" });
+
+      // GRAND TOTAL row (after all items)
+      const grandTotalRow = 7 + items.length; // 0-based index
+      const footer_data = [
+        [
+          'GRAND TOTAL:',
+          null,
+          null,
+          null,
+          null,
+          { t: 'n', f: `SUM(${totalSumFormulaRange})` }
+        ]
+      ];
+
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        footer_data,
+        { origin: XLSX.utils.encode_cell({ c: 0, r: grandTotalRow }) }
+      );
+
+      // Create workbook and save file
+      const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
-      XLSX.writeFile(wb, `${fileDate} invoice.xlsx`);
+
+      const filename =
+        `INVOICE_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}` +
+        `${now.getDate().toString().padStart(2, '0')}_` +
+        `${now.getHours().toString().padStart(2, '0')}` +
+        `${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+
+      document.getElementById('message').textContent =
+        `${items.length} items downloaded as ${filename}.`;
     }
   </script>
 </body>
