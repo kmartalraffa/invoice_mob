@@ -1,725 +1,759 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Shop Invoice - kmart alraffa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <style>
-    /* CSS remains the same */
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-    .container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-bottom: 15px;
-    }
-    button:hover:enabled {
-      opacity: 0.9;
-    }
-    button:disabled {
-      background-color: #cccccc !important;
-      cursor: not-allowed;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    h2 {
-      text-align: center;
-      color: #666;
-      margin-top: 0;
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
-    h3 {
-      margin-top: 15px;
-      margin-bottom: 10px;
-    }
-    .result-box {
-      background-color: #e0f7fa;
-      padding: 10px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-weight: bold;
-    }
-    .cart-box {
-      background-color: #fff3e0;
-      padding: 10px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }
-    .search-area {
-      position: relative;
-    }
-    .autocomplete-list {
-      border: 1px solid #ccc;
-      max-height: 200px;
-      overflow-y: auto;
-      position: absolute;
-      width: 100%;
-      background: white;
-      z-index: 10;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .autocomplete-item {
-      padding: 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    .autocomplete-item:hover {
-      background-color: #f0f0f0;
-    }
-    .label-style {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-    }
+    <style>
+        /* BASE STYLES & TYPOGRAPHY */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 15px;
+            background-color: #f0f2f5; /* Light gray background */
+            color: #333;
+        }
+        .container {
+            max-width: 450px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Soft shadow */
+        }
+        h1 {
+            text-align: center;
+            color: #007bff; /* Primary blue color */
+            margin-bottom: 5px;
+        }
+        h2 {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 18px;
+        }
+        h3 {
+            margin-top: 20px;
+            margin-bottom: 12px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
 
-    /* Buttons */
-    #addButton {
-      background-color: #4CAF50;
-    }
-    #downloadXLSXButton {
-      background-color: #007bff;
-      margin-bottom: 15px;
-    }
-    #viewBillButton {
-      background-color: #ff9800;
-      margin-bottom: 15px;
-    }
+        /* INPUTS & FIELDS */
+        .input-group, .selection-fields {
+            margin-bottom: 15px;
+        }
+        .label-style {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
 
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      border-bottom: 1px dashed #ccc;
-      font-size: 14px;
-    }
-    .cart-item:last-child {
-      border-bottom: none;
-    }
-    
-    /* Bill View Styling */
-    .bill-table { 
-        width: 100%; 
-        border-collapse: collapse; 
-        font-size: 16pt; 
-        margin-top: 20px; 
-    }
-    .bill-table th { 
-        font-size: 14pt; 
-        border-bottom: 2px solid #333; 
-        padding: 5px; 
-        text-align: center; 
-        background-color: #f2f2f2; 
-    }
-    .bill-table td { 
-        padding: 8px; 
-        text-align: center; 
-        border-bottom: 1px dashed #ccc; 
-    }
-    .bill-table .item-name { 
-        text-align: left; 
-    }
-    .bill-table .total-row td { 
-        font-weight: bold; 
-        border-top: 2px solid #333; 
-        font-size: 16pt; 
-        padding-top: 10px; 
-    }
-    .footer-text-html { 
-        text-align: center; 
-        font-weight: bold; 
-        padding: 5px; 
-        margin-top: 10px; 
-    }
-  </style>
+        /* FLEX LAYOUT FOR QTY/TOTAL */
+        .selection-fields {
+            display: flex;
+            gap: 15px;
+        }
+        .field-item {
+            flex: 1;
+            min-width: 45%;
+        }
+
+        /* BUTTONS */
+        button {
+            width: 100%;
+            padding: 12px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+        button:hover:enabled {
+            opacity: 0.9;
+        }
+        button:disabled {
+            background-color: #e9ecef !important;
+            color: #6c757d !important;
+            cursor: not-allowed;
+        }
+        #addButton {
+            background-color: #28a745; /* Green */
+        }
+        #downloadXLSXButton {
+            background-color: #007bff; /* Blue */
+        }
+        #viewBillButton {
+            background-color: #ffc107; /* Yellow/Orange */
+            color: #212529;
+        }
+        #clearCartButton {
+            background-color: #dc3545; /* Red */
+        }
+
+        /* FEEDBACK & CART DISPLAY */
+        .result-box {
+            background-color: #e0f7fa;
+            color: #005662;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .cart-box {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+            font-size: 15px;
+        }
+        .cart-item span:first-child {
+            font-weight: 500;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .message-status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        /* Autocomplete List */
+        .search-area {
+            position: relative;
+        }
+        .autocomplete-list {
+            border: 1px solid #ced4da;
+            max-height: 180px;
+            overflow-y: auto;
+            position: absolute;
+            width: 100%;
+            background: white;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 6px 6px;
+        }
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+        }
+        .autocomplete-item:hover {
+            background-color: #f0f8ff;
+        }
+        .autocomplete-list:empty {
+             /* Hide the box entirely if no results are shown */
+            display: none !important;
+        }
+
+        /* Bill View Styling (Simplified and Modernized) */
+        .bill-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14pt;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        .bill-table th {
+            font-size: 12pt;
+            border-bottom: 2px solid #333;
+            padding: 8px;
+            text-align: center;
+            background-color: #f2f2f2;
+        }
+        .bill-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        .bill-table .item-name {
+            text-align: left;
+        }
+        .bill-table .total-row td {
+            font-weight: bold;
+            border-top: 2px solid #333;
+            font-size: 14pt;
+            padding-top: 10px;
+        }
+        .footer-text-html {
+            text-align: center;
+            font-weight: bold;
+            padding: 5px;
+            margin-top: 10px;
+            font-size: 16pt;
+        }
+    </style>
 </head>
 
 <body onload="loadItemData()">
-  <div class="container">
-    <h1>Shop Invoice</h1>
-    <h2>kmart alraffa</h2>
-    <hr>
-
-    <div class="search-area">
-      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Type to search and click an item"
-        onkeyup="handleSearchInput()"
-        autocomplete="off">
-      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
-    </div>
-
-    <hr>
-
-    <h3>Selection</h3>
-    <div id="resultDisplay" class="result-box" style="display: none;"></div>
-
-    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
-    <input
-      type="number"
-      id="qtyInput"
-      placeholder="Quantity"
-      inputmode="decimal">
-
-    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
-    <input
-      type="number"
-      id="totalInput"
-      placeholder="Total Amount"
-      inputmode="decimal">
-
-    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
-
-    <hr>
-
-    <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
-    <div id="localCartDisplay" class="cart-box"></div>
-
-    <button onclick="viewLocalCartHTML()" id="viewBillButton" disabled>
-      View Bill (On Screen)
-    </button>
-    <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
-      Download Cart as XLSX
-    </button>
-    
-    <button onclick="clearLocalCart()" style="background-color: #f44336; margin-top: 10px;">
-      Clear Local Cart / New Invoice
-    </button>
-
-
-    <p id="message">Loading data ...</p>
-  </div>
-  
-  <div id="billViewArea" class="container" style="display: none; max-width: 90%; margin-top: 20px;">
-    <h3>Generated Bill Preview</h3>
-    <div id="billContent"></div>
-  </div>
-
-
-  <script>
-    // CONFIG
-    const CART_STORAGE_KEY = 'kmartLocalCart';
-    const TEMPLATE_FILE = './template.xlsx'; // Path to your template file
-
-    // STATE
-    let allItemData = [];
-    let selectedItem = null;
-
-    // --- LOCAL STORAGE UTILITIES (Unchanged) ---
-    function loadLocalCart() {
-      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-      return storedCart ? JSON.parse(storedCart) : {};
-    }
-
-    function saveLocalCart(cartData) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
-    }
-
-    // --- INITIAL LOAD (Unchanged) ---
-    async function loadItemData() {
-      try {
-        // NOTE: This assumes 'items.json' exists alongside this HTML file
-        const itemResponse = await fetch('./items.json'); 
-        allItemData = await itemResponse.json();
-
-        // Check if template exists
-        const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
-        if (!checkTemplate.ok) {
-            document.getElementById('message').textContent = 'Error: template.xlsx not found!';
-            return;
-        }
-        
-        document.getElementById('message').textContent = 'Data loaded. Template ready.';
-      } catch (e) {
-        console.error("Error loading JSON files or template:", e);
-        document.getElementById('message').textContent =
-          'Error loading item data or template. Check files.';
-      }
-      renderCart();
-    }
-    
-    // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
-    function handleSearchInput() {
-      const searchInput = document.getElementById('searchInput');
-      const listDiv = document.getElementById('autocompleteList');
-      const messageEl = document.getElementById('message');
-      const searchText = searchInput.value.trim().toLowerCase();
-
-      selectedItem = null;
-      document.getElementById('resultDisplay').style.display = 'none';
-      document.getElementById('addButton').disabled = true;
-
-      listDiv.style.display = 'none';
-      listDiv.innerHTML = "";
-
-      if (searchText.length < 3) {
-        messageEl.textContent = 'Type at least 3 characters.';
-        return;
-      }
-
-      const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
-      const results = [];
-
-      for (const data of allItemData) {
-        const itemName = (data.item || "").toLowerCase();
-        const code = String(data.code || "");
-        const combined = `${itemName} ${code}`;
-
-        const match = searchParts.every(part => combined.includes(part));
-        if (match) {
-          results.push(data);
-          if (results.length >= 20) break;
-        }
-      }
-
-      if (results.length > 0) {
-        results.forEach(suggestion => {
-          const div = document.createElement('div');
-          div.className = 'autocomplete-item';
-          div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
-          div.onclick = () => {
-            searchInput.value = `${suggestion.code} ${suggestion.item}`;
-            selectedItem = suggestion;
-            listDiv.style.display = 'none';
-            showSelectedItem();
-          };
-          listDiv.appendChild(div);
-        });
-        listDiv.style.display = 'block';
-      }
-
-      messageEl.textContent = `Found ${results.length} items.`;
-    }
-
-    function showSelectedItem() {
-      if (selectedItem) {
-        const display = document.getElementById('resultDisplay');
-        display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
-        display.style.display = 'block';
-
-        document.getElementById('addButton').disabled = false;
-        document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
-      }
-    }
-
-    // --- LOCAL CART LOGIC (Unchanged) ---
-    function renderCart() {
-      const localCart = loadLocalCart();
-      const items = Object.values(localCart);
-      const cartDisplay = document.getElementById('localCartDisplay');
-      const cartCount = document.getElementById('cartCount');
-      const downloadButton = document.getElementById('downloadXLSXButton');
-      const viewBillButton = document.getElementById('viewBillButton');
-
-      cartCount.textContent = items.length;
-      downloadButton.disabled = (items.length === 0);
-      viewBillButton.disabled = (items.length === 0); // Enable/Disable View Bill button
-
-      if (items.length === 0) {
-        document.getElementById('billViewArea').style.display = 'none'; // Hide bill if cart is empty
-        cartDisplay.innerHTML = 'Cart is empty. Add items above.';
-        return;
-      }
-
-      cartDisplay.innerHTML = "";
-      items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'cart-item';
-        div.innerHTML = `
-          <span>${item.item} (Row: ${item.row})</span>
-          <span>Qty: ${item.qty} | Total: ${item.total}</span>
-        `;
-        cartDisplay.appendChild(div);
-      });
-    }
-    
-    // --- NEW FUNCTION: CLEAR CART ---
-    function clearLocalCart() {
-      if (confirm("Are you sure you want to clear the entire cart and start a new invoice?")) {
-        localStorage.removeItem(CART_STORAGE_KEY);
-        renderCart();
-        document.getElementById('message').textContent = 'Cart cleared. Ready for new invoice.';
-        document.getElementById('searchInput').value = '';
-        document.getElementById('qtyInput').value = '';
-        document.getElementById('totalInput').value = '';
-        document.getElementById('resultDisplay').style.display = 'none';
-        document.getElementById('billViewArea').style.display = 'none';
-      }
-    }
-
-
-    function addItemToCart() {
-      if (!selectedItem) {
-        alert('Please select an item first.');
-        return;
-      }
-
-      const qtyStr = document.getElementById('qtyInput').value.trim();
-      const totalStr = document.getElementById('totalInput').value.trim();
-
-      const numQty = parseFloat(qtyStr);
-      const numTotal = parseFloat(totalStr);
-
-      if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
-        alert('Please enter valid QTY and TOTAL values.');
-        return;
-      }
-
-      const localCart = loadLocalCart();
-
-      const cartItem = {
-        row: selectedItem.row,
-        qty: numQty,
-        total: numTotal,
-        item: selectedItem.item
-      };
-
-      localCart[selectedItem.row] = cartItem;
-      saveLocalCart(localCart);
-
-      document.getElementById('qtyInput').value = "";
-      document.getElementById('totalInput').value = "";
-      document.getElementById('searchInput').value = "";
-      document.getElementById('resultDisplay').style.display = 'none';
-      document.getElementById('addButton').disabled = true;
-      selectedItem = null;
-
-      renderCart();
-      document.getElementById('message').textContent =
-        `Item added to local storage. (${cartItem.item})`;
-    }
-
-    // -------------------------------------------------------------------
-    // ✅ FUNCTION: VIEW BILL (ON SCREEN) (Unchanged)
-    // -------------------------------------------------------------------
-    function viewLocalCartHTML() {
-        const localCart = loadLocalCart();
-        const items = Object.values(localCart);
-        const billViewArea = document.getElementById('billViewArea');
-        const billContent = document.getElementById('billContent');
-        const now = new Date();
-        
-        if (items.length === 0) {
-            billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>";
-            billViewArea.style.display = 'block';
-            return;
-        }
-
-        let tableHTML = `
-            <table class="bill-table">
-                <thead>
-                    <tr>
-                        <th>CODE</th>
-                        <th class="item-name">ITEM NAME</th>
-                        <th>QTY</th>
-                        <th>Rate</th>
-                        <th>RATE.inc</th>
-                        <th>TOTAL</th>
-                        <th>ItemBarCode</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        let grandTotal = 0;
-        
-        items.forEach((item) => {
-            const itemDetails = allItemData.find((d) => d.row === item.row);
-            const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-            // Barcode calculation based on your provided screenshot pattern: 9900 + CODE + 000000
-            const paddedCode = itemCode.padStart(4, '0'); // Assuming code is up to 4 digits for this pattern
-            const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
-
-            const qty = item.qty;
-            const total = item.total;
-            const rateInc = qty > 0 ? total / qty : 0; 
-            const rateExcl = rateInc / 1.05; // Assuming a standard 5% VAT or similar inclusion
-
-            grandTotal += total;
-
-            tableHTML += `
-                <tr>
-                    <td>${itemCode}</td>
-                    <td class="item-name">${item.item}</td>
-                    <td>${qty.toFixed(2)}</td>
-                    <td>${rateExcl.toFixed(3)}</td>
-                    <td>${rateInc.toFixed(3)}</td>
-                    <td>${total.toFixed(2)}</td>
-                    <td>${itemBarcode}</td>
-                </tr>
-            `;
-        });
-        
-        tableHTML += `
-                <tr class="total-row">
-                    <td colspan="5" style="text-align: right;">GRAND TOTAL:</td>
-                    <td style="text-align: center;">${grandTotal.toFixed(2)}</td>
-                    <td></td>
-                </tr>
-                </tbody>
-            </table>
-            <br>
-            <div class="footer-text-html" style="font-size: 18pt;">KMART SUPERMARKET LLC</div>
-            <div class="footer-text-html">Branch: Burdubai (Al Raffa)</div>
-            <div class="footer-text-html">Date: ${now.toLocaleDateString("en-GB")}</div>
-            <div class="footer-text-html">Vegetable and Fruits Invoice</div>
-        `;
-
-        billContent.innerHTML = tableHTML;
-        billViewArea.style.display = 'block';
-        document.getElementById('message').textContent = 'Bill displayed below.';
-    }
-
-
-    // -------------------------------------------------------------------
-    // ✅ UTILITY FUNCTION: MOVES AND UPDATES GRAND TOTAL ROW
-    // -------------------------------------------------------------------
-    function moveGrandTotalRow(ws, itemsCount) {
-        // The original Grand Total row in the template is assumed to be Row 3 (1-indexed)
-        const originalGtRowIndex = 2; // 0-indexed row number (Row 3 in Excel)
-        // The new Grand Total row will be immediately after the last data row (Row 2 + itemsCount)
-        const newGtRowIndex = 1 + itemsCount + 1; // 0-indexed row number (Row index 1 is Row 2 in Excel)
-        const finalGtAddress = `F${newGtRowIndex + 1}`; // F column, 1-indexed row for the formula
-
-        if (itemsCount === 0) return;
-
-        // Define the range of cells to move (A3:G3)
-        const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-
-        // 1. Copy cells from the original row (Row 3) to the new row
-        colsToMove.forEach(col => {
-            const originalCellAddress = col + (originalGtRowIndex + 1);
-            const newCellAddress = col + (newGtRowIndex + 1);
-
-            const originalCell = ws[originalCellAddress];
-            if (originalCell) {
-                // Deep copy the cell object to the new location
-                ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
-            } else {
-                // Ensure target cell is empty if source was empty
-                delete ws[newCellAddress];
-            }
-        });
-
-        // 2. Clear the original Grand Total row's cells (A3:G3)
-        colsToMove.forEach(col => {
-            const originalCellAddress = col + (originalGtRowIndex + 1);
-            delete ws[originalCellAddress];
-        });
-
-        // 3. Update the Grand Total Formula in the new location (F column)
-        if (ws[finalGtAddress]) {
-            // The data ends at row 'lastDataRowExcel' (1-indexed Excel row is 1 + itemsCount)
-            const lastDataRowExcel = 1 + itemsCount;
-            // Formula is SUM(F2:F_lastDataRow)
-            ws[finalGtAddress].f = `SUM(F2:F${lastDataRowExcel})`;
-            // Force the type to 'n' and apply the proper format for a total
-            ws[finalGtAddress].t = 'n';
-            ws[finalGtAddress].z = "#,##0.00";
-        }
-
-        // 4. Update the worksheet's dimensions to include the new row
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        if (newGtRowIndex > range.e.r) {
-            range.e.r = newGtRowIndex;
-            ws['!ref'] = XLSX.utils.encode_range(range);
-        }
-        
-        // 5. Update Merges for the Grand Total row (A to E)
-        const mergeRange = `A${newGtRowIndex + 1}:E${newGtRowIndex + 1}`;
-        if (!ws['!merges']) ws['!merges'] = [];
-        ws['!merges'].push(XLSX.utils.decode_range(mergeRange));
-
-        // 6. Remove the old merge (A3:E3)
-        const oldMergeRange = `A${originalGtRowIndex + 1}:E${originalGtRowIndex + 1}`;
-        const oldMergeIndex = ws['!merges'].findIndex(m => {
-            const encoded = XLSX.utils.encode_range(m);
-            return encoded === oldMergeRange;
-        });
-        if (oldMergeIndex > -1) {
-            ws['!merges'].splice(oldMergeIndex, 1);
-        }
-    }
-
-
-    // -------------------------------------------------------------------
-    // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FIX)
-    // -------------------------------------------------------------------
-    async function downloadLocalCartXLSX() {
-        const XLSX = window.XLSX; 
-
-        if (!XLSX) {
-        alert("XLSX library not loaded");
-        return;
-        }
-
-        const localCart = loadLocalCart();
-        const items = Object.values(localCart);
-        if (items.length === 0) {
-        alert("Cart is empty");
-        return;
-        }
-
-        // 1. Fetch the template file
-        let rawData;
-        try {
-            const response = await fetch(TEMPLATE_FILE);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch template: ${response.statusText}`);
-            }
-            rawData = await response.arrayBuffer();
-        } catch (e) {
-            alert("Error loading template.xlsx. Please ensure the file exists and is uploaded as a proper XLSX file.");
-            console.error(e);
-            return;
-        }
-
-        // 2. Read the template Workbook
-        const wb = XLSX.read(rawData, { type: 'array' });
-        const sheetName = wb.SheetNames[0]; 
-        const ws = wb.Sheets[sheetName];
-
-        // 3. Prepare the new data
-        const dataRows = [];
-        const now = new Date();
-
-        items.forEach((item) => {
-        const itemDetails = allItemData.find((d) => d.row === item.row);
-        const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-        // Barcode calculation logic: 9900 + padded CODE + 000000
-        const paddedCode = itemCode.padStart(4, '0');
-        const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
-
-        const qty = item.qty;
-        const total = item.total;
-        const rateInc = qty > 0 ? total / qty : 0; 
-        const rateExcl = rateInc / 1.05;
-
-        // Ensure the order matches the template's columns (A-G)
-        dataRows.push([
-            itemCode,
-            item.item,
-            qty,
-            { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
-            { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
-            { v: total, t: "n", z: "#,##0.00" },
-            itemBarcode
-        ]);
-        });
-
-        // 4. Add new data to the worksheet starting from A2
-        XLSX.utils.sheet_add_aoa(
-            ws, 
-            dataRows, 
-            { 
-                origin: "A2", 
-                skipHeader: true, 
-                cellStyles: true // Retains styles from template (Row 2 styles the data)
-            } 
-        ); 
-
-        // 5. DEFINE AND APPLY ROBUST STYLE FOR NEW DATA ROWS
-        const startRow = 2; 
-        const lastDataRow = 1 + items.length; // The last row number of the inserted data
-
-        // Define a base style object (16pt font)
-        const baseCellStyle = {
-            font: { sz: 16, name: "Arial" }, 
-            alignment: { vertical: "center" }
-        };
-        
-        // Ensure row objects exist for height setting
-        if (!ws['!rows']) ws['!rows'] = [];
-
-
-        for (let r = startRow; r <= lastDataRow; r++) {
-            const rowIdx = r - 1; // 0-indexed row number
-            
-            // 🎯 Force Row Height (22 points for size 16 font)
-            if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
-            ws['!rows'][rowIdx].hpt = 22; 
-            
-            for (let c = 0; c <= 6; c++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
-                const cell = ws[cellAddress];
-
-                if (cell) {
-                    // Create a style object based on the base style
-                    let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
-                    
-                    // Apply specific number formats and horizontal alignment based on column
-                    if (c === 0 || c === 2 || c === 6) { // CODE, QTY, BarCode
-                        currentStyle.alignment.horizontal = "center";
-                    } else if (c === 1) { // ITEM NAME
-                        currentStyle.alignment.horizontal = "left";
-                    } else { // Rates & Total
-                        currentStyle.alignment.horizontal = "center";
-                    }
-                    
-                    // Number formats (Rates & Total) - Use 'z' (format string) if it exists
-                    if (cell.t === 'n') {
-                        if (c === 3 || c === 4) { // Rate/Rate.inc
-                            currentStyle.numFmt = "0.000"; 
-                        } else if (c === 5) { // Total
-                            currentStyle.numFmt = "#,##0.00"; 
-                        } else {
-                            // Use the default number format set by the template if available
-                            currentStyle.numFmt = cell.z || "General";
-                        }
-                    } else {
-                        delete currentStyle.numFmt;
-                    }
-
-                    // Assign the constructed style object to the cell
-                    cell.s = currentStyle;
-                }
-            }
-        }
-
-
-        // 6. MOVE AND UPDATE GRAND TOTAL ROW (THE FIX)
-        moveGrandTotalRow(ws, items.length);
-        
-        // 7. Write/Download the new file
-        const filename =
-        `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
-
-        XLSX.writeFile(wb, filename);
-        document.getElementById('message').textContent = `Downloaded: ${filename}. Please check if the final styling has applied.`;
-    }
-  </script>
+    <div class="container">
+        <h1>Shop Invoice</h1>
+        <h2>kmart alraffa (Offline Cart)</h2>
+        <hr>
+
+        <div class="search-area input-group">
+            <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Type to search and click an item"
+                onkeyup="handleSearchInput()"
+                autocomplete="off">
+            <div id="autocompleteList" class="autocomplete-list"></div>
+        </div>
+
+        <h3>Selection Details</h3>
+        <div id="resultDisplay" class="result-box" style="display: none;"></div>
+
+        <div class="selection-fields">
+            <div class="field-item">
+                <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
+                <input
+                    type="number"
+                    id="qtyInput"
+                    placeholder="Quantity"
+                    inputmode="decimal">
+            </div>
+            <div class="field-item">
+                <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
+                <input
+                    type="number"
+                    id="totalInput"
+                    placeholder="Total Amount"
+                    inputmode="decimal">
+            </div>
+        </div>
+
+        <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
+
+        <hr>
+
+        <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
+        <div id="localCartDisplay" class="cart-box"></div>
+
+        <button onclick="viewLocalCartHTML()" id="viewBillButton" disabled>
+            View Bill (On Screen)
+        </button>
+        <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
+            Download Cart as XLSX
+        </button>
+        <button onclick="clearLocalCart()" id="clearCartButton">
+            Clear Local Cart / New Invoice
+        </button>
+
+        <p id="message" class="message-status">Loading data ...</p>
+    </div>
+
+    <div id="billViewArea" class="container" style="display: none; max-width: 90%; margin-top: 20px;">
+        <h3>Generated Bill Preview</h3>
+        <div id="billContent"></div>
+    </div>
+
+
+    <script>
+        // CONFIG
+        const CART_STORAGE_KEY = 'kmartLocalCart';
+        const TEMPLATE_FILE = './template.xlsx'; // Path to your template file
+
+        // STATE
+        let allItemData = [];
+        let selectedItem = null;
+
+        // --- LOCAL STORAGE UTILITIES ---
+        function loadLocalCart() {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            return storedCart ? JSON.parse(storedCart) : {};
+        }
+
+        function saveLocalCart(cartData) {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+        }
+
+        // --- INITIAL LOAD ---
+        async function loadItemData() {
+            try {
+                // NOTE: This assumes 'items.json' exists alongside this HTML file
+                const itemResponse = await fetch('./items.json'); 
+                allItemData = await itemResponse.json();
+
+                // Check if template exists
+                const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
+                if (!checkTemplate.ok) {
+                    document.getElementById('message').textContent = 'Error: template.xlsx not found!';
+                    return;
+                }
+                
+                document.getElementById('message').textContent = 'Data loaded. Template ready.';
+            } catch (e) {
+                console.error("Error loading JSON files or template:", e);
+                document.getElementById('message').textContent =
+                    'Error loading item data or template. Check files.';
+            }
+            renderCart();
+        }
+        
+        // --- SEARCH AND SELECTION LOGIC ---
+        function handleSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            const listDiv = document.getElementById('autocompleteList');
+            const messageEl = document.getElementById('message');
+            const searchText = searchInput.value.trim().toLowerCase();
+
+            selectedItem = null;
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+
+            listDiv.style.display = 'none';
+            listDiv.innerHTML = "";
+
+            if (searchText.length < 3) {
+                messageEl.textContent = 'Type at least 3 characters.';
+                return;
+            }
+
+            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+            const results = [];
+
+            for (const data of allItemData) {
+                const itemName = (data.item || "").toLowerCase();
+                const code = String(data.code || "");
+                const combined = `${itemName} ${code}`;
+
+                const match = searchParts.every(part => combined.includes(part));
+                if (match) {
+                    results.push(data);
+                    if (results.length >= 20) break;
+                }
+            }
+
+            if (results.length > 0) {
+                results.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.onclick = () => {
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        selectedItem = suggestion;
+                        listDiv.style.display = 'none';
+                        showSelectedItem();
+                    };
+                    listDiv.appendChild(div);
+                });
+                listDiv.style.display = 'block';
+            }
+
+            messageEl.textContent = `Found ${results.length} items.`;
+        }
+
+        function showSelectedItem() {
+            if (selectedItem) {
+                const display = document.getElementById('resultDisplay');
+                display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+                display.style.display = 'block';
+
+                document.getElementById('addButton').disabled = false;
+                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+            }
+        }
+
+        // --- LOCAL CART LOGIC ---
+        function renderCart() {
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            const cartDisplay = document.getElementById('localCartDisplay');
+            const cartCount = document.getElementById('cartCount');
+            const downloadButton = document.getElementById('downloadXLSXButton');
+            const viewBillButton = document.getElementById('viewBillButton');
+
+            cartCount.textContent = items.length;
+            downloadButton.disabled = (items.length === 0);
+            viewBillButton.disabled = (items.length === 0);
+
+            if (items.length === 0) {
+                document.getElementById('billViewArea').style.display = 'none';
+                cartDisplay.innerHTML = 'Cart is empty. Add items above.';
+                return;
+            }
+
+            cartDisplay.innerHTML = "";
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                // Note: The item object in the cart does not currently store the CODE, 
+                // but only the row index and item name.
+                div.innerHTML = `
+                    <span>${item.item} (Row: ${item.row})</span>
+                    <span>Qty: ${item.qty} | Total: ${item.total}</span>
+                `;
+                cartDisplay.appendChild(div);
+            });
+        }
+
+        function clearLocalCart() {
+            if (confirm("Are you sure you want to clear the entire cart and start a new invoice?")) {
+                localStorage.removeItem(CART_STORAGE_KEY);
+                renderCart();
+                document.getElementById('message').textContent = 'Cart cleared. Ready for new invoice.';
+                document.getElementById('searchInput').value = '';
+                document.getElementById('qtyInput').value = '';
+                document.getElementById('totalInput').value = '';
+                document.getElementById('resultDisplay').style.display = 'none';
+                document.getElementById('billViewArea').style.display = 'none';
+            }
+        }
+
+
+        function addItemToCart() {
+            if (!selectedItem) {
+                alert('Please select an item first.');
+                return;
+            }
+
+            const qtyStr = document.getElementById('qtyInput').value.trim();
+            const totalStr = document.getElementById('totalInput').value.trim();
+
+            const numQty = parseFloat(qtyStr);
+            const numTotal = parseFloat(totalStr);
+
+            if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+                alert('Please enter valid QTY and TOTAL values.');
+                return;
+            }
+
+            const localCart = loadLocalCart();
+
+            const cartItem = {
+                row: selectedItem.row,
+                qty: numQty,
+                total: numTotal,
+                item: selectedItem.item
+            };
+
+            localCart[selectedItem.row] = cartItem;
+            saveLocalCart(localCart);
+
+            document.getElementById('qtyInput').value = "";
+            document.getElementById('totalInput').value = "";
+            document.getElementById('searchInput').value = "";
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+            selectedItem = null;
+
+            renderCart();
+            document.getElementById('message').textContent =
+                `Item added to local storage. (${cartItem.item})`;
+        }
+
+        // -------------------------------------------------------------------
+        // ✅ FUNCTION: VIEW BILL (ON SCREEN)
+        // -------------------------------------------------------------------
+        function viewLocalCartHTML() {
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            const billViewArea = document.getElementById('billViewArea');
+            const billContent = document.getElementById('billContent');
+            const now = new Date();
+            
+            if (items.length === 0) {
+                billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>";
+                billViewArea.style.display = 'block';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="bill-table">
+                    <thead>
+                        <tr>
+                            <th>CODE</th>
+                            <th class="item-name">ITEM NAME</th>
+                            <th>QTY</th>
+                            <th>Rate</th>
+                            <th>RATE.inc</th>
+                            <th>TOTAL</th>
+                            <th>ItemBarCode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            let grandTotal = 0;
+            
+            items.forEach((item) => {
+                const itemDetails = allItemData.find((d) => d.row === item.row);
+                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+                const paddedCode = itemCode.padStart(4, '0');
+                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
+
+                const qty = item.qty;
+                const total = item.total;
+                const rateInc = qty > 0 ? total / qty : 0;
+                const rateExcl = rateInc / 1.05;
+
+                grandTotal += total;
+
+                tableHTML += `
+                    <tr>
+                        <td>${itemCode}</td>
+                        <td class="item-name">${item.item}</td>
+                        <td>${qty.toFixed(2)}</td>
+                        <td>${rateExcl.toFixed(3)}</td>
+                        <td>${rateInc.toFixed(3)}</td>
+                        <td>${total.toFixed(2)}</td>
+                        <td>${itemBarcode}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    <tr class="total-row">
+                        <td colspan="5" style="text-align: right;">GRAND TOTAL:</td>
+                        <td style="text-align: center;">${grandTotal.toFixed(2)}</td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <br>
+                <div class="footer-text-html">KMART SUPERMARKET LLC</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Branch: Burdubai (Al Raffa)</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Date: ${now.toLocaleDateString("en-GB")}</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Vegetable and Fruits Invoice</div>
+            `;
+
+            billContent.innerHTML = tableHTML;
+            billViewArea.style.display = 'block';
+            document.getElementById('message').textContent = 'Bill displayed below.';
+        }
+
+
+        // -------------------------------------------------------------------
+        // ✅ UTILITY FUNCTION: MOVES AND UPDATES GRAND TOTAL ROW
+        // -------------------------------------------------------------------
+        function moveGrandTotalRow(ws, itemsCount) {
+            // The original Grand Total row in the template is assumed to be Row 3 (1-indexed)
+            const originalGtRowIndex = 2; // 0-indexed row number (Row 3 in Excel)
+            // The new Grand Total row will be immediately after the last data row (Row 2 + itemsCount)
+            const newGtRowIndex = 1 + itemsCount + 1; // 0-indexed row number 
+            const finalGtAddress = `F${newGtRowIndex + 1}`; // F column, 1-indexed row for the formula
+
+            if (itemsCount === 0) return;
+
+            const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+            // 1. Copy cells from the original row (Row 3) to the new row
+            colsToMove.forEach(col => {
+                const originalCellAddress = col + (originalGtRowIndex + 1);
+                const newCellAddress = col + (newGtRowIndex + 1);
+
+                const originalCell = ws[originalCellAddress];
+                if (originalCell) {
+                    ws[newCellAddress] = JSON.parse(JSON.stringify(originalCell));
+                } else {
+                    delete ws[newCellAddress];
+                }
+            });
+
+            // 2. Clear the original Grand Total row's cells (A3:G3)
+            colsToMove.forEach(col => {
+                const originalCellAddress = col + (originalGtRowIndex + 1);
+                delete ws[originalCellAddress];
+            });
+
+            // 3. Update the Grand Total Formula in the new location (F column)
+            if (ws[finalGtAddress]) {
+                const lastDataRowExcel = 1 + itemsCount;
+                ws[finalGtAddress].f = `SUM(F2:F${lastDataRowExcel})`;
+                ws[finalGtAddress].t = 'n';
+                ws[finalGtAddress].z = "#,##0.00";
+            }
+
+            // 4. Update the worksheet's dimensions to include the new row
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            if (newGtRowIndex > range.e.r) {
+                range.e.r = newGtRowIndex;
+                ws['!ref'] = XLSX.utils.encode_range(range);
+            }
+            
+            // 5. Update Merges for the Grand Total row (A to E)
+            const mergeRange = `A${newGtRowIndex + 1}:E${newGtRowIndex + 1}`;
+            if (!ws['!merges']) ws['!merges'] = [];
+            ws['!merges'].push(XLSX.utils.decode_range(mergeRange));
+
+            // 6. Remove the old merge (A3:E3)
+            const oldMergeRange = `A${originalGtRowIndex + 1}:E${originalGtRowIndex + 1}`;
+            const oldMergeIndex = ws['!merges'].findIndex(m => {
+                const encoded = XLSX.utils.encode_range(m);
+                return encoded === oldMergeRange;
+            });
+            if (oldMergeIndex > -1) {
+                ws['!merges'].splice(oldMergeIndex, 1);
+            }
+        }
+
+
+        // -------------------------------------------------------------------
+        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION
+        // -------------------------------------------------------------------
+        async function downloadLocalCartXLSX() {
+            const XLSX = window.XLSX;
+
+            if (!XLSX) {
+                alert("XLSX library not loaded");
+                return;
+            }
+
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            if (items.length === 0) {
+                alert("Cart is empty");
+                return;
+            }
+
+            // 1. Fetch the template file
+            let rawData;
+            try {
+                const response = await fetch(TEMPLATE_FILE);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch template: ${response.statusText}`);
+                }
+                rawData = await response.arrayBuffer();
+            } catch (e) {
+                alert("Error loading template.xlsx. Please ensure the file exists and is uploaded as a proper XLSX file.");
+                console.error(e);
+                return;
+            }
+
+            // 2. Read the template Workbook
+            const wb = XLSX.read(rawData, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const ws = wb.Sheets[sheetName];
+
+            // 3. Prepare the new data
+            const dataRows = [];
+            const now = new Date();
+
+            items.forEach((item) => {
+                const itemDetails = allItemData.find((d) => d.row === item.row);
+                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+                const paddedCode = itemCode.padStart(4, '0');
+                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
+
+                const qty = item.qty;
+                const total = item.total;
+                const rateInc = qty > 0 ? total / qty : 0;
+                const rateExcl = rateInc / 1.05;
+
+                dataRows.push([
+                    itemCode,
+                    item.item,
+                    qty,
+                    { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
+                    { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
+                    { v: total, t: "n", z: "#,##0.00" },
+                    itemBarcode
+                ]);
+            });
+
+            // 4. Add new data to the worksheet starting from A2
+            XLSX.utils.sheet_add_aoa(
+                ws,
+                dataRows,
+                {
+                    origin: "A2",
+                    skipHeader: true,
+                    cellStyles: true
+                }
+            );
+
+            // 5. DEFINE AND APPLY ROBUST STYLE FOR NEW DATA ROWS
+            const startRow = 2;
+            const lastDataRow = 1 + items.length;
+
+            const baseCellStyle = {
+                font: { sz: 16, name: "Arial" },
+                alignment: { vertical: "center" }
+            };
+
+            if (!ws['!rows']) ws['!rows'] = [];
+
+
+            for (let r = startRow; r <= lastDataRow; r++) {
+                const rowIdx = r - 1; 
+
+                if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
+                ws['!rows'][rowIdx].hpt = 22;
+
+                for (let c = 0; c <= 6; c++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
+                    const cell = ws[cellAddress];
+
+                    if (cell) {
+                        let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
+
+                        if (c === 0 || c === 2 || c === 6) { 
+                            currentStyle.alignment.horizontal = "center";
+                        } else if (c === 1) { 
+                            currentStyle.alignment.horizontal = "left";
+                        } else { 
+                            currentStyle.alignment.horizontal = "center";
+                        }
+
+                        if (cell.t === 'n') {
+                            if (c === 3 || c === 4) { 
+                                currentStyle.numFmt = "0.000";
+                            } else if (c === 5) { 
+                                currentStyle.numFmt = "#,##0.00";
+                            } else {
+                                currentStyle.numFmt = cell.z || "General";
+                            }
+                        } else {
+                            delete currentStyle.numFmt;
+                        }
+
+                        cell.s = currentStyle;
+                    }
+                }
+            }
+
+
+            // 6. MOVE AND UPDATE GRAND TOTAL ROW (The core fix)
+            moveGrandTotalRow(ws, items.length);
+
+            // 7. Write/Download the new file
+            const filename =
+                `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            document.getElementById('message').textContent = `Downloaded: ${filename}. Please check if the final styling has applied.`;
+        }
+    </script>
 </body>
 </html>
