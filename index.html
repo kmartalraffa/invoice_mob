@@ -214,7 +214,7 @@
             renderCart();
         }
         
-        // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
+        // --- SEARCH AND SELECTION LOGIC ---
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -278,7 +278,7 @@
             }
         }
 
-        // --- LOCAL CART LOGIC (Unchanged) ---
+        // --- LOCAL CART LOGIC ---
         function renderCart() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -364,7 +364,7 @@
                 `Item added to local storage. (${cartItem.item})`;
         }
 
-        // --- VIEW BILL (ON SCREEN) (Unchanged) ---
+        // --- VIEW BILL (ON SCREEN) ---
         function viewLocalCartHTML() {
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
@@ -446,7 +446,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ CORRECTED UTILITY FUNCTION: MOVES ALL TEMPLATE FOOTER ROWS (Error Fix, Blank Row Added and Merged)
+        // ✅ FINAL CORRECTED UTILITY FUNCTION (Includes Row Metadata Fix)
         // -------------------------------------------------------------------
         function shiftTemplateRows(ws, itemsCount) {
             
@@ -464,10 +464,12 @@
 
             const colsToMove = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
             
-            // CRITICAL FIX: Get original merges (they come in as objects)
             let originalMerges = ws['!merges'] || [];
             
+            // Ensure !rows is initialized for metadata manipulation
+            if (!ws['!rows']) ws['!rows'] = [];
 
+            
             // --- 1. Shift the Footer Details Block (Rows 4-7) ---
             for (let r = END_ROW_TO_SHIFT; r >= START_ROW_TO_SHIFT + 1; r--) {
                 const originalRowExcel = r + 1; 
@@ -484,10 +486,13 @@
                     }
                 });
 
-                if (ws['!rows'] && ws['!rows'][r]) {
+                // --- FIX: Transfer and DELETE old row metadata for cleanliness ---
+                if (ws['!rows'][r]) {
+                    // Transfer the row metadata (e.g., height)
                     if (!ws['!rows'][r + footerDetailShiftAmount]) ws['!rows'][r + footerDetailShiftAmount] = {};
                     Object.assign(ws['!rows'][r + footerDetailShiftAmount], ws['!rows'][r]);
-                    delete ws['!rows'][r];
+                    // Delete the original metadata entry to prevent 's' error
+                    delete ws['!rows'][r]; 
                 }
             }
 
@@ -508,16 +513,17 @@
                         delete ws[originalCellAddress];
                     }
                 });
-
-                if (ws['!rows'] && ws['!rows'][r]) {
+                
+                // --- FIX: Transfer and DELETE old row metadata for cleanliness ---
+                if (ws['!rows'][r]) {
                     if (!ws['!rows'][r + grandTotalShiftAmount]) ws['!rows'][r + grandTotalShiftAmount] = {};
                     Object.assign(ws['!rows'][r + grandTotalShiftAmount], ws['!rows'][r]);
-                    delete ws['!rows'][r];
+                    delete ws['!rows'][r]; // Delete the original metadata entry
                 }
             }
 
 
-            // 3. Clear the original footer rows (Rows 3-7)
+            // 3. Clear the original footer cell data (Rows 3-7) 
             for (let r = START_ROW_TO_SHIFT; r <= END_ROW_TO_SHIFT; r++) {
                 const originalRowExcel = r + 1;
                 colsToMove.forEach(col => {
@@ -529,7 +535,6 @@
             ws['!merges'] = [];
             
             // *** ADD MERGE FOR THE BLANK ROW ***
-            // The blank row is immediately after the shifted Grand Total.
             const blankRowIndex = START_ROW_TO_SHIFT + grandTotalShiftAmount; 
             const blankMergeRange = `A${blankRowIndex + 1}:G${blankRowIndex + 1}`; 
             
@@ -538,15 +543,15 @@
 
 
             originalMerges.forEach(mergeRange => {
-                // *** THE CRITICAL FIX FOR TYPE ERROR: Convert object merge to string address ***
-                let rangeAddress = typeof mergeRange === 'object' ? XLSX.utils.encode_range(mergeRange) : mergeRange;
-                
+                // FIX: Ensure the merge object is decoded before manipulation
+                const rangeAddress = typeof mergeRange === 'object' ? XLSX.utils.encode_range(mergeRange) : mergeRange;
                 const range = XLSX.utils.decode_range(rangeAddress);
                 
+                // Apply the correct shift
                 if (range.s.r === START_ROW_TO_SHIFT) { // Grand Total merge (Row 3)
                     range.s.r += grandTotalShiftAmount;
                     range.e.r += grandTotalShiftAmount;
-                } else if (range.s.r >= START_ROW_TO_SHIFT + 1) { // Footer Detail merges (Rows 4-7)
+                } else if (range.s.r >= START_ROW_TO_SHIFT + 1 && range.s.r <= END_ROW_TO_SHIFT) { // Footer Detail merges (Rows 4-7)
                     range.s.r += footerDetailShiftAmount;
                     range.e.r += footerDetailShiftAmount;
                 }
@@ -578,7 +583,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION 
+        // TEMPLATE-BASED DOWNLOAD FUNCTION 
         // -------------------------------------------------------------------
         async function downloadLocalCartXLSX() {
             const XLSX = window.XLSX;
@@ -653,7 +658,7 @@
                 }
             );
 
-            // 6. Apply robust style to inserted data (similar to previous version)
+            // 6. Apply robust style to inserted data (ensuring row height and formatting are consistent)
             const startRow = 2;
             const lastDataRow = 1 + items.length;
 
@@ -668,7 +673,7 @@
                 const rowIdx = r - 1; 
 
                 if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
-                ws['!rows'][rowIdx].hpt = 22;
+                ws['!rows'][rowIdx].hpt = 22; // Set standard row height
 
                 for (let c = 0; c <= 6; c++) {
                     const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
@@ -677,6 +682,7 @@
                     if (cell) {
                         let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
 
+                        // Alignment logic
                         if (c === 0 || c === 2 || c === 6) { 
                             currentStyle.alignment.horizontal = "center";
                         } else if (c === 1) { 
@@ -685,6 +691,7 @@
                             currentStyle.alignment.horizontal = "center";
                         }
 
+                        // Number formatting logic
                         if (cell.t === 'n') {
                             if (c === 3 || c === 4) { 
                                 currentStyle.numFmt = "0.000";
