@@ -344,77 +344,25 @@
     }
 
   function downloadLocalCartXLSX() {
-  const XLSX = window.XLSX; 
+    const XLSX = window.XLSX; 
 
-  if (!XLSX) {
-    alert("XLSX library not loaded");
-    return;
-  }
+    if (!XLSX) {
+      alert("XLSX library not loaded");
+      return;
+    }
 
-  const localCart = loadLocalCart();
-  const items = Object.values(localCart);
-  if (items.length === 0) {
-    alert("Cart is empty");
-    return;
-  }
+    const localCart = loadLocalCart();
+    const items = Object.values(localCart);
+    if (items.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
 
-  const now = new Date();
-  const formattedDate = now.toLocaleDateString("en-GB");
+    const now = new Date();
 
-  const ws = XLSX.utils.json_to_sheet([]);
+    const ws = XLSX.utils.json_to_sheet([]);
 
-// ✅ HEADER ROWS + STYLES 
-// --------------------------------------------------
-XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
-ws["A1"].s = {
-  font: { name: "Calibri", sz: 18, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws["A1"].t = "s";
-
-XLSX.utils.sheet_add_aoa(ws, [["Branch: Burdubai (Al Raffa)"]], { origin: "A2" });
-ws["A2"].s = {
-  font: { name: "Calibri", sz: 14, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws["A2"].t = "s";
-
-XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
-ws["A3"].s = {
-  font: { name: "Calibri", sz: 14, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws["A3"].t = "s";
-
-XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: "A4" });
-ws["A4"].s = {
-  font: { name: "Calibri", sz: 16, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws["A4"].t = "s";
-
-
-// ✅ MERGE HEADER CELLS 
-// --------------------------------------------------
-ws["!merges"] = [
-  { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-  { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-  { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-  { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
-];
-
-
-// ✅ ROW HEIGHTS 
-// --------------------------------------------------
-ws["!rows"] = [
-  { hpt: 32 }, // Row 1
-  { hpt: 24 }, // Row 2
-  { hpt: 24 }, // Row 3
-  { hpt: 26 }  // Row 4
-];
-
-
-// ✅ COLUMN WIDTHS 
+// ✅ COLUMN WIDTHS (Retained)
 // --------------------------------------------------
 ws["!cols"] = [
   { wch: 12 }, // CODE
@@ -426,138 +374,137 @@ ws["!cols"] = [
   { wch: 18 }  // ItemBarCode
 ];
 
+// -----------------------------
+// TABLE HEADER (Origin: A1)
+// -----------------------------
+XLSX.utils.sheet_add_aoa(
+  ws,
+  [["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]],
+  { origin: "A1" } // Started at A1
+);
 
-  // -----------------------------
-  // TABLE HEADER
-  // -----------------------------
-  XLSX.utils.sheet_add_aoa(
-    ws,
-    [["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]],
-    { origin: "A6" }
-  );
+// ✅ Style table header (Row 1) - FONT SIZE 14 & BOLD
+const tableHeaderCells = ["A1","B1","C1","D1","E1","F1","G1"];
+tableHeaderCells.forEach(cell => {
+  ws[cell].s = {
+    font: { bold: true, sz: 14 }, // BOLD: true and SIZE: 14
+    alignment: { horizontal: "center", vertical: "center" },
+    fill: { fgColor: { rgb: "FFF2F2F2" } }
+  };
+  ws[cell].t = "s";
+});
 
-  // ✅ Style table header
-  const tableHeaderCells = ["A6","B6","C6","D6","E6","F6","G6"];
-  tableHeaderCells.forEach(cell => {
-    ws[cell].s = {
-      font: { bold: true, sz: 12 },
-      alignment: { horizontal: "center", vertical: "center" },
-      fill: { fgColor: { rgb: "FFF2F2F2" } }
-    };
-    ws[cell].t = "s";
-  });
+// -----------------------------
+// DATA ROWS (Origin: A2)
+// -----------------------------
+const dataRows = [];
+items.forEach((item) => {
+  const itemDetails = allItemData.find((d) => d.row === item.row);
+  const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+  const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
 
-  // -----------------------------
-  // DATA ROWS
-  // -----------------------------
-  const dataRows = [];
-  items.forEach((item) => {
-    const itemDetails = allItemData.find((d) => d.row === item.row);
-    const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-    const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
+  const qty = item.qty;
+  const total = item.total;
+  // Assuming 5% VAT (1.05)
+  const rateInc = qty > 0 ? total / qty : 0; 
+  const rateExcl = rateInc / 1.05;
 
-    const qty = item.qty;
-    const total = item.total;
-    // Assuming 5% VAT (1.05)
-    const rateInc = qty > 0 ? total / qty : 0; 
-    const rateExcl = rateInc / 1.05;
+  dataRows.push([
+    itemCode,
+    item.item,
+    qty,
+    { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
+    { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
+    { v: total, t: "n", z: "#,##0.00" },
+    itemBarcode
+  ]);
+});
 
-    dataRows.push([
-      itemCode,
-      item.item,
-      qty,
-      { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
-      { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
-      { v: total, t: "n", z: "#,##0.00" },
-      itemBarcode
-    ]);
-  });
+XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A2" }); // Started at A2
 
-  XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A7" });
-  
-  // ✅ REVISED FIX: Apply styling (font size 12) to all data rows
-  const startRow = 7;
-  const endRow = startRow + items.length - 1; 
+// ✅ Apply styling (font size 12) to all data rows
+const startRow = 2; // Data rows now start at row 2
+const endRow = startRow + items.length - 1; 
 
-  for (let r = startRow; r <= endRow; r++) {
-    // Iterate through columns A to G (index 0 to 6)
-    for (let c = 0; c <= 6; c++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
-      const cell = ws[cellAddress];
+for (let r = startRow; r <= endRow; r++) {
+  // Iterate through columns A to G (index 0 to 6)
+  for (let c = 0; c <= 6; c++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
+    const cell = ws[cellAddress];
 
-      if (cell) {
-        // Create style object if it doesn't exist
-        if (!cell.s) {
-            cell.s = {};
-        }
-        
-        // Enforce font size 12
-        cell.s.font = { name: "Calibri", sz: 12 }; 
-        cell.s.alignment = { vertical: "center" };
-        
-        // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
-        if (c === 0 || c === 2 || c === 5 || c === 6) {
-           cell.s.alignment.horizontal = "center";
-        }
-        
-        // Ensure that numeric types retain their number format
-        if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
-             cell.s.numFmt = cell.z; 
-        }
+    if (cell) {
+      if (!cell.s) {
+          cell.s = {};
+      }
+      
+      // Enforce font size 12 for data rows
+      cell.s.font = { name: "Calibri", sz: 12 }; 
+      cell.s.alignment = { vertical: "center" };
+      
+      // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
+      if (c === 0 || c === 2 || c === 5 || c === 6) {
+         cell.s.alignment.horizontal = "center";
+      }
+      
+      // Ensure that numeric types retain their number format
+      if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
+           cell.s.numFmt = cell.z; 
       }
     }
   }
+}
 
 
-  // -----------------------------
-  // GRAND TOTAL (FIXED)
-  // -----------------------------
-  const lastRow = 7 + items.length;
+// -----------------------------
+// GRAND TOTAL (Updated Position)
+// -----------------------------
+const lastRow = 2 + items.length; // Grand Total row index
 
-  XLSX.utils.sheet_add_aoa(
-    ws,
+XLSX.utils.sheet_add_aoa(
+  ws,
+  [
     [
-      [
-        "GRAND TOTAL:",
-        null,
-        null,
-        null,
-        null,
-        // FIX: Formula starts from F7
-        { t: "n", f: `SUM(F7:F${lastRow -1 })`, z: "#,##0.00" } 
-      ]
-    ],
-    // FIX: Grand total is on the next available row (lastRow)
-    { origin: `A${lastRow}` } 
-  );
+      "GRAND TOTAL:",
+      null,
+      null,
+      null,
+      null,
+      // Formula starts from F2
+      { t: "n", f: `SUM(F2:F${lastRow -1 })`, z: "#,##0.00" } 
+    ]
+  ],
+  // Grand total is on the next available row (lastRow)
+  { origin: `A${lastRow}` } 
+);
 
-  // FIX: Merge cells for the row where Grand Total label appears
-  ws["!merges"].push({
-    s: { r: lastRow - 1, c: 0 },
-    e: { r: lastRow - 1, c: 4 }
-  });
+// Merge cells for the row where Grand Total label appears
+ws["!merges"] = (ws["!merges"] || []); 
+ws["!merges"].push({
+  s: { r: lastRow - 1, c: 0 },
+  e: { r: lastRow - 1, c: 4 }
+});
 
-  ws[`A${lastRow}`].s = {
-    font: { bold: true, sz: 16 },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
-  ws[`A${lastRow}`].t = "s";
+ws[`A${lastRow}`].s = {
+  font: { bold: true, sz: 16 },
+  alignment: { horizontal: "center", vertical: "center" }
+};
+ws[`A${lastRow}`].t = "s";
 
-  ws[`F${lastRow}`].s = {
-    font: { bold: true, sz: 16 },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
+ws[`F${lastRow}`].s = {
+  font: { bold: true, sz: 16 },
+  alignment: { horizontal: "center", vertical: "center" }
+};
 
-  // -----------------------------
-  // SAVE FILE 
-  // -----------------------------
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
+// -----------------------------
+// SAVE FILE 
+// -----------------------------
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
 
-  const filename =
-    `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+const filename =
+  `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
-  XLSX.writeFile(wb, filename);
+XLSX.writeFile(wb, filename);
 }
   </script>
 </body>
