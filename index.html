@@ -1,27 +1,995 @@
-// --- INITIAL LOAD ---
-async function loadItemData() {
-    try {
-        // [OLD CODE REMOVED]: The fetch part is removed due to CORS issue
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMart POS & Order Utility</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        h2, h3 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-group > div {
+            flex: 1;
+        }
+        .autocomplete-list {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 22px);
+            z-index: 1000;
+        }
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+        #resultDisplay, #orderResultDisplay {
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        #message, #orderMessage {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+        }
+        #localCartDisplay, #orderListDisplay {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .bill-table, .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .bill-table th, .bill-table td, .order-table th, .order-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .bill-table th, .order-table th {
+            background-color: #f2f2f2;
+        }
+        .bill-table .item-name, .order-table .item-name {
+            text-align: left;
+        }
+        .total-row td {
+            font-weight: bold;
+            background-color: #e0e0e0;
+        }
+        .footer-text-html {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16pt;
+            margin-top: 5px;
+        }
+
+        /* --- TEMPORARY ITEM TAB STYLES (Invoice Mode) --- */
+        #tempItemTab {
+            position: absolute;
+            top: 100%; 
+            left: 0;
+            width: 100%;
+            background: #e6f7ff;
+            border: 2px solid #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            display: none;
+            box-sizing: border-box;
+        }
+        #tempItemTab h4 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 1px solid #b3d9ff;
+            padding-bottom: 5px;
+        }
         
-        // --- START: HARDCODED JSON DATA ---
-        const hardcodedItemData = [
-            // ഇവിടെ നിങ്ങളുടെ items.json ലെ മുഴുവൻ ഡാറ്റയും പേസ്റ്റ് ചെയ്യുക.
-            // ഉദാഹരണത്തിന്:
-            { "row": 1, "code": 101, "item": "Onion", "rate": 2.5 },
-            { "row": 2, "code": 102, "item": "Tomato", "rate": 3.0 },
-            { "row": 3, "code": 103, "item": "Carrot", "rate": 4.5 }
-            // ... നിങ്ങളുടെ മറ്റ് ഡാറ്റകൾ ഇവിടെ ചേർക്കുക ...
-        ];
-        // --- END: HARDCODED JSON DATA ---
+        /* --- ORDER MODE STYLES --- */
+        .order-table th, .order-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .offer-item-row td {
+            background-color: #e9f7ef; /* Light green/teal background for offer */
+            font-weight: bold;
+        }
+        .order-action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body onload="loadItemData()">
+
+    <div id="welcomeScreen" class="container" style="max-width: 500px; text-align: center; display: none;">
+        <h2>🛒 KMart POS Mode Selector</h2>
+        <p>Please select the required utility mode.</p>
         
-        allItemData = hardcodedItemData;
+        <button onclick="showMode('invoice')" style="background-color: #007bff; font-size: 1.2em; margin-top: 20px;">
+            📝 INVOICE MODE (POS Utility)
+        </button>
         
-        document.getElementById('orderMessage').textContent = 'Data loaded internally. Start creating the order.';
-    } catch (e) {
-        // Since this is hardcoded, catch should not normally run.
-        console.error("Error setting hardcoded data:", e);
-        document.getElementById('orderMessage').textContent =
-            'CRITICAL ERROR: Data initialization failed.';
-    }
-    document.getElementById('orderCount').textContent = orderList.length;
-}
+        <button onclick="showMode('order')" style="background-color: #28a745; font-size: 1.2em; margin-top: 15px;">
+            📦 ORDER MODE (Order Creation)
+        </button>
+        <p style="margin-top: 20px; font-size: 0.8em; color: #777;">Data is loaded from items.json for both modes.</p>
+    </div>
+
+
+    <div id="invoiceBlock" class="container" style="display: none;">
+        
+        <button onclick="showMode('home')" style="background-color: #6c757d; margin-bottom: 15px; width: auto;">← Back to Home</button>
+        <h2>🛍️ KMart Vegetable POS Utility (Invoice)</h2>
+        <div id="message">Loading item data...</div>
+
+        <h3>Add Item to Cart</h3>
+        <div style="position: relative;">
+            <input type="text" id="searchInput" placeholder="Search by Code or Item Name (Type 1001 to add a temporary item)" oninput="handleSearchInput()">
+            <div id="autocompleteList" class="autocomplete-list"></div>
+            
+            <div id="tempItemTab">
+                <h4>➕ Add Temporary/New Item (Code 1001 Activated)</h4>
+                <div class="input-group">
+                    <div><input type="number" id="tempItemCodeInput" placeholder="Custom Code (e.g., 999 or 1001)" value="1001"></div>
+                    <div><input type="text" id="tempItemNameInput" placeholder="Item Name (e.g., New Apple)"></div>
+                </div>
+                <button onclick="saveTemporaryItem()">Save Temporary Item & Continue</button>
+            </div>
+        </div>
+        <div id="resultDisplay"></div>
+        
+        <div class="input-group">
+            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)"></div>
+            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)"></div>
+        </div>
+
+        <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
+
+        <h3>Current Cart (Items: <span id="cartCount">0</span>)</h3>
+        <div id="localCartDisplay"></div>
+        
+        <div class="action-buttons">
+            <button onclick="clearLocalCart()" style="background-color: #dc3545;">Clear Cart</button>
+            <button id="viewBillButton" onclick="viewLocalCartHTML()" disabled style="background-color: #ffc107; color: #333;">View Bill (On Screen)</button>
+        </div>
+        
+        <button id="downloadXLSXButton" onclick="downloadSimpleXLSX()" disabled style="background-color: #28a745; margin-top: 10px;">Download Cart as Simple XLSX</button>
+
+        <div id="billViewArea" style="display: none; margin-top: 30px;">
+            <h3>Bill Preview</h3>
+            <div id="billContent"></div>
+        </div>
+    </div>
+
+    <div id="orderBlock" class="container" style="display: none;">
+        
+        <button onclick="showMode('home')" style="background-color: #6c757d; margin-bottom: 15px; width: auto;">← Back to Home</button>
+        <h2>📦 KMart Order Creation Mode</h2>
+        <div id="orderMessage">Loading item data...</div>
+
+        <h3>Add Item to Order</h3>
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="text" id="orderSearchInput" placeholder="Search by Code or Item Name" oninput="handleOrderSearchInput()">
+            <div id="orderAutocompleteList" class="autocomplete-list"></div>
+        </div>
+
+        <div id="orderResultDisplay" style="display: none;"></div>
+
+        <div class="input-group">
+            <div><input type="number" id="orderQtyInput" placeholder="QTY" min="1"></div>
+            <div>
+                <select id="orderTypeSelect">
+                    <option value="kg">KG</option>
+                    <option value="pcs">PCS</option>
+                    <option value="bag">BAG</option>
+                    <option value="box">BOX</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+            <input type="checkbox" id="offerCheckbox" style="width: 20px;" onclick="toggleOfferPrice()">
+            <label for="offerCheckbox" style="flex: 1; margin: 0;">Tickmarking Offer</label>
+            
+            <input type="number" id="offerPriceInput" placeholder="Offer Price" style="width: 50%; display: none;">
+        </div>
+
+        <button id="addOrderItemButton" onclick="addOrderItem()" disabled style="background-color: #17a2b8;">Add Item to Order List</button>
+
+        <h3>Current Order List (<span id="orderCount">0</span> Items)</h3>
+        <div id="orderListDisplay">Order list is empty.</div>
+
+        <div class="order-action-buttons">
+            <button onclick="clearOrderList()" style="background-color: #dc3545;">Clear Order List</button>
+            <button id="viewOrderButton" onclick="viewOrderListHTML()" disabled style="background-color: #28a745;">Generate Order List (On Screen)</button>
+        </div>
+
+        <div id="orderViewArea" style="display: none; margin-top: 30px;">
+            <h3>Generated Order Preview</h3>
+            <div id="orderContent"></div>
+        </div>
+    </div>
+    <script>
+        // CONFIG
+        const CART_STORAGE_KEY = 'kmartLocalCart';
+        const TEMP_ITEM_TRIGGER_CODE = '1001';
+
+        // STATE
+        let allItemData = [];
+        let selectedItem = null; // For Invoice Mode
+        let selectedOrderItem = null; // For Order Mode
+        let orderList = []; // Array to hold current order items
+
+        // --- MODE SWITCHING LOGIC ---
+        function showMode(mode) {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('invoiceBlock').style.display = 'none';
+            document.getElementById('orderBlock').style.display = 'none';
+            
+            if (mode === 'invoice') {
+                document.getElementById('invoiceBlock').style.display = 'block';
+                document.getElementById('searchInput').focus(); 
+                document.getElementById('message').textContent = 'Invoice Mode Active. Data loaded.';
+            } else if (mode === 'order') {
+                document.getElementById('orderBlock').style.display = 'block';
+                document.getElementById('orderSearchInput').focus();
+                renderOrderList(); // Re-render order list on entry
+                document.getElementById('orderMessage').textContent = 'Order Mode Active. Data loaded.';
+            } else if (mode === 'home') {
+                document.getElementById('welcomeScreen').style.display = 'block';
+            }
+        }
+
+        // --- INITIAL LOAD (Updated to fetch and then show home screen) ---
+        async function loadItemData() {
+            try {
+                // Attempt to fetch data from items.json
+                const itemResponse = await fetch('./items.json'); 
+                allItemData = await itemResponse.json();
+                
+                // Update messages for both blocks
+                document.getElementById('message').textContent = 'Data loaded. Ready for Invoice.';
+                document.getElementById('orderMessage').textContent = 'Data loaded. Ready for Order Creation.';
+            } catch (e) {
+                console.error("Error loading JSON file:", e);
+                const errorMsg = 'Error loading item data from items.json. Functionality may be limited.';
+                document.getElementById('message').textContent = errorMsg;
+                document.getElementById('orderMessage').textContent = errorMsg;
+            }
+            // Ensure the application starts in home mode
+            showMode('home'); 
+            setupEventListeners();
+            renderCart(); // Initialize Invoice cart display
+        }
+        
+        // -------------------------------------------------------------------
+        // 1. INVOICE MODE FUNCTIONS (POS UTILITY)
+        // -------------------------------------------------------------------
+
+        // --- INVOICE SEARCH AND SELECTION ---
+        function handleSearchInput() {
+            const searchInput = document.getElementById('searchInput');
+            const listDiv = document.getElementById('autocompleteList');
+            const messageEl = document.getElementById('message');
+            const tempTab = document.getElementById('tempItemTab');
+            const searchText = searchInput.value.trim();
+
+            selectedItem = null;
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+            listDiv.style.display = 'none';
+            listDiv.innerHTML = "";
+            tempTab.style.display = 'none';
+
+            if (searchText === TEMP_ITEM_TRIGGER_CODE) {
+                tempTab.style.display = 'block';
+                document.getElementById('tempItemCodeInput').value = TEMP_ITEM_TRIGGER_CODE;
+                document.getElementById('tempItemNameInput').value = '';
+                document.getElementById('tempItemNameInput').focus();
+                messageEl.textContent = `Type Item Name and Code to add temporary item.`;
+                return;
+            }
+
+            const lowerSearchText = searchText.toLowerCase();
+            if (lowerSearchText.length < 3) {
+                messageEl.textContent = 'Type at least 3 characters.';
+                return;
+            }
+            
+            const searchParts = lowerSearchText.split(/\s+/).filter(p => p.length > 0);
+            const results = [];
+            
+            for (const data of allItemData) {
+                const itemName = (data.item || "").toLowerCase();
+                const code = String(data.code || "");
+                const combined = `${itemName} ${code}`;
+                const match = searchParts.every(part => combined.includes(part));
+                if (match) {
+                    results.push(data);
+                    if (results.length >= 20) break;
+                }
+            }
+
+            if (results.length > 0) {
+                results.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.onclick = () => {
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        selectedItem = suggestion;
+                        listDiv.style.display = 'none';
+                        showSelectedItem();
+                    };
+                    listDiv.appendChild(div);
+                });
+                listDiv.style.display = 'block';
+            }
+
+            messageEl.textContent = `Found ${results.length} items.`;
+        }
+
+        function showSelectedItem() {
+            if (selectedItem) {
+                const display = document.getElementById('resultDisplay');
+                display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
+                display.style.display = 'block';
+
+                document.getElementById('addButton').disabled = false;
+                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+                document.getElementById('qtyInput').focus(); 
+            }
+        }
+        
+        function saveTemporaryItem() {
+            const codeInput = document.getElementById('tempItemCodeInput');
+            const nameInput = document.getElementById('tempItemNameInput');
+            const searchInput = document.getElementById('searchInput');
+            const tempTab = document.getElementById('tempItemTab');
+            const messageEl = document.getElementById('message');
+            
+            const code = codeInput.value.trim();
+            const name = nameInput.value.trim();
+
+            if (!code || !name) {
+                alert('Please enter both a Code and an Item Name for the temporary item.');
+                return;
+            }
+            const numCode = parseInt(code);
+
+            if (isNaN(numCode) || numCode < 1) {
+                alert('Please enter a valid numeric Code.');
+                return;
+            }
+
+            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) {
+                alert(`An item with Code ${code} or Name "${name}" already exists.`);
+                return;
+            }
+
+            const tempRow = `TEMP_${Date.now()}`;
+            const newTempItem = { row: tempRow, code: numCode, item: name, rate: 0 };
+            allItemData.push(newTempItem);
+            
+            selectedItem = newTempItem;
+            searchInput.value = `${newTempItem.code} ${newTempItem.item}`;
+            
+            tempTab.style.display = 'none';
+            showSelectedItem(); 
+            messageEl.textContent = `Temporary item "${name}" (Code: ${code}) added and selected.`;
+        }
+
+
+        // --- LOCAL CART LOGIC (Invoice) ---
+        function loadLocalCart() {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            return storedCart ? JSON.parse(storedCart) : {};
+        }
+
+        function saveLocalCart(cartData) {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+        }
+        
+        function renderCart() {
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            const cartDisplay = document.getElementById('localCartDisplay');
+            const cartCount = document.getElementById('cartCount');
+            const downloadButton = document.getElementById('downloadXLSXButton');
+            const viewBillButton = document.getElementById('viewBillButton');
+
+            cartCount.textContent = items.length;
+            downloadButton.disabled = (items.length === 0);
+            viewBillButton.disabled = (items.length === 0);
+
+            if (items.length === 0) {
+                document.getElementById('billViewArea').style.display = 'none';
+                cartDisplay.innerHTML = 'Cart is empty. Add items above.';
+                return;
+            }
+
+            cartDisplay.innerHTML = "";
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <span>${item.item}</span>
+                    <span>Qty: ${item.qty} | Total: ${item.total.toFixed(2)}</span>
+                `;
+                cartDisplay.appendChild(div);
+            });
+        }
+
+        function clearLocalCart() {
+            if (confirm("Are you sure you want to clear the entire cart and start a new invoice?")) {
+                localStorage.removeItem(CART_STORAGE_KEY);
+                renderCart();
+                document.getElementById('message').textContent = 'Cart cleared. Ready for new invoice.';
+                document.getElementById('searchInput').value = '';
+                document.getElementById('qtyInput').value = '';
+                document.getElementById('totalInput').value = '';
+                document.getElementById('resultDisplay').style.display = 'none';
+                document.getElementById('billViewArea').style.display = 'none';
+                document.getElementById('searchInput').focus(); 
+            }
+        }
+
+        function addItemToCart() {
+            if (!selectedItem) {
+                alert('Please select an item first.');
+                return;
+            }
+
+            const qtyStr = document.getElementById('qtyInput').value.trim();
+            const totalStr = document.getElementById('totalInput').value.trim();
+            const numQty = parseFloat(qtyStr);
+            const numTotal = parseFloat(totalStr);
+
+            if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
+                alert('Please enter valid QTY and TOTAL values.');
+                return;
+            }
+
+            const localCart = loadLocalCart();
+
+            const cartItem = {
+                row: selectedItem.row,
+                qty: numQty,
+                total: numTotal,
+                item: selectedItem.item
+            };
+
+            localCart[selectedItem.row] = cartItem;
+            saveLocalCart(localCart);
+
+            document.getElementById('qtyInput').value = "";
+            document.getElementById('totalInput').value = "";
+            document.getElementById('searchInput').value = "";
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+            selectedItem = null;
+
+            renderCart();
+            document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
+            document.getElementById('searchInput').focus(); 
+        }
+
+        function viewLocalCartHTML() {
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            const billViewArea = document.getElementById('billViewArea');
+            const billContent = document.getElementById('billContent');
+            const now = new Date();
+            
+            if (items.length === 0) {
+                billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>";
+                billViewArea.style.display = 'block';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="bill-table">
+                    <thead>
+                        <tr>
+                            <th>CODE</th>
+                            <th class="item-name">ITEM NAME</th>
+                            <th>QTY</th>
+                            <th>PRICE (inc. VAT)</th>
+                            <th>TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            let grandTotal = 0;
+            items.forEach((item) => {
+                const itemDetails = allItemData.find((d) => d.row === item.row);
+                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+                const qty = item.qty;
+                const total = item.total;
+                const rateInc = qty > 0 ? total / qty : 0;
+                grandTotal += total;
+
+                tableHTML += `
+                    <tr>
+                        <td>${itemCode}</td>
+                        <td class="item-name">${item.item}</td>
+                        <td>${qty.toFixed(2)}</td>
+                        <td>${rateInc.toFixed(3)}</td>
+                        <td>${total.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">GRAND TOTAL:</td>
+                        <td colspan="2" style="text-align: center;">${grandTotal.toFixed(2)}</td>
+                    </tr>
+                    <tr><td colspan="5" style="height: 15px;"></td></tr>
+                    </tbody>
+                </table>
+                <br>
+                <div class="footer-text-html">KMART SUPERMARKET LLC</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Branch: Burdubai (Al Raffa)</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Date: ${now.toLocaleDateString("en-GB")}</div>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Vegetable and Fruits Invoice</div>
+            `;
+
+            billContent.innerHTML = tableHTML;
+            billViewArea.style.display = 'block';
+            document.getElementById('message').textContent = 'Bill displayed below.';
+        }
+
+        function downloadSimpleXLSX() {
+            const XLSX = window.XLSX;
+            if (!XLSX) { alert("XLSX library is not loaded."); return; }
+
+            const localCart = loadLocalCart();
+            const items = Object.values(localCart);
+            if (items.length === 0) { alert("Cart is empty"); return; }
+
+            let grandTotal = 0;
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString("en-GB");
+            
+            const exportData = [];
+            exportData.push(["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]);
+
+            items.forEach((item) => {
+                const itemDetails = allItemData.find((d) => d.row === item.row);
+                const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+                const paddedCode = itemCode.padStart(4, '0');
+                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
+
+                const qty = item.qty;
+                const total = item.total;
+                const rateInc = qty > 0 ? total / qty : 0;
+                const rateExcl = rateInc / 1.05;
+
+                grandTotal += total;
+
+                exportData.push([
+                    itemCode,
+                    item.item,
+                    qty,
+                    Number(rateExcl.toFixed(3)),
+                    Number(rateInc.toFixed(3)),
+                    total,
+                    itemBarcode
+                ]);
+            });
+
+            const lastDataRowExcel = exportData.length; 
+            exportData.push(["GRAND TOTAL:", null, null, null, null, "", null]);
+            exportData.push(["", "", "", "", "", "", ""]);
+            exportData.push([ "K MART SUPERMARKET" ]);
+            exportData.push([ "Branch: Burdubai (Al Raffa)" ]);
+            exportData.push([ `DATE : ${formattedDate}` ]);
+            exportData.push([ "Vegetable and Fruits Invoice" ]);
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            if (!ws['!merges']) ws['!merges'] = [];
+            const grandTotalRowExcel = lastDataRowExcel + 1; 
+
+            ws['!merges'].push(XLSX.utils.decode_range(`A${grandTotalRowExcel}:E${grandTotalRowExcel}`));
+            ws['!merges'].push(XLSX.utils.decode_range(`F${grandTotalRowExcel}:G${grandTotalRowExcel}`));
+
+            const grandTotalCellAddress = `F${grandTotalRowExcel}`;
+            const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
+            
+            XLSX.utils.sheet_add_aoa(ws, [
+                [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
+            ], { origin: grandTotalCellAddress });
+
+            const labelCell = ws[`A${grandTotalRowExcel}`];
+            if (labelCell) {
+                labelCell.s = { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' } };
+            }
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+
+            const filename =
+                `INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            document.getElementById('message').textContent = `Downloaded: ${filename}.`;
+        }
+        
+        // -------------------------------------------------------------------
+        // 2. ORDER MODE FUNCTIONS (ORDER CREATION)
+        // -------------------------------------------------------------------
+        
+        // --- OFFER PRICE TOGGLE ---
+        function toggleOfferPrice() {
+            const isChecked = document.getElementById('offerCheckbox').checked;
+            document.getElementById('offerPriceInput').style.display = isChecked ? 'block' : 'none';
+            document.getElementById('offerPriceInput').value = ''; 
+            document.getElementById('orderQtyInput').focus();
+        }
+
+        // --- ORDER SEARCH AND SELECTION ---
+        function handleOrderSearchInput() {
+            const searchInput = document.getElementById('orderSearchInput');
+            const listDiv = document.getElementById('orderAutocompleteList');
+            const messageEl = document.getElementById('orderMessage');
+            const searchText = searchInput.value.trim().toLowerCase();
+
+            selectedOrderItem = null;
+            document.getElementById('orderResultDisplay').style.display = 'none';
+            document.getElementById('addOrderItemButton').disabled = true;
+            listDiv.style.display = 'none';
+            listDiv.innerHTML = "";
+
+            if (searchText.length < 3) {
+                messageEl.textContent = 'Type at least 3 characters.';
+                return;
+            }
+
+            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+            const results = [];
+
+            for (const data of allItemData) {
+                const itemName = (data.item || "").toLowerCase();
+                const code = String(data.code || "");
+                const combined = `${itemName} ${code}`;
+
+                const match = searchParts.every(part => combined.includes(part));
+                if (match) {
+                    results.push(data);
+                    if (results.length >= 20) break;
+                }
+            }
+
+            if (results.length > 0) {
+                results.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.onclick = () => {
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        selectedOrderItem = suggestion;
+                        listDiv.style.display = 'none';
+                        showSelectedOrderItem();
+                    };
+                    listDiv.appendChild(div);
+                });
+                listDiv.style.display = 'block';
+            } else {
+                messageEl.textContent = `Found 0 items.`;
+            }
+        }
+
+        function showSelectedOrderItem() {
+            if (selectedOrderItem) {
+                const display = document.getElementById('orderResultDisplay');
+                display.innerHTML = `CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item}`;
+                display.style.display = 'block';
+
+                document.getElementById('addOrderItemButton').disabled = false;
+                document.getElementById('orderMessage').textContent = 'Item Selected. Enter Qty and Type.';
+                document.getElementById('orderQtyInput').focus(); 
+            }
+        }
+
+        // --- ORDER LIST MANAGEMENT ---
+        function renderOrderList() {
+            const listDisplay = document.getElementById('orderListDisplay');
+            const viewOrderButton = document.getElementById('viewOrderButton');
+            const orderCount = document.getElementById('orderCount');
+
+            orderCount.textContent = orderList.length;
+            viewOrderButton.disabled = (orderList.length === 0);
+            document.getElementById('orderViewArea').style.display = 'none';
+
+            if (orderList.length === 0) {
+                listDisplay.innerHTML = 'Order list is empty.';
+                return;
+            }
+
+            let html = '<ul>';
+            orderList.forEach((item, index) => {
+                let nameDisplay = item.item;
+                let listStyle = '';
+                
+                if (item.isOffer) {
+                    nameDisplay += ` [OFFER ITEM - ${item.offerPrice.toFixed(2)}]`;
+                    listStyle = 'background-color: #f0fff0; border: 1px dashed #c0e0c0;';
+                }
+                
+                html += `<li style="${listStyle} display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee;">
+                            <span style="flex: 1;">${index + 1}. <strong>${item.code}</strong> ${nameDisplay}</span>
+                            <span style="font-weight: bold;">${item.qty} ${item.type.toUpperCase()} 
+                                <button onclick="removeOrderItem(${index})" style="background-color: #dc3545; padding: 2px 5px; margin-left: 10px; width: auto; font-size: 0.8em;">X</button>
+                            </span>
+                        </li>`;
+            });
+            html += '</ul>';
+            listDisplay.innerHTML = html;
+        }
+
+        function addOrderItem() {
+            if (!selectedOrderItem) { alert('Please select an item first.'); return; }
+
+            const qtyStr = document.getElementById('orderQtyInput').value.trim();
+            const type = document.getElementById('orderTypeSelect').value;
+            const isOffer = document.getElementById('offerCheckbox').checked;
+            const offerPriceStr = document.getElementById('offerPriceInput').value.trim();
+
+            const numQty = parseFloat(qtyStr);
+            const offerPrice = parseFloat(offerPriceStr);
+
+            if (isNaN(numQty) || numQty <= 0) { alert('Please enter a valid quantity.'); return; }
+            if (isOffer && (isNaN(offerPrice) || offerPrice <= 0)) { alert('Please enter a valid Offer Price.'); return; }
+            
+            const newItem = {
+                code: selectedOrderItem.code,
+                item: selectedOrderItem.item,
+                qty: numQty,
+                type: type,
+                isOffer: isOffer,
+                offerPrice: isOffer ? offerPrice : 0,
+                originalRowId: selectedOrderItem.row 
+            };
+
+            orderList.push(newItem);
+
+            document.getElementById('orderQtyInput').value = "";
+            document.getElementById('orderSearchInput').value = "";
+            document.getElementById('orderResultDisplay').style.display = 'none';
+            document.getElementById('addOrderItemButton').disabled = true;
+            document.getElementById('offerCheckbox').checked = false;
+            document.getElementById('offerPriceInput').style.display = 'none';
+            document.getElementById('offerPriceInput').value = '';
+            selectedOrderItem = null;
+
+            renderOrderList();
+            document.getElementById('orderMessage').textContent = `Item added to order list. (${newItem.item})`;
+            document.getElementById('orderSearchInput').focus();
+        }
+
+        function removeOrderItem(index) {
+            if (confirm(`Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?`)) {
+                orderList.splice(index, 1);
+                renderOrderList();
+            }
+        }
+
+        function clearOrderList() {
+            if (confirm("Are you sure you want to clear the entire order list?")) {
+                orderList = [];
+                renderOrderList();
+                document.getElementById('orderMessage').textContent = 'Order list cleared.';
+            }
+        }
+
+
+        function viewOrderListHTML() {
+            const billViewArea = document.getElementById('orderViewArea');
+            const orderContent = document.getElementById('orderContent');
+            const now = new Date();
+            
+            if (orderList.length === 0) {
+                orderContent.innerHTML = "<p>Order list is empty. Add items above.</p>";
+                billViewArea.style.display = 'block';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>CODE</th>
+                            <th class="item-name">ITEM NAME / DETAILS</th>
+                            <th>QTY</th>
+                            <th>TYPE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            orderList.forEach((item) => {
+                let nameDisplay = item.item;
+                let rowClass = '';
+
+                if (item.isOffer) {
+                    nameDisplay += ` [OFFER ITEM - ${item.offerPrice.toFixed(2)}]`;
+                    rowClass = 'offer-item-row';
+                }
+
+                tableHTML += `
+                    <tr class="${rowClass}">
+                        <td>${item.code}</td>
+                        <td class="item-name">${nameDisplay}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.type.toUpperCase()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+                <br>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Order Date: ${now.toLocaleDateString("en-GB")}</div>
+                <div class="footer-text-html">CUSTOMER ORDER LIST</div>
+            `;
+
+            orderContent.innerHTML = tableHTML;
+            billViewArea.style.display = 'block';
+            document.getElementById('orderMessage').textContent = 'Order List generated below.';
+        }
+
+        // --- Event Listeners Setup (Consolidated) ---
+        function setupEventListeners() {
+            const searchInput = document.getElementById('searchInput');
+            const qtyInput = document.getElementById('qtyInput');
+            const totalInput = document.getElementById('totalInput');
+            const addButton = document.getElementById('addButton');
+            const tempNameInput = document.getElementById('tempItemNameInput');
+            const orderQtyInput = document.getElementById('orderQtyInput');
+            const orderSearchInput = document.getElementById('orderSearchInput');
+
+            // 1. Invoice Search Input: Check for exact code match on Enter
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const searchText = searchInput.value.trim();
+                    if (searchText === TEMP_ITEM_TRIGGER_CODE && document.getElementById('tempItemTab').style.display === 'block') {
+                        document.getElementById('tempItemNameInput').focus();
+                        return;
+                    }
+                    const exactMatch = allItemData.find(item => String(item.code) === searchText);
+                    if (exactMatch) {
+                        selectedItem = exactMatch;
+                        searchInput.value = `${exactMatch.code} ${exactMatch.item}`;
+                        document.getElementById('autocompleteList').style.display = 'none';
+                        showSelectedItem(); 
+                    } else {
+                        handleSearchInput();
+                    }
+                }
+            });
+            
+            // 2. Temp Name Input: Move focus or save on Enter
+            tempNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveTemporaryItem();
+                }
+            });
+
+            // 3. Invoice QTY Input: Move focus to TOTAL on Enter
+            qtyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    totalInput.focus();
+                }
+            });
+
+            // 4. Invoice TOTAL Input: Add item to cart on Enter
+            totalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!addButton.disabled) {
+                        addItemToCart();
+                        searchInput.focus(); 
+                    }
+                }
+            });
+            
+            // 5. Order QTY Input: Move focus to Add button on Enter
+            orderQtyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!document.getElementById('addOrderItemButton').disabled) {
+                        addOrderItem();
+                        orderSearchInput.focus(); 
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
