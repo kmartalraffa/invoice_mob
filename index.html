@@ -7,6 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
+    /* CSS remains the same */
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
@@ -181,6 +182,7 @@
 
     // STATE
     let allItemData = [];
+    let allFooterData = []; // New state variable for footer data
     let selectedItem = null;
 
     // --- LOCAL STORAGE UTILITIES ---
@@ -193,21 +195,25 @@
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
     }
 
-    // --- INITIAL LOAD ---
+    // --- INITIAL LOAD (Updated to fetch footer.json) ---
     async function loadItemData() {
       try {
-        const response = await fetch('./items.json');
-        allItemData = await response.json();
+        const itemResponse = await fetch('./items.json');
+        allItemData = await itemResponse.json();
+        
+        const footerResponse = await fetch('./footer.json'); // Fetch footer data
+        allFooterData = await footerResponse.json();
+
         document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
       } catch (e) {
-        console.error("Error loading items.json:", e);
+        console.error("Error loading JSON files:", e);
         document.getElementById('message').textContent =
-          'Error loading item data. Check items.json file.';
+          'Error loading item or footer data. Check JSON files.';
       }
       renderCart();
     }
-
-    // --- SEARCH AND SELECTION LOGIC ---
+    
+    // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
@@ -272,7 +278,7 @@
       }
     }
 
-    // --- LOCAL CART LOGIC ---
+    // --- LOCAL CART LOGIC (Unchanged) ---
     function renderCart() {
       const localCart = loadLocalCart();
       const items = Object.values(localCart);
@@ -351,6 +357,11 @@
       return;
     }
 
+    if (allFooterData.length === 0) {
+        alert("Footer data not loaded. Please check footer.json.");
+        return;
+    }
+
     const localCart = loadLocalCart();
     const items = Object.values(localCart);
     if (items.length === 0) {
@@ -359,7 +370,6 @@
     }
 
     const now = new Date();
-    // Re-instate date formatting for the footer
     const formattedDate = now.toLocaleDateString("en-GB"); 
 
     const ws = XLSX.utils.json_to_sheet([]);
@@ -384,14 +394,14 @@ ws["!cols"] = [
 XLSX.utils.sheet_add_aoa(
   ws,
   [["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]],
-  { origin: "A1" } // Started at A1
+  { origin: "A1" } 
 );
 
 // ✅ Style table header (Row 1) - FONT SIZE 14 & BOLD
 const tableHeaderCells = ["A1","B1","C1","D1","E1","F1","G1"];
 tableHeaderCells.forEach(cell => {
   ws[cell].s = {
-    font: { bold: true, sz: 14 }, // BOLD: true and SIZE: 14
+    font: { bold: true, sz: 14 }, 
     alignment: { horizontal: "center", vertical: "center" },
     fill: { fgColor: { rgb: "FFF2F2F2" } }
   };
@@ -409,7 +419,6 @@ items.forEach((item) => {
 
   const qty = item.qty;
   const total = item.total;
-  // Assuming 5% VAT (1.05)
   const rateInc = qty > 0 ? total / qty : 0; 
   const rateExcl = rateInc / 1.05;
 
@@ -424,14 +433,13 @@ items.forEach((item) => {
   ]);
 });
 
-XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A2" }); // Started at A2
+XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A2" }); 
 
 // ✅ Apply styling (font size 12) to all data rows
-const startRow = 2; // Data rows now start at row 2
+const startRow = 2; 
 const lastDataRow = 1 + items.length; 
 
 for (let r = startRow; r <= lastDataRow; r++) {
-  // Iterate through columns A to G (index 0 to 6)
   for (let c = 0; c <= 6; c++) {
     const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
     const cell = ws[cellAddress];
@@ -441,16 +449,17 @@ for (let r = startRow; r <= lastDataRow; r++) {
           cell.s = {};
       }
       
-      // Enforce font size 12 for data rows
+      // Enforce font size 12 for data rows, and also set row height
       cell.s.font = { name: "Calibri", sz: 12 }; 
       cell.s.alignment = { vertical: "center" };
       
-      // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
+      // Set default height for data rows (can help with display size)
+      ws["!rows"][r - 1] = { hpt: 18 }; 
+
       if (c === 0 || c === 2 || c === 5 || c === 6) {
          cell.s.alignment.horizontal = "center";
       }
       
-      // Ensure that numeric types retain their number format
       if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
            cell.s.numFmt = cell.z; 
       }
@@ -462,7 +471,7 @@ for (let r = startRow; r <= lastDataRow; r++) {
 // -----------------------------
 // GRAND TOTAL
 // -----------------------------
-const gtRow = lastDataRow + 1; // Grand Total row index
+const gtRow = lastDataRow + 1; 
 
 XLSX.utils.sheet_add_aoa(
   ws,
@@ -473,19 +482,13 @@ XLSX.utils.sheet_add_aoa(
       null,
       null,
       null,
-      // Formula starts from F2
       { t: "n", f: `SUM(F2:F${lastDataRow })`, z: "#,##0.00" } 
     ]
   ],
-  // Grand total is on the gtRow
   { origin: `A${gtRow}` } 
 );
 
-// Merge cells for the row where Grand Total label appears
-ws["!merges"].push({
-  s: { r: gtRow - 1, c: 0 },
-  e: { r: gtRow - 1, c: 4 }
-});
+ws["!merges"].push({ s: { r: gtRow - 1, c: 0 }, e: { r: gtRow - 1, c: 4 } });
 
 ws[`A${gtRow}`].s = {
   font: { bold: true, sz: 16 },
@@ -499,56 +502,40 @@ ws[`F${gtRow}`].s = {
 };
 
 // -----------------------------
-// NEW FOOTER (Old Headers)
+// NEW FOOTER (Data fetched from footer.json)
 // -----------------------------
-const freeRow = gtRow + 1; // One row after Grand Total (Blank Row)
-const footerStartRow = freeRow + 1; // Footer starts here
+let currentRow = gtRow + 2; // One row free after GT, start footer here
 
-// 1. KMART SUPERMARKET LLC (Footer Row 1)
-XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: `A${footerStartRow}` });
-ws[`A${footerStartRow}`].s = {
-  font: { name: "Calibri", sz: 18, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws[`A${footerStartRow}`].t = "s";
-ws["!merges"].push({ s: { r: footerStartRow - 1, c: 0 }, e: { r: footerStartRow - 1, c: 6 } });
-ws["!rows"][footerStartRow - 1] = { hpt: 32 };
+allFooterData.forEach((footerItem, index) => {
+    let footerText = footerItem.text;
 
-
-// 2. Branch: Burdubai (Al Raffa) (Footer Row 2)
-const footerRow2 = footerStartRow + 1;
-XLSX.utils.sheet_add_aoa(ws, [["Branch: Burdubai (Al Raffa)"]], { origin: `A${footerRow2}` });
-ws[`A${footerRow2}`].s = {
-  font: { name: "Calibri", sz: 14, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws[`A${footerRow2}`].t = "s";
-ws["!merges"].push({ s: { r: footerRow2 - 1, c: 0 }, e: { r: footerRow2 - 1, c: 6 } });
-ws["!rows"][footerRow2 - 1] = { hpt: 24 };
-
-
-// 3. Date: (Footer Row 3)
-const footerRow3 = footerStartRow + 2;
-XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: `A${footerRow3}` });
-ws[`A${footerRow3}`].s = {
-  font: { name: "Calibri", sz: 14, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws[`A${footerRow3}`].t = "s";
-ws["!merges"].push({ s: { r: footerRow3 - 1, c: 0 }, e: { r: footerRow3 - 1, c: 6 } });
-ws["!rows"][footerRow3 - 1] = { hpt: 24 };
-
-
-// 4. Vegetable and Fruits Invoice (Footer Row 4)
-const footerRow4 = footerStartRow + 3;
-XLSX.utils.sheet_add_aoa(ws, [["Vegetable and Fruits Invoice"]], { origin: `A${footerRow4}` });
-ws[`A${footerRow4}`].s = {
-  font: { name: "Calibri", sz: 16, bold: true },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws[`A${footerRow4}`].t = "s";
-ws["!merges"].push({ s: { r: footerRow4 - 1, c: 0 }, e: { r: footerRow4 - 1, c: 6 } });
-ws["!rows"][footerRow4 - 1] = { hpt: 26 };
+    // Replace DATE_PLACEHOLDER with actual date
+    if (footerText.includes('[DATE_PLACEHOLDER]')) {
+        footerText = footerText.replace('[DATE_PLACEHOLDER]', formattedDate);
+    }
+    
+    XLSX.utils.sheet_add_aoa(ws, [[footerText]], { origin: `A${currentRow}` });
+    
+    ws[`A${currentRow}`].s = {
+      font: { 
+        name: "Calibri", 
+        sz: footerItem.size, 
+        bold: footerItem.bold 
+      },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+    ws[`A${currentRow}`].t = "s";
+    
+    // Merge cells A to G
+    ws["!merges"].push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: 6 } });
+    
+    // Set Row Height
+    if (footerItem.height) {
+        ws["!rows"][currentRow - 1] = { hpt: footerItem.height }; 
+    }
+    
+    currentRow++;
+});
 
 
 // -----------------------------
