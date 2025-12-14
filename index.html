@@ -18,7 +18,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            position: relative; /* Needed for keyboard positioning and temporary tab */
+            position: relative;
         }
         h2, h3 {
             color: #333;
@@ -141,7 +141,7 @@
         /* --- TEMPORARY ITEM TAB STYLES --- */
         #tempItemTab {
             position: absolute;
-            top: 100%; /* Position right below the search input */
+            top: 100%; 
             left: 0;
             width: 100%;
             background: #e6f7ff;
@@ -165,54 +165,8 @@
         #tempItemTab button {
             background-color: #28a745;
         }
-
-        /* --- VIRTUAL KEYPAD STYLES --- */
-        #numericKeyboard {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 300px; /* Standard width for a compact keyboard */
-            background-color: #333;
-            padding: 10px;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 2000;
-        }
-        .keypad-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-bottom: 5px;
-        }
-        .keypad-button {
-            background-color: #555;
-            color: white;
-            border: none;
-            padding: 15px 0;
-            font-size: 1.2em;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.1s;
-        }
-        .keypad-button:active {
-            background-color: #777;
-        }
-        .keypad-enter {
-            background-color: #28a745; /* Green for action */
-            grid-column: span 2; /* Make ENTER wider */
-        }
-        .keypad-enter:active {
-            background-color: #1e7e34;
-        }
-        .keypad-backspace {
-            background-color: #dc3545; /* Red for deletion */
-        }
-        .keypad-backspace:active {
-            background-color: #bd2130;
-        }
+        
+        /* Numeric Keypad Styles (Removed as per user request) */
     </style>
 </head>
 <body onload="loadItemData()">
@@ -229,7 +183,7 @@
             <div id="tempItemTab">
                 <h4>➕ Add Temporary/New Item (Code 1001 Activated)</h4>
                 <div class="input-group">
-                    <div><input type="number" id="tempItemCodeInput" placeholder="Custom Code (e.g., 999 or 1001)" value="1001" onfocus="toggleNumericKeyboard(this)"></div>
+                    <div><input type="number" id="tempItemCodeInput" placeholder="Custom Code (e.g., 999 or 1001)" value="1001"></div>
                     <div><input type="text" id="tempItemNameInput" placeholder="Item Name (e.g., New Apple)"></div>
                 </div>
                 <button onclick="saveTemporaryItem()">Save Temporary Item & Continue</button>
@@ -238,8 +192,8 @@
         <div id="resultDisplay"></div>
         
         <div class="input-group">
-            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)" onfocus="toggleNumericKeyboard(this)" onblur="setTimeout(() => toggleNumericKeyboard(null), 100)"></div>
-            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)" onfocus="toggleNumericKeyboard(this)" onblur="setTimeout(() => toggleNumericKeyboard(null), 100)"></div>
+            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)"></div>
+            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)"></div>
         </div>
 
         <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
@@ -260,30 +214,6 @@
         </div>
     </div>
 
-    <div id="numericKeyboard">
-        <div class="keypad-row">
-            <button class="keypad-button" onclick="handleKeypadInput('7')">7</button>
-            <button class="keypad-button" onclick="handleKeypadInput('8')">8</button>
-            <button class="keypad-button" onclick="handleKeypadInput('9')">9</button>
-            <button class="keypad-button keypad-backspace" onclick="handleKeypadInput('backspace')">← Back</button>
-        </div>
-        <div class="keypad-row">
-            <button class="keypad-button" onclick="handleKeypadInput('4')">4</button>
-            <button class="keypad-button" onclick="handleKeypadInput('5')">5</button>
-            <button class="keypad-button" onclick="handleKeypadInput('6')">6</button>
-            <button class="keypad-button keypad-backspace" onclick="handleKeypadInput('clear')">C</button>
-        </div>
-        <div class="keypad-row">
-            <button class="keypad-button" onclick="handleKeypadInput('1')">1</button>
-            <button class="keypad-button" onclick="handleKeypadInput('2')">2</button>
-            <button class="keypad-button" onclick="handleKeypadInput('3')">3</button>
-            <button class="keypad-button" onclick="handleKeypadInput('.')">.</button>
-        </div>
-        <div class="keypad-row">
-            <button class="keypad-button" onclick="handleKeypadInput('0')" style="grid-column: span 2;">0</button>
-            <button class="keypad-button keypad-enter" onclick="handleKeypadInput('enter')">ENTER</button>
-        </div>
-    </div>
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
@@ -292,62 +222,7 @@
         // STATE
         let allItemData = [];
         let selectedItem = null;
-        let activeInput = null; // Tracks which input field (QTY or TOTAL) is active
-
-        // --- VIRTUAL KEYPAD LOGIC ---
-        function toggleNumericKeyboard(inputElement) {
-            const keyboard = document.getElementById('numericKeyboard');
-            
-            if (inputElement) {
-                activeInput = inputElement;
-                keyboard.style.display = 'grid';
-            } else {
-                if (!keyboard.contains(document.activeElement)) {
-                    activeInput = null;
-                    keyboard.style.display = 'none';
-                }
-            }
-        }
-
-        function handleKeypadInput(value) {
-            if (!activeInput) return;
-
-            const currentVal = activeInput.value;
-            let newVal = currentVal;
-            
-            activeInput.focus(); 
-
-            switch (value) {
-                case 'backspace':
-                    newVal = currentVal.slice(0, -1);
-                    break;
-                case 'clear':
-                    newVal = '';
-                    break;
-                case 'enter':
-                    // Custom logic for Enter key navigation
-                    if (activeInput.id === 'qtyInput') {
-                        document.getElementById('totalInput').focus();
-                    } else if (activeInput.id === 'totalInput') {
-                        if (!document.getElementById('addButton').disabled) {
-                            addItemToCart();
-                            document.getElementById('searchInput').focus(); 
-                        }
-                    }
-                    return; 
-                case '.':
-                    if (currentVal.includes('.')) return;
-                    newVal = currentVal + value;
-                    break;
-                default:
-                    newVal = currentVal + value;
-                    break;
-            }
-
-            activeInput.value = newVal;
-            activeInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        // --- END VIRTUAL KEYPAD LOGIC ---
+        // activeInput and numeric keypad functions removed
 
         // --- LOCAL STORAGE UTILITIES (Unchanged) ---
         function loadLocalCart() {
@@ -362,7 +237,6 @@
         // --- INITIAL LOAD ---
         async function loadItemData() {
             try {
-                // Ensure items.json is present in the same directory for this line to work
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
                 
@@ -376,7 +250,7 @@
             setupEventListeners();
         }
         
-        // --- SEARCH AND SELECTION LOGIC (MODIFIED for 1001) ---
+        // --- SEARCH AND SELECTION LOGIC ---
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -393,7 +267,7 @@
             tempTab.style.display = 'none'; // Hide temp tab by default
 
             if (searchText === TEMP_ITEM_TRIGGER_CODE) {
-                // *** New Logic: Show temporary item input tab ***
+                // Show temporary item input tab
                 tempTab.style.display = 'block';
                 document.getElementById('tempItemCodeInput').value = TEMP_ITEM_TRIGGER_CODE;
                 document.getElementById('tempItemNameInput').value = '';
@@ -492,7 +366,7 @@
                 row: tempRow,
                 code: numCode,
                 item: name,
-                rate: 0 // Placeholder rate
+                rate: 0
             };
 
             // Add the temporary item to the in-memory data array
@@ -509,7 +383,7 @@
             messageEl.textContent = `Temporary item "${name}" (Code: ${code}) successfully added and selected. Enter Qty/Total.`;
         }
         
-        // --- Keyboard Event Setup (Unchanged) ---
+        // --- Keyboard Event Setup (Simplified) ---
         function setupEventListeners() {
             const searchInput = document.getElementById('searchInput');
             const qtyInput = document.getElementById('qtyInput');
@@ -523,7 +397,6 @@
                     const searchText = searchInput.value.trim();
                     
                     if (searchText === TEMP_ITEM_TRIGGER_CODE && document.getElementById('tempItemTab').style.display === 'block') {
-                        // If 1001 is typed and tab is open, focus on name input
                         document.getElementById('tempItemNameInput').focus();
                         return;
                     }
@@ -540,8 +413,17 @@
                     }
                 }
             });
+            
+            // 2. Temp Name Input: Move focus or save on Enter
+            const tempNameInput = document.getElementById('tempItemNameInput');
+            tempNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveTemporaryItem();
+                }
+            });
 
-            // 2. QTY Input: Move focus to TOTAL on Enter (Keyboard only, virtual keypad handles its own ENTER)
+            // 3. QTY Input: Move focus to TOTAL on Enter
             qtyInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -549,7 +431,7 @@
                 }
             });
 
-            // 3. TOTAL Input: Add item to cart on Enter (Keyboard only, virtual keypad handles its own ENTER)
+            // 4. TOTAL Input: Add item to cart on Enter
             totalInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -560,8 +442,7 @@
                 }
             });
             
-            qtyInput.addEventListener('focus', () => toggleNumericKeyboard(qtyInput));
-            totalInput.addEventListener('focus', () => toggleNumericKeyboard(totalInput));
+            // Removed: focus handlers for keypad
         }
 
 
@@ -636,7 +517,6 @@
                 item: selectedItem.item
             };
             
-            // Overwrite existing item if the row ID matches, effectively editing the cart item
             localCart[selectedItem.row] = cartItem; 
             saveLocalCart(localCart);
 
@@ -686,7 +566,6 @@
             
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
-                // Fallback for temporary items which might not have a code in the original JSON
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
 
                 const qty = item.qty;
