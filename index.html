@@ -364,10 +364,8 @@
 
   const ws = XLSX.utils.json_to_sheet([]);
 
-// ✅ ✅ PASTE HEADER BLOCK HERE
-// -----------------------------
-// HEADER ROWS + STYLES
-// -----------------------------
+// ✅ HEADER ROWS + STYLES
+// --------------------------------------------------
 XLSX.utils.sheet_add_aoa(ws, [["KMART SUPERMARKET LLC"]], { origin: "A1" });
 ws["A1"].s = {
   font: { name: "Calibri", sz: 18, bold: true },
@@ -396,7 +394,9 @@ ws["A4"].s = {
 };
 ws["A4"].t = "s";
 
-// ✅ MERGES COME AFTER THIS
+
+// ✅ MERGE HEADER CELLS (ONLY ONCE)
+// --------------------------------------------------
 ws["!merges"] = [
   { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
   { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
@@ -404,13 +404,29 @@ ws["!merges"] = [
   { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
 ];
 
-// ✅ ROW HEIGHTS COME AFTER MERGES
+
+// ✅ ROW HEIGHTS (ONLY ONCE)
+// --------------------------------------------------
 ws["!rows"] = [
-  { hpt: 32 },
-  { hpt: 24 },
-  { hpt: 24 },
-  { hpt: 26 }
+  { hpt: 32 }, // Row 1
+  { hpt: 24 }, // Row 2
+  { hpt: 24 }, // Row 3
+  { hpt: 26 }  // Row 4
 ];
+
+
+// ✅ COLUMN WIDTHS
+// --------------------------------------------------
+ws["!cols"] = [
+  { wch: 12 }, // CODE
+  { wch: 35 }, // ITEM NAME
+  { wch: 8  }, // QTY
+  { wch: 12 }, // Rate
+  { wch: 12 }, // RATE.inc
+  { wch: 15 }, // TOTAL
+  { wch: 18 }  // ItemBarCode
+];
+
 
 
 
