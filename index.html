@@ -18,6 +18,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative; /* Needed for keyboard positioning */
         }
         h2, h3 {
             color: #333;
@@ -136,6 +137,54 @@
             font-size: 16pt;
             margin-top: 5px;
         }
+
+        /* --- VIRTUAL KEYPAD STYLES --- */
+        #numericKeyboard {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px; /* Standard width for a compact keyboard */
+            background-color: #333;
+            padding: 10px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+        }
+        .keypad-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .keypad-button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 15px 0;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        .keypad-button:active {
+            background-color: #777;
+        }
+        .keypad-enter {
+            background-color: #28a745; /* Green for action */
+            grid-column: span 2; /* Make ENTER wider */
+        }
+        .keypad-enter:active {
+            background-color: #1e7e34;
+        }
+        .keypad-backspace {
+            background-color: #dc3545; /* Red for deletion */
+        }
+        .keypad-backspace:active {
+            background-color: #bd2130;
+        }
     </style>
 </head>
 <body onload="loadItemData()">
@@ -152,8 +201,8 @@
         <div id="resultDisplay"></div>
         
         <div class="input-group">
-            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)"></div>
-            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)"></div>
+            <div><input type="number" id="qtyInput" placeholder="QTY (e.g., 2.5)" onfocus="toggleNumericKeyboard(this)" onblur="setTimeout(() => toggleNumericKeyboard(null), 100)"></div>
+            <div><input type="number" id="totalInput" placeholder="TOTAL Price (e.g., 50.00)" onfocus="toggleNumericKeyboard(this)" onblur="setTimeout(() => toggleNumericKeyboard(null), 100)"></div>
         </div>
 
         <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
@@ -174,6 +223,30 @@
         </div>
     </div>
 
+    <div id="numericKeyboard">
+        <div class="keypad-row">
+            <button class="keypad-button" onclick="handleKeypadInput('7')">7</button>
+            <button class="keypad-button" onclick="handleKeypadInput('8')">8</button>
+            <button class="keypad-button" onclick="handleKeypadInput('9')">9</button>
+            <button class="keypad-button keypad-backspace" onclick="handleKeypadInput('backspace')">← Back</button>
+        </div>
+        <div class="keypad-row">
+            <button class="keypad-button" onclick="handleKeypadInput('4')">4</button>
+            <button class="keypad-button" onclick="handleKeypadInput('5')">5</button>
+            <button class="keypad-button" onclick="handleKeypadInput('6')">6</button>
+            <button class="keypad-button keypad-backspace" onclick="handleKeypadInput('clear')">C</button>
+        </div>
+        <div class="keypad-row">
+            <button class="keypad-button" onclick="handleKeypadInput('1')">1</button>
+            <button class="keypad-button" onclick="handleKeypadInput('2')">2</button>
+            <button class="keypad-button" onclick="handleKeypadInput('3')">3</button>
+            <button class="keypad-button" onclick="handleKeypadInput('.')">.</button>
+        </div>
+        <div class="keypad-row">
+            <button class="keypad-button" onclick="handleKeypadInput('0')" style="grid-column: span 2;">0</button>
+            <button class="keypad-button keypad-enter" onclick="handleKeypadInput('enter')">ENTER</button>
+        </div>
+    </div>
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
@@ -181,6 +254,71 @@
         // STATE
         let allItemData = [];
         let selectedItem = null;
+        let activeInput = null; // Tracks which input field (QTY or TOTAL) is active
+
+        // --- VIRTUAL KEYPAD LOGIC ---
+        function toggleNumericKeyboard(inputElement) {
+            const keyboard = document.getElementById('numericKeyboard');
+            
+            if (inputElement) {
+                // Show keyboard and link it to the focused input
+                activeInput = inputElement;
+                keyboard.style.display = 'grid';
+            } else {
+                // This runs after a small delay (onblur), allowing button clicks to register
+                // Only hide if the input is no longer active
+                if (!keyboard.contains(document.activeElement)) {
+                    activeInput = null;
+                    keyboard.style.display = 'none';
+                }
+            }
+        }
+
+        function handleKeypadInput(value) {
+            if (!activeInput) return;
+
+            const currentVal = activeInput.value;
+            let newVal = currentVal;
+            
+            // Prevent focusing on the keyboard, keep focus on the input field
+            activeInput.focus(); 
+
+            switch (value) {
+                case 'backspace':
+                    newVal = currentVal.slice(0, -1);
+                    break;
+                case 'clear':
+                    newVal = '';
+                    break;
+                case 'enter':
+                    // Custom logic for Enter key navigation
+                    if (activeInput.id === 'qtyInput') {
+                        document.getElementById('totalInput').focus();
+                    } else if (activeInput.id === 'totalInput') {
+                        if (!document.getElementById('addButton').disabled) {
+                            addItemToCart();
+                            // Move to search input after successful add
+                            document.getElementById('searchInput').focus(); 
+                        }
+                    }
+                    return; // Stop here, we don't update the value for enter
+                case '.':
+                    // Only allow one decimal point
+                    if (currentVal.includes('.')) return;
+                    newVal = currentVal + value;
+                    break;
+                default:
+                    // Only allow numeric input
+                    newVal = currentVal + value;
+                    break;
+            }
+
+            activeInput.value = newVal;
+
+            // Trigger the native input event to ensure any calculations/validations (if added later) run
+            activeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        // --- END VIRTUAL KEYPAD LOGIC ---
 
         // --- LOCAL STORAGE UTILITIES (Unchanged) ---
         function loadLocalCart() {
@@ -192,7 +330,7 @@
             localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
         }
 
-        // --- INITIAL LOAD (Unchanged) ---
+        // --- INITIAL LOAD (Updated to call setupEventListeners) ---
         async function loadItemData() {
             try {
                 const itemResponse = await fetch('./items.json'); 
@@ -205,6 +343,7 @@
                     'Error loading item data. Check items.json file.';
             }
             renderCart();
+            setupEventListeners();
         }
         
         // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
@@ -268,8 +407,60 @@
 
                 document.getElementById('addButton').disabled = false;
                 document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+                document.getElementById('qtyInput').focus(); 
             }
         }
+        
+        // --- Keyboard Event Setup (Simplified by using onfocus/onblur for QTY/TOTAL) ---
+        function setupEventListeners() {
+            const searchInput = document.getElementById('searchInput');
+            const qtyInput = document.getElementById('qtyInput');
+            const totalInput = document.getElementById('totalInput');
+            const addButton = document.getElementById('addButton');
+
+            // 1. Search Input: Check for exact code match on Enter
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const searchText = searchInput.value.trim();
+                    
+                    const exactMatch = allItemData.find(item => String(item.code) === searchText);
+
+                    if (exactMatch) {
+                        selectedItem = exactMatch;
+                        searchInput.value = `${exactMatch.code} ${exactMatch.item}`;
+                        document.getElementById('autocompleteList').style.display = 'none';
+                        showSelectedItem(); 
+                    } else {
+                        handleSearchInput();
+                    }
+                }
+            });
+
+            // 2. QTY Input: Move focus to TOTAL on Enter (Keyboard only, virtual keypad handles its own ENTER)
+            qtyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    totalInput.focus();
+                }
+            });
+
+            // 3. TOTAL Input: Add item to cart on Enter (Keyboard only, virtual keypad handles its own ENTER)
+            totalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!addButton.disabled) {
+                        addItemToCart();
+                        searchInput.focus(); 
+                    }
+                }
+            });
+            
+            // Add handler for physical backspace key (to hide keyboard if backspace pressed on empty field)
+            qtyInput.addEventListener('focus', () => toggleNumericKeyboard(qtyInput));
+            totalInput.addEventListener('focus', () => toggleNumericKeyboard(totalInput));
+        }
+
 
         // --- LOCAL CART LOGIC (Unchanged) ---
         function renderCart() {
@@ -295,8 +486,8 @@
                 const div = document.createElement('div');
                 div.className = 'cart-item';
                 div.innerHTML = `
-                    <span>${item.item} (Row: ${item.row})</span>
-                    <span>Qty: ${item.qty} | Total: ${item.total}</span>
+                    <span>${item.item}</span>
+                    <span>Qty: ${item.qty} | Total: ${item.total.toFixed(2)}</span>
                 `;
                 cartDisplay.appendChild(div);
             });
@@ -312,6 +503,7 @@
                 document.getElementById('totalInput').value = '';
                 document.getElementById('resultDisplay').style.display = 'none';
                 document.getElementById('billViewArea').style.display = 'none';
+                document.getElementById('searchInput').focus(); 
             }
         }
 
@@ -377,10 +569,8 @@
                             <th>CODE</th>
                             <th class="item-name">ITEM NAME</th>
                             <th>QTY</th>
-                            <th>Rate</th>
-                            <th>RATE.inc</th>
+                            <th>PRICE (inc. VAT)</th>
                             <th>TOTAL</th>
-                            <th>ItemBarCode</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -391,13 +581,10 @@
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-                const paddedCode = itemCode.padStart(4, '0');
-                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
 
                 const qty = item.qty;
                 const total = item.total;
                 const rateInc = qty > 0 ? total / qty : 0;
-                const rateExcl = rateInc / 1.05;
 
                 grandTotal += total;
 
@@ -406,22 +593,19 @@
                         <td>${itemCode}</td>
                         <td class="item-name">${item.item}</td>
                         <td>${qty.toFixed(2)}</td>
-                        <td>${rateExcl.toFixed(3)}</td>
                         <td>${rateInc.toFixed(3)}</td>
                         <td>${total.toFixed(2)}</td>
-                        <td>${itemBarcode}</td>
                     </tr>
                 `;
             });
             
             tableHTML += `
                     <tr class="total-row">
-                        <td colspan="5" style="text-align: right;">GRAND TOTAL:</td>
-                        <td style="text-align: center;">${grandTotal.toFixed(2)}</td>
-                        <td></td>
+                        <td colspan="3" style="text-align: right;">GRAND TOTAL:</td>
+                        <td colspan="2" style="text-align: center;">${grandTotal.toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td colspan="7" style="height: 15px;"></td> </tr>
+                        <td colspan="5" style="height: 15px;"></td> </tr>
                     </tbody>
                 </table>
                 <br>
@@ -438,7 +622,7 @@
 
 
         // -------------------------------------------------------------------
-        // ✅ UPDATED: Simple Self Excel Creation Function (Array-Based with Merges/Custom Footer)
+        // XLSX Function (Unchanged)
         // -------------------------------------------------------------------
         function downloadSimpleXLSX() {
             const XLSX = window.XLSX;
@@ -458,10 +642,8 @@
             const now = new Date();
             const formattedDate = now.toLocaleDateString("en-GB");
             
-            // 1. Define the entire data structure as an Array of Arrays (AoA)
             const exportData = [];
             
-            // --- Row 1: Headings (Array Index 0) ---
             exportData.push([
                 "CODE",
                 "ITEM NAME",
@@ -472,7 +654,6 @@
                 "ItemBarCode"
             ]);
 
-            // --- Row 2 to N: Item Data ---
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
@@ -497,60 +678,45 @@
                 ]);
             });
 
-            // Calculate the last item row index (for Grand Total formula)
-            const lastDataRowExcel = exportData.length; // Excel rows start at 1
+            const lastDataRowExcel = exportData.length; 
 
-            // --- Row N+1: Grand Total ---
-            // This row is indexed lastDataRowExcel in the array (0-based)
             exportData.push([
-                "GRAND TOTAL:", // A[N+1]
-                null, // B[N+1] (Merged)
-                null, // C[N+1] (Merged)
-                null, // D[N+1] (Merged)
-                null, // E[N+1] (Merged)
-                "", // F[N+1] (Will hold the formula)
-                null  // G[N+1] (Merged with F)
+                "GRAND TOTAL:", 
+                null, 
+                null, 
+                null, 
+                null, 
+                "", 
+                null  
             ]);
             
-            // --- Row N+2: Blank Row ---
             exportData.push(["", "", "", "", "", "", ""]);
 
-            // --- Rows N+3 to N+6: Footer Details (in separate rows, starting from column A) ---
             exportData.push([ "K MART SUPERMARKET" ]);
             exportData.push([ "Branch: Burdubai (Al Raffa)" ]);
             exportData.push([ `DATE : ${formattedDate}` ]);
             exportData.push([ "Vegetable and Fruits Invoice" ]);
 
 
-            // 2. Convert AoA to Worksheet
             const ws = XLSX.utils.aoa_to_sheet(exportData);
             
-            // Initialize merges array
             if (!ws['!merges']) ws['!merges'] = [];
 
-            // 3. Apply Merges and Formula for Grand Total
             const grandTotalRowExcel = lastDataRowExcel + 1; 
 
-            // --- Merge A:E (GRAND TOTAL: label) ---
             ws['!merges'].push(XLSX.utils.decode_range(`A${grandTotalRowExcel}:E${grandTotalRowExcel}`));
 
-            // --- Merge F:G (Grand Total Value) ---
             ws['!merges'].push(XLSX.utils.decode_range(`F${grandTotalRowExcel}:G${grandTotalRowExcel}`));
 
 
-            // 4. Update the Grand Total Formula cell (F[N+1])
             const grandTotalCellAddress = `F${grandTotalRowExcel}`;
 
-            // F2:F[lastDataRowExcel] is the range of item totals
             const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
             
-            // Set up the cell with the formula and formatting
             XLSX.utils.sheet_add_aoa(ws, [
                 [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
             ], { origin: grandTotalCellAddress });
 
-            // 5. Apply basic alignment/style to Grand Total row for visibility
-            // Ensure the merged label (A[N+1]) is bold and right-aligned
             const labelCell = ws[`A${grandTotalRowExcel}`];
             if (labelCell) {
                 labelCell.s = {
@@ -559,7 +725,6 @@
                 };
             }
             
-            // 6. Create Workbook and Download
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Invoice");
 
