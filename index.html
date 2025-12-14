@@ -182,7 +182,7 @@
 
     // STATE
     let allItemData = [];
-    let allFooterData = []; // New state variable for footer data
+    let allFooterData = []; 
     let selectedItem = null;
 
     // --- LOCAL STORAGE UTILITIES ---
@@ -201,14 +201,20 @@
         const itemResponse = await fetch('./items.json');
         allItemData = await itemResponse.json();
         
-        const footerResponse = await fetch('./footer.json'); // Fetch footer data
-        allFooterData = await footerResponse.json();
+        // Ensure footer.json fetch is attempted if the user is using the new structure
+        try {
+            const footerResponse = await fetch('./footer.json'); 
+            allFooterData = await footerResponse.json();
+        } catch (e) {
+             console.warn("footer.json not found or failed to load. Using default empty footer.");
+             allFooterData = []; // Fallback to empty array if file is missing
+        }
 
         document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
       } catch (e) {
         console.error("Error loading JSON files:", e);
         document.getElementById('message').textContent =
-          'Error loading item or footer data. Check JSON files.';
+          'Error loading item data. Check items.json file.';
       }
       renderCart();
     }
@@ -357,11 +363,6 @@
       return;
     }
 
-    if (allFooterData.length === 0) {
-        alert("Footer data not loaded. Please check footer.json.");
-        return;
-    }
-
     const localCart = loadLocalCart();
     const items = Object.values(localCart);
     if (items.length === 0) {
@@ -407,6 +408,9 @@ tableHeaderCells.forEach(cell => {
   };
   ws[cell].t = "s";
 });
+// Set fixed height for the header row
+ws["!rows"][0] = { hpt: 20 }; 
+
 
 // -----------------------------
 // DATA ROWS (Origin: A2)
@@ -435,13 +439,20 @@ items.forEach((item) => {
 
 XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A2" }); 
 
-// ✅ Apply styling (font size 12) to all data rows
+// ✅ DEEP FIX: Apply strong styling (font size 12) to all data rows
 const startRow = 2; 
 const lastDataRow = 1 + items.length; 
 
 for (let r = startRow; r <= lastDataRow; r++) {
+  // Set fixed height for data rows, this often forces font size recognition
+  ws["!rows"][r - 1] = { hpt: 18 }; 
+  
   for (let c = 0; c <= 6; c++) {
     const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
+    // Check if cell exists, if not, create it to attach style (STRONG FIX)
+    if (!ws[cellAddress]) {
+        ws[cellAddress] = { t: 's', v: '' };
+    }
     const cell = ws[cellAddress];
 
     if (cell) {
@@ -449,17 +460,16 @@ for (let r = startRow; r <= lastDataRow; r++) {
           cell.s = {};
       }
       
-      // Enforce font size 12 for data rows, and also set row height
+      // Enforce font properties
       cell.s.font = { name: "Calibri", sz: 12 }; 
       cell.s.alignment = { vertical: "center" };
       
-      // Set default height for data rows (can help with display size)
-      ws["!rows"][r - 1] = { hpt: 18 }; 
-
+      // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
       if (c === 0 || c === 2 || c === 5 || c === 6) {
          cell.s.alignment.horizontal = "center";
       }
       
+      // Ensure that numeric types retain their number format
       if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
            cell.s.numFmt = cell.z; 
       }
@@ -472,6 +482,8 @@ for (let r = startRow; r <= lastDataRow; r++) {
 // GRAND TOTAL
 // -----------------------------
 const gtRow = lastDataRow + 1; 
+// Set height for GT row
+ws["!rows"][gtRow - 1] = { hpt: 28 }; 
 
 XLSX.utils.sheet_add_aoa(
   ws,
@@ -505,12 +517,13 @@ ws[`F${gtRow}`].s = {
 // NEW FOOTER (Data fetched from footer.json)
 // -----------------------------
 let currentRow = gtRow + 2; // One row free after GT, start footer here
+ws["!rows"][gtRow] = { hpt: 15 }; // Height for the empty row
 
 allFooterData.forEach((footerItem, index) => {
     let footerText = footerItem.text;
 
     // Replace DATE_PLACEHOLDER with actual date
-    if (footerText.includes('[DATE_PLACEHOLDER]')) {
+    if (footerText && footerText.includes('[DATE_PLACEHOLDER]')) {
         footerText = footerText.replace('[DATE_PLACEHOLDER]', formattedDate);
     }
     
