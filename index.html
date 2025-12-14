@@ -344,17 +344,14 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-    function downloadLocalCartXLSX() {
+   function downloadLocalCartXLSX() {
   if (typeof XLSX === 'undefined') {
-    console.error("FATAL ERROR: XLSX library not loaded.");
-    document.getElementById('message').textContent = 'ERROR: XLSX library failed to load.';
-    alert("Error: XLSX download failed. Library not found.");
+    alert("Error: XLSX library not loaded.");
     return;
   }
 
   const localCart = loadLocalCart();
   const items = Object.values(localCart);
-
   if (items.length === 0) {
     alert('Cart is empty. Nothing to download.');
     return;
@@ -362,32 +359,39 @@
 
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-GB');
-
   const ws = XLSX.utils.json_to_sheet([]);
 
   // Header rows
-  XLSX.utils.sheet_add_aoa(ws, [['Kmart Supermarket LLC']], { origin: "A1" });
-  XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (al raffa)', '', '', '', '', 'Date:', formattedDate]], { origin: "A2" });
-  XLSX.utils.sheet_add_aoa(ws, [['VEGETABLE AND FRUITS INVOICE']], { origin: "A4" });
+  XLSX.utils.sheet_add_aoa(ws, [['KMART SUPERMARKET LLC']], { origin: "A1" });
+  XLSX.utils.sheet_add_aoa(ws, [['Branch: Burdubai (Al Raffa)']], { origin: "A2" });
+  XLSX.utils.sheet_add_aoa(ws, [[`Date: ${formattedDate}`]], { origin: "A3" });
+  XLSX.utils.sheet_add_aoa(ws, [['Vegetable and Fruits Invoice']], { origin: "A4" });
 
-  // Merge header cells
+  // Merge header cells across all columns
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // A1:G1
-    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }  // A4:G4
+    { s: { r:0, c:0 }, e: { r:0, c:6 } }, // Row 1
+    { s: { r:1, c:0 }, e: { r:1, c:6 } }, // Row 2
+    { s: { r:2, c:0 }, e: { r:2, c:6 } }, // Row 3
+    { s: { r:3, c:0 }, e: { r:3, c:6 } }  // Row 4
   ];
+
+  // Apply styles (requires xlsx-style or styled SheetJS build)
+  ws['A1'].s = { font: { name: "Calibri", sz: 18, bold: true }, alignment: { horizontal: "center" } };
+  ws['A2'].s = { font: { name: "Calibri", sz: 12, bold: true }, alignment: { horizontal: "center" } };
+  ws['A3'].s = { font: { name: "Calibri", sz: 14, bold: true }, alignment: { horizontal: "center" } };
+  ws['A4'].s = { font: { name: "Calibri", sz: 14, bold: true }, alignment: { horizontal: "center" } };
 
   // Column headers
   XLSX.utils.sheet_add_aoa(ws, [['CODE', 'ITEM NAME', 'QTY', 'Rate', 'RATE.inc', 'TOTAL', 'ItemBarCode']], { origin: "A6" });
 
   const data_for_sheet = [];
-  items.forEach((item, index) => {
+  items.forEach((item) => {
     const itemDetails = allItemData.find(d => d.row === item.row);
     const itemCode = itemDetails ? String(itemDetails.code || "") : "";
     const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
 
     const qty = item.qty;
     const total = item.total;
-
     let rateInc = qty > 0 ? total / qty : 0;
     let rateExcl = rateInc / 1.05;
 
@@ -404,6 +408,7 @@
 
   XLSX.utils.sheet_add_aoa(ws, data_for_sheet, { origin: "A7" });
 
+  // Grand Total row
   const grandTotalRow = 7 + items.length;
   XLSX.utils.sheet_add_aoa(ws, [
     ['GRAND TOTAL:', null, null, null, null, { t: 'n', f: `SUM(F8:F${grandTotalRow})`, z: '#,##0.00' }]
@@ -413,9 +418,10 @@
 
   // Column widths
   ws['!cols'] = [
-    { wch: 10 }, // CODE
-    { wch: 30 }, // ITEM NAME
-    { wch: 8 },  // QTY
+    { wch: 30 }, // Row 1 width
+    { wch: 15 }, // Row 2 width
+    { wch: 15 }, // Row 3 width
+    { wch: 20 }, // Row 4 width
     { wch: 12 }, // Rate
     { wch: 12 }, // RATE.inc
     { wch: 15 }, // TOTAL
