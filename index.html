@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- XLSX library for Excel export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
@@ -345,7 +344,7 @@
     }
 
   function downloadLocalCartXLSX() {
-  const XLSX = window.XLSX; // must be xlsx-style
+  const XLSX = window.XLSX; 
 
   if (!XLSX) {
     alert("XLSX library not loaded");
@@ -476,7 +475,7 @@ ws["!cols"] = [
 
   XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A7" });
   
-  // ✅ FIX: Apply styling (font size 12) to all data rows
+  // ✅ REVISED FIX: Apply styling (font size 12) to all data rows
   const startRow = 7;
   const endRow = startRow + items.length - 1; 
 
@@ -486,20 +485,23 @@ ws["!cols"] = [
       const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
       const cell = ws[cellAddress];
 
-      if (cell && cell.v !== undefined) {
-        // Set default style for data cells
-        cell.s = {
-          font: { name: "Calibri", sz: 12 }, 
-          alignment: { vertical: "center" }
-        };
-
+      if (cell) {
+        // Create style object if it doesn't exist
+        if (!cell.s) {
+            cell.s = {};
+        }
+        
+        // Enforce font size 12
+        cell.s.font = { name: "Calibri", sz: 12 }; 
+        cell.s.alignment = { vertical: "center" };
+        
         // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
         if (c === 0 || c === 2 || c === 5 || c === 6) {
            cell.s.alignment.horizontal = "center";
         }
         
         // Ensure that numeric types retain their number format
-        if (cell.t === 'n' && (c === 3 || c === 4 || c === 5)) {
+        if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
              cell.s.numFmt = cell.z; 
         }
       }
@@ -557,11 +559,6 @@ ws["!cols"] = [
 
   XLSX.writeFile(wb, filename);
 }
-
-
-
-
-
   </script>
 </body>
 </html>
