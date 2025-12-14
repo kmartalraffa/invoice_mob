@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMart Order Creation App</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        h2, h3 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #17a2b8;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #138496;
+        }
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-group > div {
+            flex: 1;
+        }
+        .autocomplete-list {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            width: calc(100% - 22px);
+            z-index: 1000;
+        }
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .autocomplete-item:hover {
+            background-color: #f0f0f0;
+        }
+        #orderResultDisplay {
+            padding: 10px;
+            background-color: #d1ecf1;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+        #orderMessage {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+        }
+        #orderListDisplay {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        /* Style for Order List Table */
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .order-table th, .order-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .order-table th {
+            background-color: #f2f2f2;
+        }
+        .order-table .item-name {
+            text-align: left;
+        }
+        .offer-item-row td {
+            background-color: #e9f7ef; /* Light green/teal background for offer */
+            font-weight: bold;
+        }
+        .footer-text-html {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16pt;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body onload="loadItemData()">
+
+    <div class="container">
+        <h2>📦 KMart Order Creation App (Standalone)</h2>
+        <div id="orderMessage">Loading item data...</div>
+
+        <h3>Add Item to Order</h3>
+        <div style="position: relative; margin-bottom: 20px;">
+            <input type="text" id="orderSearchInput" placeholder="Search by Code or Item Name" oninput="handleOrderSearchInput()">
+            <div id="orderAutocompleteList" class="autocomplete-list"></div>
+        </div>
+
+        <div id="orderResultDisplay" style="display: none;"></div>
+
+        <div class="input-group">
+            <div><input type="number" id="orderQtyInput" placeholder="QTY" min="1"></div>
+            <div>
+                <select id="orderTypeSelect">
+                    <option value="kg">KG</option>
+                    <option value="pcs">PCS</option>
+                    <option value="bag">BAG</option>
+                    <option value="box">BOX</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+            <input type="checkbox" id="offerCheckbox" style="width: 20px;" onclick="toggleOfferPrice()">
+            <label for="offerCheckbox" style="flex: 1; margin: 0;">Tickmarking Offer</label>
+            
+            <input type="number" id="offerPriceInput" placeholder="Offer Price" style="width: 50%; display: none;">
+        </div>
+
+        <button id="addOrderItemButton" onclick="addOrderItem()" disabled>Add Item to Order List</button>
+
+        <h3>Current Order List (<span id="orderCount">0</span> Items)</h3>
+        <div id="orderListDisplay">Order list is empty.</div>
+
+        <div class="action-buttons" style="grid-template-columns: 1fr;">
+            <button id="viewOrderButton" onclick="viewOrderListHTML()" disabled style="background-color: #28a745; margin-top: 10px;">Generate Order List (On Screen)</button>
+            <button onclick="clearOrderList()" style="background-color: #dc3545; margin-top: 5px;">Clear Order List</button>
+        </div>
+
+        <div id="orderViewArea" style="display: none; margin-top: 30px;">
+            <h3>Generated Order Preview</h3>
+            <div id="orderContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // STATE
+        let allItemData = []; // To store items loaded from JSON
+        let orderList = []; // Array to hold current order items
+        let selectedOrderItem = null;
+
+        // --- INITIAL LOAD ---
+        async function loadItemData() {
+            try {
+                // Assuming items.json is in the same directory
+                const itemResponse = await fetch('./items.json'); 
+                allItemData = await itemResponse.json();
+                
+                document.getElementById('orderMessage').textContent = 'Item data loaded. Start creating the order.';
+            } catch (e) {
+                console.error("Error loading JSON file:", e);
+                document.getElementById('orderMessage').textContent =
+                    'Error loading item data. Check items.json file. Using mock data.';
+                // Optional: Add mock data here if loading fails
+            }
+            document.getElementById('orderCount').textContent = orderList.length;
+        }
+
+        // --- OFFER PRICE TOGGLE ---
+        function toggleOfferPrice() {
+            const isChecked = document.getElementById('offerCheckbox').checked;
+            document.getElementById('offerPriceInput').style.display = isChecked ? 'block' : 'none';
+            document.getElementById('offerPriceInput').value = ''; // Clear when unchecked
+            document.getElementById('orderQtyInput').focus();
+        }
+
+        // --- ORDER SEARCH AND SELECTION ---
+        function handleOrderSearchInput() {
+            const searchInput = document.getElementById('orderSearchInput');
+            const listDiv = document.getElementById('orderAutocompleteList');
+            const messageEl = document.getElementById('orderMessage');
+            const searchText = searchInput.value.trim().toLowerCase();
+
+            selectedOrderItem = null;
+            document.getElementById('orderResultDisplay').style.display = 'none';
+            document.getElementById('addOrderItemButton').disabled = true;
+            listDiv.style.display = 'none';
+            listDiv.innerHTML = "";
+
+            if (searchText.length < 3) {
+                messageEl.textContent = 'Type at least 3 characters.';
+                return;
+            }
+
+            const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
+            const results = [];
+
+            for (const data of allItemData) {
+                const itemName = (data.item || "").toLowerCase();
+                const code = String(data.code || "");
+                const combined = `${itemName} ${code}`;
+
+                const match = searchParts.every(part => combined.includes(part));
+                if (match) {
+                    results.push(data);
+                    if (results.length >= 20) break;
+                }
+            }
+
+            if (results.length > 0) {
+                results.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.onclick = () => {
+                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        selectedOrderItem = suggestion;
+                        listDiv.style.display = 'none';
+                        showSelectedOrderItem();
+                    };
+                    listDiv.appendChild(div);
+                });
+                listDiv.style.display = 'block';
+            } else {
+                messageEl.textContent = `Found 0 items.`;
+            }
+        }
+
+        function showSelectedOrderItem() {
+            if (selectedOrderItem) {
+                const display = document.getElementById('orderResultDisplay');
+                display.innerHTML = `CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item}`;
+                display.style.display = 'block';
+
+                document.getElementById('addOrderItemButton').disabled = false;
+                document.getElementById('orderMessage').textContent = 'Item Selected. Enter Qty and Type.';
+                document.getElementById('orderQtyInput').focus(); 
+            }
+        }
+
+        // --- ORDER LIST MANAGEMENT (DISPLAY) ---
+        function renderOrderList() {
+            const listDisplay = document.getElementById('orderListDisplay');
+            const viewOrderButton = document.getElementById('viewOrderButton');
+            const orderCount = document.getElementById('orderCount');
+
+            orderCount.textContent = orderList.length;
+            viewOrderButton.disabled = (orderList.length === 0);
+            document.getElementById('orderViewArea').style.display = 'none';
+
+            if (orderList.length === 0) {
+                listDisplay.innerHTML = 'Order list is empty.';
+                return;
+            }
+
+            // Simple list view for items in the queue
+            let html = '<ul>';
+            orderList.forEach((item, index) => {
+                let nameDisplay = item.item;
+                let listStyle = '';
+                
+                if (item.isOffer) {
+                    nameDisplay += ` [OFFER ITEM - ${item.offerPrice.toFixed(2)}]`;
+                    listStyle = 'background-color: #f0fff0; border: 1px dashed #c0e0c0;';
+                }
+                
+                html += `<li style="${listStyle} display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee;">
+                            <span style="flex: 1;">${index + 1}. <strong>${item.code}</strong> ${nameDisplay}</span>
+                            <span style="font-weight: bold;">${item.qty} ${item.type.toUpperCase()} 
+                                <button onclick="removeOrderItem(${index})" style="background-color: #dc3545; padding: 2px 5px; margin-left: 10px; width: auto; font-size: 0.8em;">X</button>
+                            </span>
+                        </li>`;
+            });
+            html += '</ul>';
+            listDisplay.innerHTML = html;
+        }
+
+        function addOrderItem() {
+            if (!selectedOrderItem) {
+                alert('Please select an item first.');
+                return;
+            }
+
+            const qtyStr = document.getElementById('orderQtyInput').value.trim();
+            const type = document.getElementById('orderTypeSelect').value;
+            const isOffer = document.getElementById('offerCheckbox').checked;
+            const offerPriceStr = document.getElementById('offerPriceInput').value.trim();
+
+            const numQty = parseFloat(qtyStr);
+            const offerPrice = parseFloat(offerPriceStr);
+
+            if (isNaN(numQty) || numQty <= 0) {
+                alert('Please enter a valid quantity.');
+                return;
+            }
+            
+            if (isOffer && (isNaN(offerPrice) || offerPrice <= 0)) {
+                alert('Please enter a valid Offer Price.');
+                return;
+            }
+            
+            const newItem = {
+                code: selectedOrderItem.code,
+                item: selectedOrderItem.item,
+                qty: numQty,
+                type: type,
+                isOffer: isOffer,
+                offerPrice: isOffer ? offerPrice : 0,
+                // Assuming selectedOrderItem has 'row' from JSON
+                originalRowId: selectedOrderItem.row 
+            };
+
+            orderList.push(newItem);
+
+            // Reset inputs and state
+            document.getElementById('orderQtyInput').value = "";
+            document.getElementById('orderSearchInput').value = "";
+            document.getElementById('orderResultDisplay').style.display = 'none';
+            document.getElementById('addOrderItemButton').disabled = true;
+            document.getElementById('offerCheckbox').checked = false;
+            document.getElementById('offerPriceInput').style.display = 'none';
+            document.getElementById('offerPriceInput').value = '';
+            selectedOrderItem = null;
+
+            renderOrderList();
+            document.getElementById('orderMessage').textContent =
+                `Item added to order list. (${newItem.item})`;
+            document.getElementById('orderSearchInput').focus();
+        }
+
+        function removeOrderItem(index) {
+            if (confirm(`Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?`)) {
+                orderList.splice(index, 1);
+                renderOrderList();
+            }
+        }
+
+        function clearOrderList() {
+            if (confirm("Are you sure you want to clear the entire order list?")) {
+                orderList = [];
+                renderOrderList();
+                document.getElementById('orderMessage').textContent = 'Order list cleared.';
+            }
+        }
+
+
+        // --- ORDER LIST GENERATION (PREVIEW) ---
+        function viewOrderListHTML() {
+            const billViewArea = document.getElementById('orderViewArea');
+            const orderContent = document.getElementById('orderContent');
+            const now = new Date();
+            
+            if (orderList.length === 0) {
+                orderContent.innerHTML = "<p>Order list is empty. Add items above.</p>";
+                billViewArea.style.display = 'block';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>CODE</th>
+                            <th class="item-name">ITEM NAME / DETAILS</th>
+                            <th>QTY</th>
+                            <th>TYPE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            orderList.forEach((item) => {
+                let nameDisplay = item.item;
+                let rowClass = '';
+
+                if (item.isOffer) {
+                    // Output format: ONION [OFFER ITEM - 1.99]
+                    nameDisplay += ` [OFFER ITEM - ${item.offerPrice.toFixed(2)}]`;
+                    rowClass = 'offer-item-row';
+                }
+
+                tableHTML += `
+                    <tr class="${rowClass}">
+                        <td>${item.code}</td>
+                        <td class="item-name">${nameDisplay}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.type.toUpperCase()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+                <br>
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Order Date: ${now.toLocaleDateString("en-GB")}</div>
+                <div class="footer-text-html">CUSTOMER ORDER LIST</div>
+            `;
+
+            orderContent.innerHTML = tableHTML;
+            billViewArea.style.display = 'block';
+            document.getElementById('orderMessage').textContent = 'Order List generated below.';
+        }
+    </script>
+</body>
+</html>
