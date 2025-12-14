@@ -112,6 +112,10 @@
       background-color: #007bff;
       margin-bottom: 15px;
     }
+    #viewBillButton {
+      background-color: #ff9800;
+      margin-bottom: 15px;
+    }
 
     .cart-item {
       display: flex;
@@ -122,6 +126,41 @@
     }
     .cart-item:last-child {
       border-bottom: none;
+    }
+    
+    /* Bill View Styling */
+    .bill-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        font-size: 16pt; 
+        margin-top: 20px; 
+    }
+    .bill-table th { 
+        font-size: 14pt; 
+        border-bottom: 2px solid #333; 
+        padding: 5px; 
+        text-align: center; 
+        background-color: #f2f2f2; 
+    }
+    .bill-table td { 
+        padding: 8px; 
+        text-align: center; 
+        border-bottom: 1px dashed #ccc; 
+    }
+    .bill-table .item-name { 
+        text-align: left; 
+    }
+    .bill-table .total-row td { 
+        font-weight: bold; 
+        border-top: 2px solid #333; 
+        font-size: 16pt; 
+        padding-top: 10px; 
+    }
+    .footer-text-html { 
+        text-align: center; 
+        font-weight: bold; 
+        padding: 5px; 
+        margin-top: 10px; 
     }
   </style>
 </head>
@@ -169,12 +208,21 @@
     <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
     <div id="localCartDisplay" class="cart-box"></div>
 
+    <button onclick="viewLocalCartHTML()" id="viewBillButton" disabled>
+      View Bill (On Screen)
+    </button>
     <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
-      Download Cart as XLSX (Template based)
+      Download Cart as XLSX
     </button>
 
     <p id="message">Loading data ...</p>
   </div>
+  
+  <div id="billViewArea" class="container" style="display: none; max-width: 90%; margin-top: 20px;">
+    <h3>Generated Bill Preview</h3>
+    <div id="billContent"></div>
+  </div>
+
 
   <script>
     // CONFIG
@@ -281,16 +329,18 @@
       }
     }
 
-    // --- LOCAL CART LOGIC (Unchanged) ---
+    // --- LOCAL CART LOGIC (Updated to enable View Bill button) ---
     function renderCart() {
       const localCart = loadLocalCart();
       const items = Object.values(localCart);
       const cartDisplay = document.getElementById('localCartDisplay');
       const cartCount = document.getElementById('cartCount');
       const downloadButton = document.getElementById('downloadXLSXButton');
+      const viewBillButton = document.getElementById('viewBillButton');
 
       cartCount.textContent = items.length;
       downloadButton.disabled = (items.length === 0);
+      viewBillButton.disabled = (items.length === 0); // Enable/Disable View Bill button
 
       if (items.length === 0) {
         cartDisplay.innerHTML = 'Cart is empty. Add items above.';
@@ -350,137 +400,221 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-
-  // -------------------------------------------------------------------
-  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FORCED FONT SIZE)
-  // -------------------------------------------------------------------
-  async function downloadLocalCartXLSX() {
-    const XLSX = window.XLSX; 
-
-    if (!XLSX) {
-      alert("XLSX library not loaded");
-      return;
-    }
-
-    const localCart = loadLocalCart();
-    const items = Object.values(localCart);
-    if (items.length === 0) {
-      alert("Cart is empty");
-      return;
-    }
-
-    // 1. Fetch the template file
-    let rawData;
-    try {
-        const response = await fetch(TEMPLATE_FILE);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch template: ${response.statusText}`);
+    // -------------------------------------------------------------------
+    // ✅ NEW FUNCTION: VIEW BILL (ON SCREEN)
+    // -------------------------------------------------------------------
+    function viewLocalCartHTML() {
+        const localCart = loadLocalCart();
+        const items = Object.values(localCart);
+        const billViewArea = document.getElementById('billViewArea');
+        const billContent = document.getElementById('billContent');
+        const now = new Date();
+        
+        if (items.length === 0) {
+            billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>";
+            billViewArea.style.display = 'block';
+            return;
         }
-        rawData = await response.arrayBuffer();
-    } catch (e) {
-        alert("Error loading template.xlsx. Please ensure the file exists.");
-        console.error(e);
+
+        let tableHTML = `
+            <table class="bill-table">
+                <thead>
+                    <tr>
+                        <th>CODE</th>
+                        <th class="item-name">ITEM NAME</th>
+                        <th>QTY</th>
+                        <th>Rate</th>
+                        <th>RATE.inc</th>
+                        <th>TOTAL</th>
+                        <th>ItemBarCode</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        let grandTotal = 0;
+        
+        items.forEach((item) => {
+            const itemDetails = allItemData.find((d) => d.row === item.row);
+            const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+            const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
+            const qty = item.qty;
+            const total = item.total;
+            const rateInc = qty > 0 ? total / qty : 0; 
+            const rateExcl = rateInc / 1.05;
+            
+            grandTotal += total;
+
+            tableHTML += `
+                <tr>
+                    <td>${itemCode}</td>
+                    <td class="item-name">${item.item}</td>
+                    <td>${qty.toFixed(2)}</td>
+                    <td>${rateExcl.toFixed(3)}</td>
+                    <td>${rateInc.toFixed(3)}</td>
+                    <td>${total.toFixed(2)}</td>
+                    <td>${itemBarcode}</td>
+                </tr>
+            `;
+        });
+        
+        tableHTML += `
+                <tr class="total-row">
+                    <td colspan="5" style="text-align: right;">GRAND TOTAL:</td>
+                    <td style="text-align: center;">${grandTotal.toFixed(2)}</td>
+                    <td></td>
+                </tr>
+                </tbody>
+            </table>
+            <br>
+            <div class="footer-text-html" style="font-size: 18pt;">KMART SUPERMARKET LLC</div>
+            <div class="footer-text-html">Branch: Burdubai (Al Raffa)</div>
+            <div class="footer-text-html">Date: ${now.toLocaleDateString("en-GB")}</div>
+            <div class="footer-text-html">Vegetable and Fruits Invoice</div>
+        `;
+
+        billContent.innerHTML = tableHTML;
+        billViewArea.style.display = 'block';
+        document.getElementById('message').textContent = 'Bill displayed below. Check if size and alignment are correct here.';
+    }
+
+
+    // -------------------------------------------------------------------
+    // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FORCED FONT SIZE & ROW HEIGHT)
+    // -------------------------------------------------------------------
+    async function downloadLocalCartXLSX() {
+        const XLSX = window.XLSX; 
+
+        if (!XLSX) {
+        alert("XLSX library not loaded");
         return;
-    }
-
-    // 2. Read the template Workbook
-    const wb = XLSX.read(rawData, { type: 'array' });
-    const sheetName = wb.SheetNames[0]; 
-    const ws = wb.Sheets[sheetName];
-
-    // 3. Prepare the new data
-    const dataRows = [];
-    const now = new Date();
-
-    items.forEach((item) => {
-      const itemDetails = allItemData.find((d) => d.row === item.row);
-      const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-      const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
-
-      const qty = item.qty;
-      const total = item.total;
-      const rateInc = qty > 0 ? total / qty : 0; 
-      const rateExcl = rateInc / 1.05;
-
-      // Ensure the order matches the template's columns (A-G)
-      dataRows.push([
-        itemCode,
-        item.item,
-        qty,
-        { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
-        { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
-        { v: total, t: "n", z: "#,##0.00" },
-        itemBarcode
-      ]);
-    });
-
-    // 4. Add new data to the worksheet starting from A2
-    XLSX.utils.sheet_add_aoa(
-        ws, 
-        dataRows, 
-        { 
-            origin: "A2", 
-            skipHeader: true, 
-            cellStyles: true // Retains styles from template (Row 2 styles the data)
-        } 
-    ); 
-
-    // 5. FORCE FONT SIZE 16 ON ALL NEW DATA CELLS (Secured Loop)
-    const startRow = 2; 
-    const lastDataRow = 1 + items.length; // The last row number of the inserted data
-
-    for (let r = startRow; r <= lastDataRow; r++) {
-      for (let c = 0; c <= 6; c++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
-        const cell = ws[cellAddress];
-
-        if (cell) {
-          if (!cell.s) {
-              cell.s = {};
-          }
-          if (!cell.s.font) {
-              cell.s.font = {};
-          }
-          // 🎯 Force size 16 only on the data rows (r=2 to r=lastDataRow)
-          cell.s.font.sz = 16; 
-          
-          // Reapply alignment and number format if necessary (to avoid losing alignment set by template)
-          if (!cell.s.alignment) {
-              cell.s.alignment = {};
-          }
-          cell.s.alignment.vertical = "center";
-          
-          if (c === 0 || c === 2 || c === 5 || c === 6) {
-             cell.s.alignment.horizontal = "center";
-          }
-          
-          if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
-               cell.s.numFmt = cell.z; 
-          }
         }
-      }
+
+        const localCart = loadLocalCart();
+        const items = Object.values(localCart);
+        if (items.length === 0) {
+        alert("Cart is empty");
+        return;
+        }
+
+        // 1. Fetch the template file
+        let rawData;
+        try {
+            const response = await fetch(TEMPLATE_FILE);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch template: ${response.statusText}`);
+            }
+            rawData = await response.arrayBuffer();
+        } catch (e) {
+            alert("Error loading template.xlsx. Please ensure the file exists.");
+            console.error(e);
+            return;
+        }
+
+        // 2. Read the template Workbook
+        const wb = XLSX.read(rawData, { type: 'array' });
+        const sheetName = wb.SheetNames[0]; 
+        const ws = wb.Sheets[sheetName];
+
+        // 3. Prepare the new data
+        const dataRows = [];
+        const now = new Date();
+
+        items.forEach((item) => {
+        const itemDetails = allItemData.find((d) => d.row === item.row);
+        const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+        const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
+
+        const qty = item.qty;
+        const total = item.total;
+        const rateInc = qty > 0 ? total / qty : 0; 
+        const rateExcl = rateInc / 1.05;
+
+        // Ensure the order matches the template's columns (A-G)
+        dataRows.push([
+            itemCode,
+            item.item,
+            qty,
+            { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
+            { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
+            { v: total, t: "n", z: "#,##0.00" },
+            itemBarcode
+        ]);
+        });
+
+        // 4. Add new data to the worksheet starting from A2
+        XLSX.utils.sheet_add_aoa(
+            ws, 
+            dataRows, 
+            { 
+                origin: "A2", 
+                skipHeader: true, 
+                cellStyles: true // Retains styles from template (Row 2 styles the data)
+            } 
+        ); 
+
+        // 5. FORCE FONT SIZE 16 & ROW HEIGHT (Secured Loop)
+        const startRow = 2; 
+        const lastDataRow = 1 + items.length; // The last row number of the inserted data
+
+        if (!ws['!rows']) ws['!rows'] = [];
+
+        for (let r = startRow; r <= lastDataRow; r++) {
+            const rowIdx = r - 1; // 0-indexed row number
+            
+            // 🎯 NEW: Force Row Height (22 points for size 16 font)
+            if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
+            ws['!rows'][rowIdx].hpt = 22; 
+            
+            for (let c = 0; c <= 6; c++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: c });
+                const cell = ws[cellAddress];
+
+                if (cell) {
+                    if (!cell.s) {
+                        cell.s = {};
+                    }
+                    if (!cell.s.font) {
+                        cell.s.font = {};
+                    }
+                    // 🎯 Force size 16
+                    cell.s.font.sz = 16; 
+                    
+                    if (!cell.s.alignment) {
+                        cell.s.alignment = {};
+                    }
+                    cell.s.alignment.vertical = "center";
+                    
+                    if (c === 0 || c === 2 || c === 5 || c === 6) {
+                        cell.s.alignment.horizontal = "center";
+                    }
+                    
+                    if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
+                        cell.s.numFmt = cell.z; 
+                    }
+                }
+            }
+        }
+
+
+        // 6. Update the Grand Total Formula (F column)
+        const newLastDataRowUpdated = 1 + items.length; 
+        const shift = items.length - 1; 
+        const finalGtRow = 3 + shift; // Recalculate GT row based on item count
+
+        const finalGtAddress = `F${finalGtRow}`; 
+        
+        if (ws[finalGtAddress]) {
+            ws[finalGtAddress].f = `SUM(F2:F${newLastDataRowUpdated})`;
+        }
+        
+        // 7. Write/Download the new file
+        const filename =
+        `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+
+        XLSX.writeFile(wb, filename);
+        document.getElementById('message').textContent = `Downloaded: ${filename}`;
     }
-
-
-    // 6. Update the Grand Total Formula (F column)
-    const newLastDataRowUpdated = 1 + items.length; 
-    const shift = items.length - 1; 
-    const finalGtRow = 3 + shift; // Recalculate GT row based on item count
-
-    const finalGtAddress = `F${finalGtRow}`; 
-    
-    // Update the formula to sum the range from F2 to the last data row (F[newLastDataRowUpdated])
-    if (ws[finalGtAddress]) {
-        ws[finalGtAddress].f = `SUM(F2:F${newLastDataRowUpdated})`;
-    }
-    
-    // 7. Write/Download the new file
-    const filename =
-      `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
-
-    XLSX.writeFile(wb, filename);
-    document.getElementById('message').textContent = `Downloaded: ${filename}`;
-  }
   </script>
 </body>
 </html>
