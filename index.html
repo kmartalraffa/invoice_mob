@@ -343,6 +343,7 @@
       viewBillButton.disabled = (items.length === 0); // Enable/Disable View Bill button
 
       if (items.length === 0) {
+        document.getElementById('billViewArea').style.display = 'none'; // Hide bill if cart is empty
         cartDisplay.innerHTML = 'Cart is empty. Add items above.';
         return;
       }
@@ -401,7 +402,7 @@
     }
 
     // -------------------------------------------------------------------
-    // ✅ NEW FUNCTION: VIEW BILL (ON SCREEN)
+    // ✅ NEW FUNCTION: VIEW BILL (ON SCREEN) (Confirmed working)
     // -------------------------------------------------------------------
     function viewLocalCartHTML() {
         const localCart = loadLocalCart();
@@ -475,12 +476,12 @@
 
         billContent.innerHTML = tableHTML;
         billViewArea.style.display = 'block';
-        document.getElementById('message').textContent = 'Bill displayed below. Check if size and alignment are correct here.';
+        document.getElementById('message').textContent = 'Bill displayed below.';
     }
 
 
     // -------------------------------------------------------------------
-    // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FORCED FONT SIZE & ROW HEIGHT)
+    // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FINAL ROBUST STYLING FIX)
     // -------------------------------------------------------------------
     async function downloadLocalCartXLSX() {
         const XLSX = window.XLSX; 
@@ -506,7 +507,7 @@
             }
             rawData = await response.arrayBuffer();
         } catch (e) {
-            alert("Error loading template.xlsx. Please ensure the file exists.");
+            alert("Error loading template.xlsx. Please ensure the file exists and is uploaded as a proper XLSX file.");
             console.error(e);
             return;
         }
@@ -553,16 +554,39 @@
             } 
         ); 
 
-        // 5. FORCE FONT SIZE 16 & ROW HEIGHT (Secured Loop)
-        const startRow = 2; 
-        const lastDataRow = 1 + items.length; // The last row number of the inserted data
+        // 5. DEFINE AND APPLY ROBUST STYLE, ROW HEIGHT, AND COLUMN WIDTHS
+        
+        // 5.1 FORCE COLUMN WIDTHS (ITEM NAME (B) is set to 40 for ample space)
+        if (!ws['!cols']) ws['!cols'] = [];
+        
+        ws['!cols'] = [
+            { wch: 10 }, // A: CODE
+            { wch: 40 }, // 🎯 B: ITEM NAME (Increased width for long names)
+            { wch: 10 }, // C: QTY
+            { wch: 12 }, // D: Rate
+            { wch: 12 }, // E: RATE.inc
+            { wch: 15 }, // F: TOTAL
+            { wch: 18 }  // G: ItemBarCode
+        ];
 
+
+        // 5.2 APPLY ROBUST STYLE & ROW HEIGHT
+        const startRow = 2; 
+        const lastDataRow = 1 + items.length; 
+
+        // Define a base style object (16pt font)
+        const baseCellStyle = {
+            font: { sz: 16, name: "Arial" }, 
+            alignment: { vertical: "center" }
+        };
+        
         if (!ws['!rows']) ws['!rows'] = [];
+
 
         for (let r = startRow; r <= lastDataRow; r++) {
             const rowIdx = r - 1; // 0-indexed row number
             
-            // 🎯 NEW: Force Row Height (22 points for size 16 font)
+            // 🎯 Force Row Height (22 points for size 16 font)
             if (!ws['!rows'][rowIdx]) ws['!rows'][rowIdx] = {};
             ws['!rows'][rowIdx].hpt = 22; 
             
@@ -571,27 +595,31 @@
                 const cell = ws[cellAddress];
 
                 if (cell) {
-                    if (!cell.s) {
-                        cell.s = {};
-                    }
-                    if (!cell.s.font) {
-                        cell.s.font = {};
-                    }
-                    // 🎯 Force size 16
-                    cell.s.font.sz = 16; 
+                    let currentStyle = JSON.parse(JSON.stringify(baseCellStyle));
                     
-                    if (!cell.s.alignment) {
-                        cell.s.alignment = {};
-                    }
-                    cell.s.alignment.vertical = "center";
-                    
-                    if (c === 0 || c === 2 || c === 5 || c === 6) {
-                        cell.s.alignment.horizontal = "center";
+                    // Apply specific number formats and horizontal alignment based on column
+                    if (c === 0 || c === 2 || c === 6) { // CODE, QTY, BarCode
+                        currentStyle.alignment.horizontal = "center";
+                    } else if (c === 1) { // ITEM NAME
+                        currentStyle.alignment.horizontal = "left";
                     }
                     
-                    if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
-                        cell.s.numFmt = cell.z; 
+                    // Number formats (Rates & Total) - Use 'z' (format string) if it exists
+                    if (cell.t === 'n') {
+                        if (c === 3 || c === 4) { // Rate/Rate.inc
+                            currentStyle.numFmt = "0.000"; 
+                        } else if (c === 5) { // Total
+                            currentStyle.numFmt = "#,##0.00"; 
+                        } else {
+                            // Use the default number format set by the template if available
+                            currentStyle.numFmt = cell.z || "General";
+                        }
+                    } else {
+                        delete currentStyle.numFmt;
                     }
+
+                    // Assign the constructed style object to the cell
+                    cell.s = currentStyle;
                 }
             }
         }
@@ -613,7 +641,7 @@
         `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
         XLSX.writeFile(wb, filename);
-        document.getElementById('message').textContent = `Downloaded: ${filename}`;
+        document.getElementById('message').textContent = `Downloaded: ${filename}. Please check final styling.`;
     }
   </script>
 </body>
