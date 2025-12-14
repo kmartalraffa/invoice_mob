@@ -1,191 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Shop Invoice - kmart alraffa (Offline Cart)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-  <style>
-    /* CSS remains the same */
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f4;
-    }
-    .container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-      margin-bottom: 15px;
-    }
-    button:hover:enabled {
-      opacity: 0.9;
-    }
-    button:disabled {
-      background-color: #cccccc !important;
-      cursor: not-allowed;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    h2 {
-      text-align: center;
-      color: #666;
-      margin-top: 0;
-      margin-bottom: 20px;
-      font-size: 18px;
-    }
-    h3 {
-      margin-top: 15px;
-      margin-bottom: 10px;
-    }
-    .result-box {
-      background-color: #e0f7fa;
-      padding: 10px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-weight: bold;
-    }
-    .cart-box {
-      background-color: #fff3e0;
-      padding: 10px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }
-    .search-area {
-      position: relative;
-    }
-    .autocomplete-list {
-      border: 1px solid #ccc;
-      max-height: 200px;
-      overflow-y: auto;
-      position: absolute;
-      width: 100%;
-      background: white;
-      z-index: 10;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .autocomplete-item {
-      padding: 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    .autocomplete-item:hover {
-      background-color: #f0f0f0;
-    }
-    .label-style {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    /* Buttons */
-    #addButton {
-      background-color: #4CAF50;
-    }
-    #downloadXLSXButton {
-      background-color: #007bff;
-      margin-bottom: 15px;
-    }
-
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      border-bottom: 1px dashed #ccc;
-      font-size: 14px;
-    }
-    .cart-item:last-child {
-      border-bottom: none;
-    }
-  </style>
-</head>
-
-<body onload="loadItemData()">
-  <div class="container">
-    <h1>Shop Invoice</h1>
-    <h2>kmart alraffa</h2>
-    <hr>
-
-    <div class="search-area">
-      <label for="searchInput" class="label-style">1. ITEM CODE OR NAME :</label>
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Type to search and click an item"
-        onkeyup="handleSearchInput()"
-        autocomplete="off">
-      <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
-    </div>
-
-    <hr>
-
-    <h3>Selection</h3>
-    <div id="resultDisplay" class="result-box" style="display: none;"></div>
-
-    <label for="qtyInput" class="label-style">2. QTY (Input) :</label>
-    <input
-      type="number"
-      id="qtyInput"
-      placeholder="Quantity"
-      inputmode="decimal">
-
-    <label for="totalInput" class="label-style">3. TOTAL (Input) :</label>
-    <input
-      type="number"
-      id="totalInput"
-      placeholder="Total Amount"
-      inputmode="decimal">
-
-    <button onclick="addItemToCart()" id="addButton" disabled>Add to Cart</button>
-
-    <hr>
-
-    <h3>Local Cart (<span id="cartCount">0</span> Items)</h3>
-    <div id="localCartDisplay" class="cart-box"></div>
-
-    <button onclick="downloadLocalCartXLSX()" id="downloadXLSXButton" disabled>
-      Download Cart as XLSX
-    </button>
-
-    <p id="message">Loading data ...</p>
-  </div>
-
-  <script>
+<script>
     // CONFIG
     const CART_STORAGE_KEY = 'kmartLocalCart';
+    const TEMPLATE_FILE = './template.xlsx'; // Path to your template file
 
     // STATE
     let allItemData = [];
-    let allFooterData = []; 
     let selectedItem = null;
 
-    // --- LOCAL STORAGE UTILITIES ---
+    // --- LOCAL STORAGE UTILITIES (Unchanged) ---
     function loadLocalCart() {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
       return storedCart ? JSON.parse(storedCart) : {};
@@ -195,26 +17,23 @@
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
     }
 
-    // --- INITIAL LOAD (Updated to fetch footer.json) ---
+    // --- INITIAL LOAD (Unchanged) ---
     async function loadItemData() {
       try {
         const itemResponse = await fetch('./items.json');
         allItemData = await itemResponse.json();
-        
-        // Ensure footer.json fetch is attempted if the user is using the new structure
-        try {
-            const footerResponse = await fetch('./footer.json'); 
-            allFooterData = await footerResponse.json();
-        } catch (e) {
-             console.warn("footer.json not found or failed to load. Using default empty footer.");
-             allFooterData = []; // Fallback to empty array if file is missing
-        }
 
-        document.getElementById('message').textContent = 'Data loaded successfully. Ready.';
+        const checkTemplate = await fetch(TEMPLATE_FILE, { method: 'HEAD' });
+        if (!checkTemplate.ok) {
+            document.getElementById('message').textContent = 'Error: template.xlsx not found!';
+            return;
+        }
+        
+        document.getElementById('message').textContent = 'Data loaded. Template ready.';
       } catch (e) {
-        console.error("Error loading JSON files:", e);
+        console.error("Error loading JSON files or template:", e);
         document.getElementById('message').textContent =
-          'Error loading item data. Check items.json file.';
+          'Error loading item data or template. Check files.';
       }
       renderCart();
     }
@@ -226,7 +45,6 @@
       const messageEl = document.getElementById('message');
       const searchText = searchInput.value.trim().toLowerCase();
 
-      // Reset selection state
       selectedItem = null;
       document.getElementById('resultDisplay').style.display = 'none';
       document.getElementById('addButton').disabled = true;
@@ -338,11 +156,9 @@
         item: selectedItem.item
       };
 
-      // Use row as key so each row is unique in the cart
       localCart[selectedItem.row] = cartItem;
       saveLocalCart(localCart);
 
-      // Reset inputs and selection
       document.getElementById('qtyInput').value = "";
       document.getElementById('totalInput').value = "";
       document.getElementById('searchInput').value = "";
@@ -355,7 +171,11 @@
         `Item added to local storage. (${cartItem.item})`;
     }
 
-  function downloadLocalCartXLSX() {
+
+  // -------------------------------------------------------------------
+  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (MODIFIED)
+  // -------------------------------------------------------------------
+  async function downloadLocalCartXLSX() {
     const XLSX = window.XLSX; 
 
     if (!XLSX) {
@@ -370,198 +190,78 @@
       return;
     }
 
+    // 1. Fetch the template file
+    let rawData;
+    try {
+        const response = await fetch(TEMPLATE_FILE);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch template: ${response.statusText}`);
+        }
+        rawData = await response.arrayBuffer();
+    } catch (e) {
+        alert("Error loading template.xlsx. Please ensure the file exists.");
+        console.error(e);
+        return;
+    }
+
+    // 2. Read the template Workbook
+    const wb = XLSX.read(rawData, { type: 'array' });
+    const sheetName = wb.SheetNames[0]; 
+    const ws = wb.Sheets[sheetName];
+
+    // 3. Prepare the new data
+    const dataRows = [];
     const now = new Date();
-    const formattedDate = now.toLocaleDateString("en-GB"); 
 
-    const ws = XLSX.utils.json_to_sheet([]);
-    ws["!merges"] = (ws["!merges"] || []); 
-    ws["!rows"] = (ws["!rows"] || []);
+    items.forEach((item) => {
+      const itemDetails = allItemData.find((d) => d.row === item.row);
+      const itemCode = itemDetails ? String(itemDetails.code || "") : "";
+      const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
 
-// ✅ COLUMN WIDTHS 
-// --------------------------------------------------
-ws["!cols"] = [
-  { wch: 12 }, // CODE
-  { wch: 35 }, // ITEM NAME
-  { wch: 8  }, // QTY
-  { wch: 12 }, // Rate
-  { wch: 12 }, // RATE.inc
-  { wch: 15 }, // TOTAL
-  { wch: 18 }  // ItemBarCode
-];
+      const qty = item.qty;
+      const total = item.total;
+      const rateInc = qty > 0 ? total / qty : 0; 
+      const rateExcl = rateInc / 1.05;
 
-// -----------------------------
-// TABLE HEADER (Origin: A1)
-// -----------------------------
-XLSX.utils.sheet_add_aoa(
-  ws,
-  [["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]],
-  { origin: "A1" } 
-);
+      // Ensure the order matches the template's columns (A-G)
+      dataRows.push([
+        itemCode,
+        item.item,
+        qty,
+        { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
+        { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
+        { v: total, t: "n", z: "#,##0.00" },
+        itemBarcode
+      ]);
+    });
 
-// ✅ Style table header (Row 1) - FONT SIZE 14 & BOLD
-const tableHeaderCells = ["A1","B1","C1","D1","E1","F1","G1"];
-tableHeaderCells.forEach(cell => {
-  ws[cell].s = {
-    font: { bold: true, sz: 14 }, 
-    alignment: { horizontal: "center", vertical: "center" },
-    fill: { fgColor: { rgb: "FFF2F2F2" } }
-  };
-  ws[cell].t = "s";
-});
-// Set fixed height for the header row
-ws["!rows"][0] = { hpt: 20 }; 
+    // 4. Add new data to the worksheet starting from A2
+    // ✅ FIX: Use skipHeader: true to prevent adding item array header
+    XLSX.utils.sheet_add_aoa(
+        ws, 
+        dataRows, 
+        { 
+            origin: "A2", 
+            skipHeader: true, // This skips the automatic header creation
+            cellStyles: true 
+        } 
+    ); 
 
-
-// -----------------------------
-// DATA ROWS (Origin: A2)
-// -----------------------------
-const dataRows = [];
-items.forEach((item) => {
-  const itemDetails = allItemData.find((d) => d.row === item.row);
-  const itemCode = itemDetails ? String(itemDetails.code || "") : "";
-  const itemBarcode = itemCode ? `9900${itemCode}000000` : "";
-
-  const qty = item.qty;
-  const total = item.total;
-  const rateInc = qty > 0 ? total / qty : 0; 
-  const rateExcl = rateInc / 1.05;
-
-  dataRows.push([
-    itemCode,
-    item.item,
-    qty,
-    { v: Number(rateExcl.toFixed(3)), t: "n", z: "0.000" },
-    { v: Number(rateInc.toFixed(3)), t: "n", z: "0.000" },
-    { v: total, t: "n", z: "#,##0.00" },
-    itemBarcode
-  ]);
-});
-
-XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A2" }); 
-
-// ✅ DEEP FIX: Apply strong styling (font size 12) to all data rows
-const startRow = 2; 
-const lastDataRow = 1 + items.length; 
-
-for (let r = startRow; r <= lastDataRow; r++) {
-  // Set fixed height for data rows, this often forces font size recognition
-  ws["!rows"][r - 1] = { hpt: 18 }; 
-  
-  for (let c = 0; c <= 6; c++) {
-    const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
-    // Check if cell exists, if not, create it to attach style (STRONG FIX)
-    if (!ws[cellAddress]) {
-        ws[cellAddress] = { t: 's', v: '' };
+    // 5. Update the Grand Total Formula
+    const newLastDataRow = 1 + items.length;
+    const assumedGtRow = newLastDataRow + 1;
+    
+    // Update the GT formula based on the new last row (F column)
+    const gtAddress = `F${assumedGtRow}`; 
+    if (ws[gtAddress]) {
+        ws[gtAddress].f = `SUM(F2:F${newLastDataRow})`;
     }
-    const cell = ws[cellAddress];
+    
+    // 6. Write/Download the new file
+    const filename =
+      `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
-    if (cell) {
-      if (!cell.s) {
-          cell.s = {};
-      }
-      
-      // Enforce font properties
-      cell.s.font = { name: "Calibri", sz: 12 }; 
-      cell.s.alignment = { vertical: "center" };
-      
-      // Center align for specific columns (CODE, QTY, TOTAL, ItemBarCode)
-      if (c === 0 || c === 2 || c === 5 || c === 6) {
-         cell.s.alignment.horizontal = "center";
-      }
-      
-      // Ensure that numeric types retain their number format
-      if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
-           cell.s.numFmt = cell.z; 
-      }
-    }
+    XLSX.writeFile(wb, filename);
+    document.getElementById('message').textContent = `Downloaded: ${filename}`;
   }
-}
-
-
-// -----------------------------
-// GRAND TOTAL
-// -----------------------------
-const gtRow = lastDataRow + 1; 
-// Set height for GT row
-ws["!rows"][gtRow - 1] = { hpt: 28 }; 
-
-XLSX.utils.sheet_add_aoa(
-  ws,
-  [
-    [
-      "GRAND TOTAL:",
-      null,
-      null,
-      null,
-      null,
-      { t: "n", f: `SUM(F2:F${lastDataRow })`, z: "#,##0.00" } 
-    ]
-  ],
-  { origin: `A${gtRow}` } 
-);
-
-ws["!merges"].push({ s: { r: gtRow - 1, c: 0 }, e: { r: gtRow - 1, c: 4 } });
-
-ws[`A${gtRow}`].s = {
-  font: { bold: true, sz: 16 },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-ws[`A${gtRow}`].t = "s";
-
-ws[`F${gtRow}`].s = {
-  font: { bold: true, sz: 16 },
-  alignment: { horizontal: "center", vertical: "center" }
-};
-
-// -----------------------------
-// NEW FOOTER (Data fetched from footer.json)
-// -----------------------------
-let currentRow = gtRow + 2; // One row free after GT, start footer here
-ws["!rows"][gtRow] = { hpt: 15 }; // Height for the empty row
-
-allFooterData.forEach((footerItem, index) => {
-    let footerText = footerItem.text;
-
-    // Replace DATE_PLACEHOLDER with actual date
-    if (footerText && footerText.includes('[DATE_PLACEHOLDER]')) {
-        footerText = footerText.replace('[DATE_PLACEHOLDER]', formattedDate);
-    }
-    
-    XLSX.utils.sheet_add_aoa(ws, [[footerText]], { origin: `A${currentRow}` });
-    
-    ws[`A${currentRow}`].s = {
-      font: { 
-        name: "Calibri", 
-        sz: footerItem.size, 
-        bold: footerItem.bold 
-      },
-      alignment: { horizontal: "center", vertical: "center" }
-    };
-    ws[`A${currentRow}`].t = "s";
-    
-    // Merge cells A to G
-    ws["!merges"].push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: 6 } });
-    
-    // Set Row Height
-    if (footerItem.height) {
-        ws["!rows"][currentRow - 1] = { hpt: footerItem.height }; 
-    }
-    
-    currentRow++;
-});
-
-
-// -----------------------------
-// SAVE FILE 
-// -----------------------------
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "INVOICE");
-
-const filename =
-  `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
-
-XLSX.writeFile(wb, filename);
-}
   </script>
-</body>
-</html>
