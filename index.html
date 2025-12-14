@@ -176,6 +176,12 @@
             gap: 10px;
             margin-top: 20px;
         }
+        /* Style for the Push to Sheet button */
+        #pushToSheetButton {
+            background-color: #4CAF50 !important;
+            margin-top: 15px;
+            grid-column: span 2;
+        }
 
     </style>
 </head>
@@ -199,7 +205,7 @@
     <div id="invoiceBlock" class="container" style="display: none;">
         
         <button onclick="showMode('home')" style="background-color: #6c757d; margin-bottom: 15px; width: auto;">← Back to Home</button>
-        <h2>🛍️ KMart Vegetable POS Utility (Invoice)</h2>
+        <h2>🛍 KMart Vegetable POS Utility (Invoice)</h2>
         <div id="message">Loading item data...</div>
 
         <h3>Add Item to Cart</h3>
@@ -281,7 +287,11 @@
 
         <div class="order-action-buttons">
             <button onclick="clearOrderList()" style="background-color: #dc3545;">Clear Order List</button>
-            <button id="viewOrderButton" onclick="viewOrderListHTML()" disabled style="background-color: #28a745;">Generate Order List (On Screen)</button>
+            <button id="viewOrderButton" onclick="viewOrderListHTML()" disabled style="background-color: #ffc107; color: #333;">Generate Order List (On Screen)</button>
+            
+            <button id="pushToSheetButton" onclick="pushOrderToGoogleSheet()" disabled>
+                ⬆ Push to Google Sheet
+            </button>
         </div>
 
         <div id="orderViewArea" style="display: none; margin-top: 30px;">
@@ -289,10 +299,14 @@
             <div id="orderContent"></div>
         </div>
     </div>
+
     <script>
         // CONFIG
         const CART_STORAGE_KEY = 'kmartLocalCart';
         const TEMP_ITEM_TRIGGER_CODE = '1001';
+        
+        // !!! IMPORTANT: REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT URL !!!
+        const GAS_URL = "YOUR_GAS_WEB_APP_URL"; 
 
         // STATE
         let allItemData = [];
@@ -313,40 +327,50 @@
             } else if (mode === 'order') {
                 document.getElementById('orderBlock').style.display = 'block';
                 document.getElementById('orderSearchInput').focus();
-                renderOrderList(); // Re-render order list on entry
+                renderOrderList();
                 document.getElementById('orderMessage').textContent = 'Order Mode Active. Data loaded.';
             } else if (mode === 'home') {
                 document.getElementById('welcomeScreen').style.display = 'block';
             }
         }
 
-        // --- INITIAL LOAD (Updated to fetch and then show home screen) ---
+        // --- INITIAL LOAD ---
         async function loadItemData() {
             try {
-                // Attempt to fetch data from items.json
                 const itemResponse = await fetch('./items.json'); 
                 allItemData = await itemResponse.json();
                 
-                // Update messages for both blocks
                 document.getElementById('message').textContent = 'Data loaded. Ready for Invoice.';
                 document.getElementById('orderMessage').textContent = 'Data loaded. Ready for Order Creation.';
             } catch (e) {
                 console.error("Error loading JSON file:", e);
-                const errorMsg = 'Error loading item data from items.json. Functionality may be limited.';
+                const errorMsg = 'Error loading item data from items.json. Functionality may be limited. (Check CORS/File Path)';
                 document.getElementById('message').textContent = errorMsg;
                 document.getElementById('orderMessage').textContent = errorMsg;
             }
-            // Ensure the application starts in home mode
             showMode('home'); 
             setupEventListeners();
-            renderCart(); // Initialize Invoice cart display
+            renderCart(); 
         }
         
         // -------------------------------------------------------------------
-        // 1. INVOICE MODE FUNCTIONS (POS UTILITY)
+        // 1. INVOICE MODE FUNCTIONS 
         // -------------------------------------------------------------------
 
-        // --- INVOICE SEARCH AND SELECTION ---
+        // (All Invoice Search, Cart, Add, Clear, XLSX functions are here - Unchanged from previous final block)
+
+        function showSelectedItem() {
+            if (selectedItem) {
+                const display = document.getElementById('resultDisplay');
+                display.innerHTML = CODE: ${selectedItem.code} | ITEM: ${selectedItem.item};
+                display.style.display = 'block';
+
+                document.getElementById('addButton').disabled = false;
+                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
+                document.getElementById('qtyInput').focus(); 
+            }
+        }
+        
         function handleSearchInput() {
             const searchInput = document.getElementById('searchInput');
             const listDiv = document.getElementById('autocompleteList');
@@ -366,15 +390,12 @@
                 document.getElementById('tempItemCodeInput').value = TEMP_ITEM_TRIGGER_CODE;
                 document.getElementById('tempItemNameInput').value = '';
                 document.getElementById('tempItemNameInput').focus();
-                messageEl.textContent = `Type Item Name and Code to add temporary item.`;
+                messageEl.textContent = Type Item Name and Code to add temporary item.;
                 return;
             }
 
             const lowerSearchText = searchText.toLowerCase();
-            if (lowerSearchText.length < 3) {
-                messageEl.textContent = 'Type at least 3 characters.';
-                return;
-            }
+            if (lowerSearchText.length < 3) { messageEl.textContent = 'Type at least 3 characters.'; return; }
             
             const searchParts = lowerSearchText.split(/\s+/).filter(p => p.length > 0);
             const results = [];
@@ -382,7 +403,7 @@
             for (const data of allItemData) {
                 const itemName = (data.item || "").toLowerCase();
                 const code = String(data.code || "");
-                const combined = `${itemName} ${code}`;
+                const combined = ${itemName} ${code};
                 const match = searchParts.every(part => combined.includes(part));
                 if (match) {
                     results.push(data);
@@ -394,9 +415,9 @@
                 results.forEach(suggestion => {
                     const div = document.createElement('div');
                     div.className = 'autocomplete-item';
-                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.innerHTML = <strong>${suggestion.code}</strong> - ${suggestion.item};
                     div.onclick = () => {
-                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        searchInput.value = ${suggestion.code} ${suggestion.item};
                         selectedItem = suggestion;
                         listDiv.style.display = 'none';
                         showSelectedItem();
@@ -406,21 +427,9 @@
                 listDiv.style.display = 'block';
             }
 
-            messageEl.textContent = `Found ${results.length} items.`;
+            messageEl.textContent = Found ${results.length} items.;
         }
 
-        function showSelectedItem() {
-            if (selectedItem) {
-                const display = document.getElementById('resultDisplay');
-                display.innerHTML = `CODE: ${selectedItem.code} | ITEM: ${selectedItem.item}`;
-                display.style.display = 'block';
-
-                document.getElementById('addButton').disabled = false;
-                document.getElementById('message').textContent = 'Item Selected. Enter Qty/Total.';
-                document.getElementById('qtyInput').focus(); 
-            }
-        }
-        
         function saveTemporaryItem() {
             const codeInput = document.getElementById('tempItemCodeInput');
             const nameInput = document.getElementById('tempItemNameInput');
@@ -431,36 +440,25 @@
             const code = codeInput.value.trim();
             const name = nameInput.value.trim();
 
-            if (!code || !name) {
-                alert('Please enter both a Code and an Item Name for the temporary item.');
-                return;
-            }
+            if (!code || !name) { alert('Please enter both a Code and an Item Name for the temporary item.'); return; }
             const numCode = parseInt(code);
 
-            if (isNaN(numCode) || numCode < 1) {
-                alert('Please enter a valid numeric Code.');
-                return;
-            }
+            if (isNaN(numCode) || numCode < 1) { alert('Please enter a valid numeric Code.'); return; }
 
-            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) {
-                alert(`An item with Code ${code} or Name "${name}" already exists.`);
-                return;
-            }
+            if (allItemData.some(item => String(item.code) === code || item.item.toLowerCase() === name.toLowerCase())) { alert(An item with Code ${code} or Name "${name}" already exists.); return; }
 
-            const tempRow = `TEMP_${Date.now()}`;
+            const tempRow = TEMP_${Date.now()};
             const newTempItem = { row: tempRow, code: numCode, item: name, rate: 0 };
             allItemData.push(newTempItem);
             
             selectedItem = newTempItem;
-            searchInput.value = `${newTempItem.code} ${newTempItem.item}`;
+            searchInput.value = ${newTempItem.code} ${newTempItem.item};
             
             tempTab.style.display = 'none';
             showSelectedItem(); 
-            messageEl.textContent = `Temporary item "${name}" (Code: ${code}) added and selected.`;
+            messageEl.textContent = Temporary item "${name}" (Code: ${code}) added and selected.;
         }
-
-
-        // --- LOCAL CART LOGIC (Invoice) ---
+        
         function loadLocalCart() {
             const storedCart = localStorage.getItem(CART_STORAGE_KEY);
             return storedCart ? JSON.parse(storedCart) : {};
@@ -515,30 +513,16 @@
         }
 
         function addItemToCart() {
-            if (!selectedItem) {
-                alert('Please select an item first.');
-                return;
-            }
-
+            if (!selectedItem) { alert('Please select an item first.'); return; }
             const qtyStr = document.getElementById('qtyInput').value.trim();
             const totalStr = document.getElementById('totalInput').value.trim();
             const numQty = parseFloat(qtyStr);
             const numTotal = parseFloat(totalStr);
 
-            if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) {
-                alert('Please enter valid QTY and TOTAL values.');
-                return;
-            }
+            if (isNaN(numQty) || isNaN(numTotal) || numQty <= 0) { alert('Please enter valid QTY and TOTAL values.'); return; }
 
             const localCart = loadLocalCart();
-
-            const cartItem = {
-                row: selectedItem.row,
-                qty: numQty,
-                total: numTotal,
-                item: selectedItem.item
-            };
-
+            const cartItem = { row: selectedItem.row, qty: numQty, total: numTotal, item: selectedItem.item };
             localCart[selectedItem.row] = cartItem;
             saveLocalCart(localCart);
 
@@ -550,7 +534,7 @@
             selectedItem = null;
 
             renderCart();
-            document.getElementById('message').textContent = `Item added to local storage. (${cartItem.item})`;
+            document.getElementById('message').textContent = Item added to local storage. (${cartItem.item});
             document.getElementById('searchInput').focus(); 
         }
 
@@ -561,26 +545,9 @@
             const billContent = document.getElementById('billContent');
             const now = new Date();
             
-            if (items.length === 0) {
-                billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>";
-                billViewArea.style.display = 'block';
-                return;
-            }
+            if (items.length === 0) { billContent.innerHTML = "<p>Cart is empty. Add items to view the bill.</p>"; billViewArea.style.display = 'block'; return; }
 
-            let tableHTML = `
-                <table class="bill-table">
-                    <thead>
-                        <tr>
-                            <th>CODE</th>
-                            <th class="item-name">ITEM NAME</th>
-                            <th>QTY</th>
-                            <th>PRICE (inc. VAT)</th>
-                            <th>TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
+            let tableHTML = <table class="bill-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME</th><th>QTY</th><th>PRICE (inc. VAT)</th><th>TOTAL</th></tr></thead><tbody>;
             let grandTotal = 0;
             items.forEach((item) => {
                 const itemDetails = allItemData.find((d) => d.row === item.row);
@@ -590,31 +557,14 @@
                 const rateInc = qty > 0 ? total / qty : 0;
                 grandTotal += total;
 
-                tableHTML += `
-                    <tr>
-                        <td>${itemCode}</td>
-                        <td class="item-name">${item.item}</td>
-                        <td>${qty.toFixed(2)}</td>
-                        <td>${rateInc.toFixed(3)}</td>
-                        <td>${total.toFixed(2)}</td>
-                    </tr>
-                `;
+                tableHTML += <tr><td>${itemCode}</td><td class="item-name">${item.item}</td><td>${qty.toFixed(2)}</td><td>${rateInc.toFixed(3)}</td><td>${total.toFixed(2)}</td></tr>;
             });
             
-            tableHTML += `
-                    <tr class="total-row">
-                        <td colspan="3" style="text-align: right;">GRAND TOTAL:</td>
-                        <td colspan="2" style="text-align: center;">${grandTotal.toFixed(2)}</td>
-                    </tr>
-                    <tr><td colspan="5" style="height: 15px;"></td></tr>
-                    </tbody>
-                </table>
-                <br>
+            tableHTML += `<tr class="total-row"><td colspan="3" style="text-align: right;">GRAND TOTAL:</td><td colspan="2" style="text-align: center;">${grandTotal.toFixed(2)}</td></tr><tr><td colspan="5" style="height: 15px;"></td></tr></tbody></table><br>
                 <div class="footer-text-html">KMART SUPERMARKET LLC</div>
                 <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Branch: Burdubai (Al Raffa)</div>
                 <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Date: ${now.toLocaleDateString("en-GB")}</div>
-                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Vegetable and Fruits Invoice</div>
-            `;
+                <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Vegetable and Fruits Invoice</div>`;
 
             billContent.innerHTML = tableHTML;
             billViewArea.style.display = 'block';
@@ -624,15 +574,14 @@
         function downloadSimpleXLSX() {
             const XLSX = window.XLSX;
             if (!XLSX) { alert("XLSX library is not loaded."); return; }
-
+            // (XLSX logic remains here, unchanged)
+            
             const localCart = loadLocalCart();
             const items = Object.values(localCart);
             if (items.length === 0) { alert("Cart is empty"); return; }
-
             let grandTotal = 0;
             const now = new Date();
             const formattedDate = now.toLocaleDateString("en-GB");
-            
             const exportData = [];
             exportData.push(["CODE", "ITEM NAME", "QTY", "Rate", "RATE.inc", "TOTAL", "ItemBarCode"]);
 
@@ -640,24 +589,13 @@
                 const itemDetails = allItemData.find((d) => d.row === item.row);
                 const itemCode = itemDetails ? String(itemDetails.code || "") : "";
                 const paddedCode = itemCode.padStart(4, '0');
-                const itemBarcode = itemCode ? `9900${paddedCode}000000` : "";
-
+                const itemBarcode = itemCode ? 9900${paddedCode}000000 : "";
                 const qty = item.qty;
                 const total = item.total;
                 const rateInc = qty > 0 ? total / qty : 0;
                 const rateExcl = rateInc / 1.05;
-
                 grandTotal += total;
-
-                exportData.push([
-                    itemCode,
-                    item.item,
-                    qty,
-                    Number(rateExcl.toFixed(3)),
-                    Number(rateInc.toFixed(3)),
-                    total,
-                    itemBarcode
-                ]);
+                exportData.push([itemCode, item.item, qty, Number(rateExcl.toFixed(3)), Number(rateInc.toFixed(3)), total, itemBarcode]);
             });
 
             const lastDataRowExcel = exportData.length; 
@@ -665,43 +603,37 @@
             exportData.push(["", "", "", "", "", "", ""]);
             exportData.push([ "K MART SUPERMARKET" ]);
             exportData.push([ "Branch: Burdubai (Al Raffa)" ]);
-            exportData.push([ `DATE : ${formattedDate}` ]);
+            exportData.push([ DATE : ${formattedDate} ]);
             exportData.push([ "Vegetable and Fruits Invoice" ]);
 
             const ws = XLSX.utils.aoa_to_sheet(exportData);
             if (!ws['!merges']) ws['!merges'] = [];
             const grandTotalRowExcel = lastDataRowExcel + 1; 
+            ws['!merges'].push(XLSX.utils.decode_range(A${grandTotalRowExcel}:E${grandTotalRowExcel}));
+            ws['!merges'].push(XLSX.utils.decode_range(F${grandTotalRowExcel}:G${grandTotalRowExcel}));
 
-            ws['!merges'].push(XLSX.utils.decode_range(`A${grandTotalRowExcel}:E${grandTotalRowExcel}`));
-            ws['!merges'].push(XLSX.utils.decode_range(`F${grandTotalRowExcel}:G${grandTotalRowExcel}`));
-
-            const grandTotalCellAddress = `F${grandTotalRowExcel}`;
-            const totalFormula = `SUM(F2:F${lastDataRowExcel})`;
+            const grandTotalCellAddress = F${grandTotalRowExcel};
+            const totalFormula = SUM(F2:F${lastDataRowExcel});
             
             XLSX.utils.sheet_add_aoa(ws, [
                 [{ f: totalFormula, v: grandTotal, z: "#,##0.00", t: 'n' }]
             ], { origin: grandTotalCellAddress });
 
-            const labelCell = ws[`A${grandTotalRowExcel}`];
-            if (labelCell) {
-                labelCell.s = { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' } };
-            }
+            const labelCell = ws[A${grandTotalRowExcel}];
+            if (labelCell) { labelCell.s = { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' } }; }
             
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Invoice");
-
-            const filename =
-                `INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
+            const filename = INVOICE_SIMPLE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx;
 
             XLSX.writeFile(wb, filename);
-            document.getElementById('message').textContent = `Downloaded: ${filename}.`;
+            document.getElementById('message').textContent = Downloaded: ${filename}.;
         }
         
         // -------------------------------------------------------------------
-        // 2. ORDER MODE FUNCTIONS (ORDER CREATION)
+        // 2. ORDER MODE FUNCTIONS 
         // -------------------------------------------------------------------
         
-        // --- OFFER PRICE TOGGLE ---
         function toggleOfferPrice() {
             const isChecked = document.getElementById('offerCheckbox').checked;
             document.getElementById('offerPriceInput').style.display = isChecked ? 'block' : 'none';
@@ -709,7 +641,6 @@
             document.getElementById('orderQtyInput').focus();
         }
 
-        // --- ORDER SEARCH AND SELECTION ---
         function handleOrderSearchInput() {
             const searchInput = document.getElementById('orderSearchInput');
             const listDiv = document.getElementById('orderAutocompleteList');
@@ -719,36 +650,30 @@
             selectedOrderItem = null;
             document.getElementById('orderResultDisplay').style.display = 'none';
             document.getElementById('addOrderItemButton').disabled = true;
+            document.getElementById('pushToSheetButton').disabled = (orderList.length === 0);
             listDiv.style.display = 'none';
             listDiv.innerHTML = "";
 
-            if (searchText.length < 3) {
-                messageEl.textContent = 'Type at least 3 characters.';
-                return;
-            }
-
+            if (searchText.length < 3) { messageEl.textContent = 'Type at least 3 characters.'; return; }
+            
             const searchParts = searchText.split(/\s+/).filter(p => p.length > 0);
             const results = [];
 
             for (const data of allItemData) {
                 const itemName = (data.item || "").toLowerCase();
                 const code = String(data.code || "");
-                const combined = `${itemName} ${code}`;
-
+                const combined = ${itemName} ${code};
                 const match = searchParts.every(part => combined.includes(part));
-                if (match) {
-                    results.push(data);
-                    if (results.length >= 20) break;
-                }
+                if (match) { results.push(data); if (results.length >= 20) break; }
             }
 
             if (results.length > 0) {
                 results.forEach(suggestion => {
                     const div = document.createElement('div');
                     div.className = 'autocomplete-item';
-                    div.innerHTML = `<strong>${suggestion.code}</strong> - ${suggestion.item}`;
+                    div.innerHTML = <strong>${suggestion.code}</strong> - ${suggestion.item};
                     div.onclick = () => {
-                        searchInput.value = `${suggestion.code} ${suggestion.item}`;
+                        searchInput.value = ${suggestion.code} ${suggestion.item};
                         selectedOrderItem = suggestion;
                         listDiv.style.display = 'none';
                         showSelectedOrderItem();
@@ -756,15 +681,13 @@
                     listDiv.appendChild(div);
                 });
                 listDiv.style.display = 'block';
-            } else {
-                messageEl.textContent = `Found 0 items.`;
-            }
+            } else { messageEl.textContent = Found 0 items.; }
         }
 
         function showSelectedOrderItem() {
             if (selectedOrderItem) {
                 const display = document.getElementById('orderResultDisplay');
-                display.innerHTML = `CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item}`;
+                display.innerHTML = CODE: ${selectedOrderItem.code} | ITEM: ${selectedOrderItem.item};
                 display.style.display = 'block';
 
                 document.getElementById('addOrderItemButton').disabled = false;
@@ -773,20 +696,18 @@
             }
         }
 
-        // --- ORDER LIST MANAGEMENT ---
         function renderOrderList() {
             const listDisplay = document.getElementById('orderListDisplay');
             const viewOrderButton = document.getElementById('viewOrderButton');
+            const pushToSheetButton = document.getElementById('pushToSheetButton');
             const orderCount = document.getElementById('orderCount');
 
             orderCount.textContent = orderList.length;
             viewOrderButton.disabled = (orderList.length === 0);
+            pushToSheetButton.disabled = (orderList.length === 0);
             document.getElementById('orderViewArea').style.display = 'none';
 
-            if (orderList.length === 0) {
-                listDisplay.innerHTML = 'Order list is empty.';
-                return;
-            }
+            if (orderList.length === 0) { listDisplay.innerHTML = 'Order list is empty.'; return; }
 
             let html = '<ul>';
             orderList.forEach((item, index) => {
@@ -845,12 +766,12 @@
             selectedOrderItem = null;
 
             renderOrderList();
-            document.getElementById('orderMessage').textContent = `Item added to order list. (${newItem.item})`;
+            document.getElementById('orderMessage').textContent = Item added to order list. (${newItem.item});
             document.getElementById('orderSearchInput').focus();
         }
 
         function removeOrderItem(index) {
-            if (confirm(`Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?`)) {
+            if (confirm(Are you sure you want to remove item number ${index + 1} (${orderList[index].item})?)) {
                 orderList.splice(index, 1);
                 renderOrderList();
             }
@@ -864,30 +785,14 @@
             }
         }
 
-
         function viewOrderListHTML() {
             const billViewArea = document.getElementById('orderViewArea');
             const orderContent = document.getElementById('orderContent');
             const now = new Date();
             
-            if (orderList.length === 0) {
-                orderContent.innerHTML = "<p>Order list is empty. Add items above.</p>";
-                billViewArea.style.display = 'block';
-                return;
-            }
+            if (orderList.length === 0) { orderContent.innerHTML = "<p>Order list is empty. Add items above.</p>"; billViewArea.style.display = 'block'; return; }
 
-            let tableHTML = `
-                <table class="order-table">
-                    <thead>
-                        <tr>
-                            <th>CODE</th>
-                            <th class="item-name">ITEM NAME / DETAILS</th>
-                            <th>QTY</th>
-                            <th>TYPE</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            let tableHTML = <table class="order-table"><thead><tr><th>CODE</th><th class="item-name">ITEM NAME / DETAILS</th><th>QTY</th><th>TYPE</th></tr></thead><tbody>;
             
             orderList.forEach((item) => {
                 let nameDisplay = item.item;
@@ -898,27 +803,62 @@
                     rowClass = 'offer-item-row';
                 }
 
-                tableHTML += `
-                    <tr class="${rowClass}">
-                        <td>${item.code}</td>
-                        <td class="item-name">${nameDisplay}</td>
-                        <td>${item.qty}</td>
-                        <td>${item.type.toUpperCase()}</td>
-                    </tr>
-                `;
+                tableHTML += <tr class="${rowClass}"><td>${item.code}</td><td class="item-name">${nameDisplay}</td><td>${item.qty}</td><td>${item.type.toUpperCase()}</td></tr>;
             });
             
-            tableHTML += `
-                    </tbody>
-                </table>
-                <br>
+            tableHTML += `</tbody></table><br>
                 <div class="footer-text-html" style="font-size: 14pt; font-weight: normal;">Order Date: ${now.toLocaleDateString("en-GB")}</div>
-                <div class="footer-text-html">CUSTOMER ORDER LIST</div>
-            `;
+                <div class="footer-text-html">CUSTOMER ORDER LIST</div>`;
 
             orderContent.innerHTML = tableHTML;
             billViewArea.style.display = 'block';
             document.getElementById('orderMessage').textContent = 'Order List generated below.';
+        }
+
+        // --- NEW FUNCTION: PUSH TO GOOGLE SHEET ---
+        function pushOrderToGoogleSheet() {
+            if (orderList.length === 0) {
+                alert("Order list is empty. Cannot push to Google Sheet.");
+                return;
+            }
+            
+            if (GAS_URL === "Yhttps://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec") {
+                 alert("ERROR: Google Apps Script URL not configured. Please replace 'https://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec' in the JavaScript code.");
+                 return;
+            }
+            
+            document.getElementById('pushToSheetButton').disabled = true;
+            document.getElementById('pushToSheetButton').textContent = 'Sending... Please Wait';
+
+            const dataToSend = {
+                orderData: orderList, 
+                orderDate: new Date().toISOString()
+            };
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                cache: 'no-cache',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8',
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => {
+                document.getElementById('orderMessage').textContent = '✅ Order successfully SENT to Google Sheet server. Check your sheet for update.';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                document.getElementById('orderMessage').textContent = '❌ ERROR: Failed to push order to Google Sheet. Check console for details or verify GAS URL/Deployment.';
+            })
+            .finally(() => {
+                document.getElementById('pushToSheetButton').textContent = '⬆ Push to Google Sheet';
+                document.getElementById('pushToSheetButton').disabled = false;
+                
+                if (confirm("Order sent! Would you like to clear the local Order List now?")) {
+                     clearOrderList();
+                }
+            });
         }
 
         // --- Event Listeners Setup (Consolidated) ---
@@ -943,7 +883,7 @@
                     const exactMatch = allItemData.find(item => String(item.code) === searchText);
                     if (exactMatch) {
                         selectedItem = exactMatch;
-                        searchInput.value = `${exactMatch.code} ${exactMatch.item}`;
+                        searchInput.value = ${exactMatch.code} ${exactMatch.item};
                         document.getElementById('autocompleteList').style.display = 'none';
                         showSelectedItem(); 
                     } else {
