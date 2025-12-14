@@ -185,7 +185,7 @@
     let allItemData = [];
     let selectedItem = null;
 
-    // --- LOCAL STORAGE UTILITIES ---
+    // --- LOCAL STORAGE UTILITIES (Unchanged) ---
     function loadLocalCart() {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
       return storedCart ? JSON.parse(storedCart) : {};
@@ -195,7 +195,7 @@
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
     }
 
-    // --- INITIAL LOAD ---
+    // --- INITIAL LOAD (Unchanged) ---
     async function loadItemData() {
       try {
         const itemResponse = await fetch('./items.json');
@@ -217,7 +217,7 @@
       renderCart();
     }
     
-    // --- SEARCH AND SELECTION LOGIC ---
+    // --- SEARCH AND SELECTION LOGIC (Unchanged) ---
     function handleSearchInput() {
       const searchInput = document.getElementById('searchInput');
       const listDiv = document.getElementById('autocompleteList');
@@ -352,7 +352,7 @@
 
 
   // -------------------------------------------------------------------
-  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION
+  // ✅ TEMPLATE-BASED DOWNLOAD FUNCTION (WITH FORCED FONT SIZE)
   // -------------------------------------------------------------------
   async function downloadLocalCartXLSX() {
     const XLSX = window.XLSX; 
@@ -420,27 +420,61 @@
         dataRows, 
         { 
             origin: "A2", 
-            skipHeader: true, // Skips automatic header creation
+            skipHeader: true, 
             cellStyles: true // Retains styles from template (Row 2 styles the data)
         } 
     ); 
 
-    // 5. Update the Grand Total Formula
-    const newLastDataRow = 1 + items.length; // Row number of the last item 
-    
-    // We assume the GT row is directly after the last inserted data row,
-    // which in the template structure means Row 3 + (new items added)
-    const shift = items.length - 1; // Number of rows inserted after original Row 2
-    const finalGtRow = 3 + shift; // Original GT row (3) + shift
+    // 5. FORCE FONT SIZE 16 ON ALL NEW DATA CELLS (Secured Loop)
+    const startRow = 2; 
+    const lastDataRow = 1 + items.length; // The last row number of the inserted data
+
+    for (let r = startRow; r <= lastDataRow; r++) {
+      for (let c = 0; c <= 6; c++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: r - 1, c: c });
+        const cell = ws[cellAddress];
+
+        if (cell) {
+          if (!cell.s) {
+              cell.s = {};
+          }
+          if (!cell.s.font) {
+              cell.s.font = {};
+          }
+          // 🎯 Force size 16 only on the data rows (r=2 to r=lastDataRow)
+          cell.s.font.sz = 16; 
+          
+          // Reapply alignment and number format if necessary (to avoid losing alignment set by template)
+          if (!cell.s.alignment) {
+              cell.s.alignment = {};
+          }
+          cell.s.alignment.vertical = "center";
+          
+          if (c === 0 || c === 2 || c === 5 || c === 6) {
+             cell.s.alignment.horizontal = "center";
+          }
+          
+          if (cell.t === 'n' && (c === 3 || c === 4 || c === 5) && cell.z) {
+               cell.s.numFmt = cell.z; 
+          }
+        }
+      }
+    }
+
+
+    // 6. Update the Grand Total Formula (F column)
+    const newLastDataRowUpdated = 1 + items.length; 
+    const shift = items.length - 1; 
+    const finalGtRow = 3 + shift; // Recalculate GT row based on item count
 
     const finalGtAddress = `F${finalGtRow}`; 
     
-    // Update the formula to sum the range from F2 to the last data row (F[newLastDataRow])
+    // Update the formula to sum the range from F2 to the last data row (F[newLastDataRowUpdated])
     if (ws[finalGtAddress]) {
-        ws[finalGtAddress].f = `SUM(F2:F${newLastDataRow})`;
+        ws[finalGtAddress].f = `SUM(F2:F${newLastDataRowUpdated})`;
     }
     
-    // 6. Write/Download the new file
+    // 7. Write/Download the new file
     const filename =
       `INVOICE_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
 
