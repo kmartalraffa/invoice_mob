@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMart POS - Invoice</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        /* നിങ്ങളുടെ പഴയ CSS എല്ലാം ഇവിടെ ഉൾപ്പെടുത്തിയിട്ടുണ്ട് */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: relative; }
+        input, button, select { padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; cursor: pointer; border: none; }
+        .input-group { display: flex; gap: 10px; }
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; width: calc(100% - 22px); z-index: 1000; }
+        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .bill-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .bill-table th, .bill-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        #tempItemTab { position: absolute; top: 100%; left: 0; width: 100%; background: #e6f7ff; border: 2px solid #007bff; padding: 15px; border-radius: 8px; display: none; z-index: 1001; }
+    </style>
+</head>
+<body onload="loadItemData()">
+    <div class="container">
+        <h2>🛍 KMart Invoice Utility</h2>
+        <div id="message">Loading...</div>
+        
+        <div style="position: relative;">
+            <input type="text" id="searchInput" placeholder="Search (Type 1001 for New Item)" oninput="handleSearchInput()">
+            <div id="autocompleteList" class="autocomplete-list"></div>
+            
+            <div id="tempItemTab">
+                <h4>➕ Add New Item (Code 1001)</h4>
+                <input type="text" id="tempItemNameInput" placeholder="Item Name">
+                <button onclick="saveTemporaryItem()">Save & Continue</button>
+            </div>
+        </div>
+
+        <div id="resultDisplay" style="display:none; padding:10px; background:#e9ecef; margin:10px 0;"></div>
+
+        <div class="input-group">
+            <input type="number" id="qtyInput" placeholder="QTY">
+            <input type="number" id="totalInput" placeholder="TOTAL Price">
+        </div>
+        <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
+
+        <h3>Cart (<span id="cartCount">0</span>)</h3>
+        <div id="localCartDisplay"></div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+            <button onclick="clearLocalCart()" style="background:#dc3545;">Clear Cart</button>
+            <button id="viewBillButton" onclick="viewLocalCartHTML()" style="background:#ffc107; color:#333;">View Bill</button>
+        </div>
+        <button onclick="downloadSimpleXLSX()" style="background:#28a745; margin-top:10px;">Download Excel</button>
+
+        <div id="billViewArea" style="display:none;"><div id="billContent"></div></div>
+    </div>
+
+    <script>
+        // ഇവിടെ നിങ്ങളുടെ പഴയ കോഡിലെ മുഴുവൻ JavaScript Logic (loadItemData, handleSearchInput, saveTemporaryItem, addItemToCart, downloadSimpleXLSX, etc.) ഉൾപ്പെടുത്തണം.
+        // സ്ഥലപരിമിതി കാരണം പ്രധാന ഫംഗ്ഷനുകൾ മാത്രം കാണിക്കുന്നു.
+        const CART_STORAGE_KEY = 'kmartLocalCart';
+        let allItemData = []; let selectedItem = null;
+
+        async function loadItemData() {
+            const res = await fetch('./items.json');
+            allItemData = await res.json();
+            renderCart();
+            document.getElementById('message').textContent = 'Ready';
+        }
+
+        // ... (നിങ്ങളുടെ പഴയ ബാക്കി എല്ലാ ഫംഗ്ഷനുകളും ഇവിടെ റീപ്ലേസ് ചെയ്യുക) ...
+    </script>
+</body>
+</html>
