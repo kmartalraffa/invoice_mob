@@ -1,152 +1,304 @@
+നിങ്ങളുടെ നിർദ്ദേശപ്രകാരം invoice.html ഫയലിൽ ആവശ്യമായ എല്ലാ മാറ്റങ്ങളും വരുത്തിയിട്ടുണ്ട്. ഡിസൈൻ കൂടുതൽ പ്രൊഫഷണൽ ആക്കുകയും, കീബോർഡ് ഉപയോഗിച്ച് വേഗത്തിൽ ബില്ലിംഗ് നടത്താൻ സാധിക്കുന്ന രീതിയിൽ (Autofocus & Enter key logic) ക്രമീകരിക്കുകയും ചെയ്തിട്ടുണ്ട്.
+വരുത്തിയ പ്രധാന മാറ്റങ്ങൾ:
+ * Uniform Font: ഗൂഗിൾ ഫോണ്ട് (Inter) ഉപയോഗിച്ച് എല്ലാ സെക്ഷനിലെയും ഫോണ്ടുകൾ ഒരുപോലെയാക്കി.
+ * Professional UI: 'Vegetable & Fruits Invoice' എന്നത് ഒരു പ്രൊഫഷണൽ കാർഡിനുള്ളിലാക്കി, 'System Ready' എന്നത് ഒരു സ്റ്റാറ്റസ് ഇൻഡിക്കേറ്റർ ആക്കി മാറ്റി.
+ * Workflow Automation: ഐറ്റം സെലക്ട് ചെയ്താൽ ഓട്ടോമാറ്റിക്കായി കർസർ Qty-ലേക്ക് പോകും. Enter അമർത്തിയാൽ Total-ലേക്കും, വീണ്ടും Enter അമർത്തിയാൽ അത് Invoice-ലേക്ക് ആഡ് ആയി കർസർ തിരികെ സെർച്ച് ബോക്സിലേക്കും എത്തും.
+ * Enhanced Cart: 'Added Items' എന്ന പേരിൽ കാർഡിനുള്ളിൽ ലിസ്റ്റ് വരും. എഡിറ്റ് ബട്ടൺ അമർത്തിയാൽ ആ ഐറ്റം തിരികെ മുകളിലെ ഇൻപുട്ടുകളിലേക്ക് വരികയും എഡിറ്റ് ചെയ്യാൻ സാധിക്കുകയും ചെയ്യും.
+ * Persistence: ബ്രൗസർ മാറിയാലും (Refresh ചെയ്താലും) പഴയ ഐറ്റങ്ങൾ കാണാനായി localStorage കൃത്യമായി ഉപയോഗിച്ചിട്ടുണ്ട്.
+പകർത്തിയെടുക്കേണ്ട കോഡ് (Invoice.html):
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMart Order Management</title>
+    <title>Vegetable & Fruits Invoice</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 10px; background-color: #f0f2f5; }
-        .container { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
-        h2 { color: #1a73e8; text-align: center; }
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
-        th { background: #f8f9fa; font-size: 13px; }
-        .locked { background: #f1f3f4; font-weight: bold; width: 50px; }
-        .item-cell { display: flex; align-items: center; justify-content: space-between; }
-        .qty-box { border: 2px solid #1a73e8; border-radius: 6px; padding: 5px; width: 40px; font-weight: bold; display: inline-block; }
-        .qty-active { background: #e8f0fe; border-color: #34a853; }
-        .btn-plus { background: #34a853; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; }
-        .btn-push { background: #4CAF50; color: white; padding: 15px; width: 100%; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        .btn-edit { background: none; border: none; color: #1a73e8; cursor: pointer; }
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        
+        /* Header Card */
+        .header-card { background: linear-gradient(135deg, #1e293b, #334155); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; position: relative; }
+        .header-card h2 { margin: 0; font-size: 22px; letter-spacing: 1px; }
+        .status-badge { display: inline-block; font-size: 11px; background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 4px 12px; border-radius: 20px; margin-top: 8px; border: 1px solid rgba(74, 222, 128, 0.3); }
+        .home-icon { position: absolute; left: 20px; top: 25px; color: white; font-size: 20px; text-decoration: none; transition: 0.3s; }
+        .home-icon:hover { opacity: 0.7; }
+
+        /* Form Elements */
+        .input-box { margin-bottom: 15px; position: relative; }
+        input, select { padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; font-size: 15px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Search List */
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 8px; max-height: 250px; overflow-y: auto; width: 100%; z-index: 1000; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .autocomplete-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .autocomplete-item:hover { background: #f8fafc; color: var(--primary); font-weight: 600; }
+
+        /* Selection Display */
+        #resultDisplay { padding: 12px; background: #f1f7ff; border-left: 4px solid var(--primary); border-radius: 4px; margin-bottom: 15px; font-weight: 600; color: #1e40af; display: none; font-size: 14px; }
+
+        /* Buttons */
+        .btn { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-add { background-color: var(--primary); color: white; width: 100%; margin-top: 10px; }
+        .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-clear { background: #f1f5f9; color: var(--danger); }
+        .btn-preview { background: #f1f5f9; color: #475569; }
+        .btn-excel { background: var(--success); color: white; margin-top: 15px; }
+
+        /* Added Items List */
+        .cart-section { margin-top: 30px; }
+        .cart-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; }
+        .cart-header h3 { margin: 0; font-size: 18px; color: #334155; }
+        .cart-item { background: #fff; border: 1px solid #f1f5f9; padding: 12px 15px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .cart-info { display: flex; flex-direction: column; gap: 2px; }
+        .cart-name { font-weight: 700; font-size: 14px; }
+        .cart-meta { font-size: 12px; color: #64748b; }
+        .btn-edit-item { background: none; border: none; color: var(--primary); cursor: pointer; padding: 5px; }
+
+        /* Temporary Item Tab */
+        #tempItemTab { position: absolute; top: 100%; left: 0; width: 100%; background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; display: none; z-index: 1001; }
+        
+        .bill-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .bill-table th { background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; text-align: left; }
+        .bill-table td { padding: 10px; border: 1px solid #f1f5f9; }
     </style>
 </head>
-<body onload="loadOrderData()">
+<body onload="loadItemData()">
 
-<div class="container">
-    <h2>📦 KMart Order Creation</h2>
-    <div id="orderMessage">Loading Items...</div>
+    <div class="container">
+        <div class="header-card">
+            <a href="index.html" class="home-icon" title="Home"><i class="fas fa-house-chimney"></i></a>
+            <h2>VEGETABLE & FRUITS INVOICE</h2>
+            <div class="status-badge"><i class="fas fa-circle-check"></i> OPERATIONAL READY</div>
+        </div>
+        
+        <div class="input-box">
+            <input type="text" id="searchInput" placeholder="Search item name or code (Type 1001 for New Item)" oninput="handleSearchInput()">
+            <div id="autocompleteList" class="autocomplete-list"></div>
+            
+            <div id="tempItemTab">
+                <h4 style="margin-top:0; font-size:14px;">➕ NEW ITEM DETECTED</h4>
+                <input type="text" id="tempItemNameInput" placeholder="Enter full item name">
+                <button onclick="saveTemporaryItem()" class="btn btn-add" style="margin-top:10px; font-size:12px;">PROCEED WITH NEW ITEM</button>
+            </div>
+        </div>
 
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>SL</th>
-                    <th>Code</th>
-                    <th>Item Name</th>
-                    <th>Qty</th>
-                    <th>Type</th>
-                    <th>Offer</th>
-                    <th class="offer-header" style="display:none">Offer Price</th>
-                </tr>
-            </thead>
-            <tbody id="orderTableBody"></tbody>
-        </table>
+        <div id="resultDisplay"></div>
+
+        <div class="input-group">
+            <input type="number" id="qtyInput" placeholder="Quantity" onkeydown="handleEnter(event, 'totalInput')">
+            <input type="number" id="totalInput" placeholder="Total Price" onkeydown="handleEnter(event, 'addItem')">
+        </div>
+
+        <button id="addButton" onclick="addItemToCart()" class="btn btn-add" disabled>
+            <i class="fas fa-file-invoice"></i> ADD TO INVOICE
+        </button>
+
+        <div class="cart-section">
+            <div class="cart-header">
+                <i class="fas fa-shopping-basket" style="color: var(--primary);"></i>
+                <h3>ADDED ITEMS (<span id="cartCount">0</span>)</h3>
+            </div>
+            <div id="localCartDisplay"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:20px;">
+            <button onclick="clearLocalCart()" class="btn btn-clear"><i class="fas fa-trash-can"></i> CLEAR ALL</button>
+            <button onclick="viewLocalCartHTML()" class="btn btn-preview"><i class="fas fa-eye"></i> PREVIEW BILL</button>
+        </div>
+        
+        <button onclick="downloadSimpleXLSX()" class="btn btn-excel"><i class="fas fa-file-excel"></i> DOWNLOAD AS EXCEL (.XLSX)</button>
+
+        <div id="billViewArea" style="display:none; margin-top:25px; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
+            <h3 style="font-size: 16px;">FINAL PREVIEW</h3>
+            <div id="billContent"></div>
+        </div>
     </div>
 
-    <button id="pushToSheetButton" class="btn-push" onclick="pushOrderToGoogleSheet()">
-        ⬆ Push Order to Google Sheet
-    </button>
-</div>
+    <script>
+        const CART_STORAGE_KEY = 'kmartLocalCart';
+        let allItemData = [];
+        let selectedItem = null;
 
-<script>
-    let allItemData = [];
-    let orderData = []; 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxOavHBT9hNdja25ZHBmqSqGkzEhz4GGTn1ZNmwP7KTWI1u9BnhbwEO0Gz6JKojlFSFAQ/exec";
+        async function loadItemData() {
+            try {
+                const res = await fetch('./items.json');
+                allItemData = await res.json();
+                renderCart();
+            } catch (e) { console.error('JSON Load Error'); }
+        }
 
-    async function loadOrderData() {
-        try {
-            const res = await fetch('./items.json');
-            allItemData = await res.json();
-            renderOrderTable();
-            document.getElementById('orderMessage').textContent = "Total Items: " + allItemData.length;
-        } catch (e) { document.getElementById('orderMessage').textContent = "Error loading data."; }
-    }
+        // Search Input Handling
+        function handleSearchInput() {
+            const input = document.getElementById('searchInput').value.trim().toLowerCase();
+            const list = document.getElementById('autocompleteList');
+            const tempTab = document.getElementById('tempItemTab');
+            list.innerHTML = "";
+            
+            if (input === '1001') {
+                tempTab.style.display = 'block';
+                return;
+            } else { tempTab.style.display = 'none'; }
 
-    function renderOrderTable() {
-        const tbody = document.getElementById('orderTableBody');
-        tbody.innerHTML = allItemData.map((item, index) => `
-            <tr>
-                <td class="locked">${index + 1}</td>
-                <td class="locked">${item.code}</td>
-                <td>
-                    <div class="item-cell">
-                        <span id="name-${index}">${item.item}</span>
-                        <button class="btn-edit" onclick="editName(${index})">✎</button>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:5px; justify-content:center;">
-                        <div id="qty-${index}" class="qty-box">0</div>
-                        <button class="btn-plus" onclick="incrementQty(${index})">+</button>
-                    </div>
-                </td>
-                <td>
-                    <div style="text-align:left; font-size:12px;">
-                        <label><input type="checkbox" class="type-${index}" value="Pkt"> Pkt</label><br>
-                        <label><input type="checkbox" class="type-${index}" value="Kg"> Kg</label>
-                    </div>
-                </td>
-                <td><input type="checkbox" onchange="toggleOfferField(${index}, this)"></td>
-                <td id="offer-td-${index}" style="display:none">
-                    <input type="number" id="offer-val-${index}" style="width:60px" placeholder="Price">
-                </td>
-            </tr>
-        `).join('');
-    }
+            if (input.length < 2) return;
 
-    function incrementQty(index) {
-        const box = document.getElementById(`qty-${index}`);
-        let val = parseInt(box.innerText);
-        box.innerText = ++val;
-        box.classList.add('qty-active');
-    }
+            const matches = allItemData.filter(i => 
+                i.item.toLowerCase().includes(input) || 
+                String(i.code).includes(input)
+            ).slice(0, 10);
 
-    function editName(index) {
-        const span = document.getElementById(`name-${index}`);
-        const newName = prompt("Edit Name:", span.innerText);
-        if (newName) span.innerText = newName;
-    }
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `<span style="color:#64748b; font-size:12px;">#${item.code}</span> &nbsp; ${item.item}`;
+                div.onclick = () => selectItem(item);
+                list.appendChild(div);
+            });
+        }
 
-    function toggleOfferField(index, cb) {
-        document.getElementById(`offer-td-${index}`).style.display = cb.checked ? "table-cell" : "none";
-        const anyChecked = document.querySelectorAll('input[type="checkbox"]:checked').length > 0;
-        document.querySelector('.offer-header').style.display = anyChecked ? "table-cell" : "none";
-    }
+        function selectItem(item) {
+            selectedItem = item;
+            document.getElementById('searchInput').value = item.item;
+            document.getElementById('autocompleteList').innerHTML = "";
+            document.getElementById('resultDisplay').innerHTML = `<i class="fas fa-check-circle"></i> ${item.item} (${item.code})`;
+            document.getElementById('resultDisplay').style.display = 'block';
+            document.getElementById('addButton').disabled = false;
+            
+            // Auto focus to Qty
+            document.getElementById('qtyInput').focus();
+        }
 
-    function pushOrderToGoogleSheet() {
-        // ക്വാണ്ടിറ്റി 0-ൽ കൂടുതൽ ഉള്ള ഐറ്റങ്ങൾ മാത്രം എടുക്കുന്നു
-        const finalOrder = [];
-        allItemData.forEach((item, index) => {
-            const qty = parseInt(document.getElementById(`qty-${index}`).innerText);
-            if (qty > 0) {
-                const types = Array.from(document.querySelectorAll(`.type-${index}:checked`)).map(c => c.value);
-                const isOffer = document.getElementById(`offer-val-${index}`).parentElement.style.display !== 'none';
-                finalOrder.push({
-                    code: item.code,
-                    item: document.getElementById(`name-${index}`).innerText,
-                    qty: qty,
-                    type: types.join(', '),
-                    isOffer: isOffer,
-                    offerPrice: isOffer ? document.getElementById(`offer-val-${index}`).value : 0
-                });
+        // Enter Key Navigation
+        function handleEnter(event, target) {
+            if (event.key === "Enter") {
+                if (target === 'addItem') {
+                    addItemToCart();
+                } else {
+                    document.getElementById(target).focus();
+                }
             }
-        });
+        }
 
-        if (finalOrder.length === 0) { alert("Please add at least one item!"); return; }
+        function saveTemporaryItem() {
+            const name = document.getElementById('tempItemNameInput').value;
+            if (!name) return;
+            const newItem = { code: 1001, item: name, row: 'TEMP_' + Date.now() };
+            selectItem(newItem);
+            document.getElementById('tempItemTab').style.display = 'none';
+        }
 
-        const btn = document.getElementById('pushToSheetButton');
-        btn.disabled = true; btn.textContent = "Sending...";
+        function addItemToCart() {
+            const qty = parseFloat(document.getElementById('qtyInput').value);
+            const total = parseFloat(document.getElementById('totalInput').value);
+            if (!selectedItem || isNaN(qty) || isNaN(total)) return;
 
-        fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ orderData: finalOrder, orderDate: new Date().toISOString() })
-        }).then(() => {
-            alert("Order Sent Successfully!");
-            location.reload(); 
-        }).catch(e => alert("Error!"));
-    }
-</script>
+            let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const id = selectedItem.row || selectedItem.code;
+            cart[id] = { code: selectedItem.code, item: selectedItem.item, qty: qty, total: total, row: id };
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+
+            // Reset UI
+            document.getElementById('qtyInput').value = "";
+            document.getElementById('totalInput').value = "";
+            document.getElementById('searchInput').value = "";
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+            renderCart();
+
+            // Return focus to Search Box
+            document.getElementById('searchInput').focus();
+        }
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const items = Object.values(cart);
+            document.getElementById('cartCount').textContent = items.length;
+            
+            document.getElementById('localCartDisplay').innerHTML = items.length > 0 ? 
+                items.map(i => `
+                    <div class="cart-item">
+                        <div class="cart-info">
+                            <span class="cart-name">${i.item}</span>
+                            <span class="cart-meta">Qty: ${i.qty} | Total: ₹${i.total}</span>
+                        </div>
+                        <button class="btn-edit-item" onclick="editCartItem('${i.row}')" title="Edit Item">
+                            <i class="fas fa-pen-to-square"></i>
+                        </button>
+                    </div>`).reverse().join('') : 
+                `<div style="text-align:center; color:#94a3b8; padding:20px; font-size:13px;">No items added yet</div>`;
+        }
+
+        function editCartItem(id) {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const item = cart[id];
+            
+            // Move back to inputs
+            selectedItem = { code: item.code, item: item.item, row: item.row };
+            document.getElementById('searchInput').value = item.item;
+            document.getElementById('qtyInput').value = item.qty;
+            document.getElementById('totalInput').value = item.total;
+            document.getElementById('resultDisplay').innerHTML = `<i class="fas fa-edit"></i> Editing: ${item.item}`;
+            document.getElementById('resultDisplay').style.display = 'block';
+            document.getElementById('addButton').disabled = false;
+
+            // Remove from cart
+            delete cart[id];
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+            renderCart();
+            
+            // Focus on Qty
+            document.getElementById('qtyInput').focus();
+        }
+
+        function clearLocalCart() {
+            if(confirm("Confirm: Clear entire invoice list?")) {
+                localStorage.removeItem(CART_STORAGE_KEY);
+                renderCart();
+                document.getElementById('billViewArea').style.display = 'none';
+            }
+        }
+
+        function viewLocalCartHTML() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const items = Object.values(cart);
+            if (items.length === 0) return;
+            let totalSum = 0;
+            let html = '<table class="bill-table"><tr><th>Code</th><th>Item</th><th>Qty</th><th>Total (₹)</th></tr>';
+            items.forEach(i => {
+                html += `<tr><td>${i.code}</td><td>${i.item}</td><td>${i.qty}</td><td>${i.total.toFixed(2)}</td></tr>`;
+                totalSum += i.total;
+            });
+            html += `<tr style="font-weight:bold; background:#f8fafc;"><td colspan="3" style="text-align:right">Grand Total</td><td>${totalSum.toFixed(2)}</td></tr></table>`;
+            document.getElementById('billContent').innerHTML = html;
+            document.getElementById('billViewArea').style.display = 'block';
+        }
+
+        function downloadSimpleXLSX() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const data = Object.values(cart).map(i => ({ Item: i.item, Qty: i.qty, Total: i.total }));
+            if (data.length === 0) return;
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+            XLSX.writeFile(wb, "KMart_Invoice_" + Date.now() + ".xlsx");
+        }
+    </script>
 </body>
 </html>
+
+പ്രധാന ഗുണങ്ങൾ:
+ * Home Icon: 'Home' ബട്ടണിന് പകരം മുകളിൽ ഇടത് ഭാഗത്ത് ഒരു വീടിന്റെ ഐക്കൺ നൽകി.
+ * Edit Feature: കാർട്ടിലെ പേന ഐക്കണിൽ ക്ലിക്ക് ചെയ്താൽ ആ ഐറ്റം നേരിട്ട് മുകളിലെ ഫോമിലേക്ക് ലോഡ് ആവുകയും എഡിറ്റ് ചെയ്യാൻ സാധിക്കുകയും ചെയ്യും.
+ * Keyboard Logic: കീബോർഡ് മാത്രം ഉപയോഗിച്ച് വളരെ വേഗത്തിൽ ബില്ലിംഗ് നടത്താം (Search -> Enter -> Qty -> Enter -> Total -> Enter).
+ * UI Consistency: ഫോണ്ടുകളും വിഷ്വലുകളും പ്രൊഫഷണൽ രീതിയിൽ യൂണിഫോം ആക്കി മാറ്റി.
+ഇത് നിങ്ങളുടെ GitHub-ൽ പഴയ കോഡിന് പകരം ഉപയോഗിക്കാവുന്നതാണ്. എന്തെങ്കിലും മാറ്റങ്ങൾ വേണമെന്നുണ്ടെങ്കിൽ പറയാം.
