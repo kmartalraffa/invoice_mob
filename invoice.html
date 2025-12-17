@@ -6,36 +6,39 @@
     <title>KMart POS - Invoice</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        /* നിങ്ങളുടെ പഴയ CSS എല്ലാം ഇവിടെ ഉൾപ്പെടുത്തിയിട്ടുണ്ട് */
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: relative; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); position: relative; }
         input, button, select { padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; }
         button { background-color: #007bff; color: white; cursor: pointer; border: none; }
-        .input-group { display: flex; gap: 10px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        /* Search List Styling */
         .autocomplete-list { position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; width: calc(100% - 22px); z-index: 1000; }
         .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .autocomplete-item:hover { background: #f0f0f0; }
+        #tempItemTab { position: absolute; top: 100%; left: 0; width: 100%; background: #e6f7ff; border: 2px solid #007bff; padding: 15px; border-radius: 8px; display: none; z-index: 1001; }
         .bill-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .bill-table th, .bill-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        #tempItemTab { position: absolute; top: 100%; left: 0; width: 100%; background: #e6f7ff; border: 2px solid #007bff; padding: 15px; border-radius: 8px; display: none; z-index: 1001; }
     </style>
 </head>
 <body onload="loadItemData()">
+
     <div class="container">
-        <h2>🛍 KMart Invoice Utility</h2>
-        <div id="message">Loading...</div>
+        <button onclick="window.location.href='index.html'" style="background:#6c757d; width:auto; margin-bottom:10px;">← Back Home</button>
+        <h2>🛍 KMart Invoice (POS)</h2>
+        
+        <div id="message">Loading items...</div>
         
         <div style="position: relative;">
-            <input type="text" id="searchInput" placeholder="Search (Type 1001 for New Item)" oninput="handleSearchInput()">
+            <input type="text" id="searchInput" placeholder="Search Item Name or Code (Type 1001 for New)" oninput="handleSearchInput()">
             <div id="autocompleteList" class="autocomplete-list"></div>
             
             <div id="tempItemTab">
-                <h4>➕ Add New Item (Code 1001)</h4>
-                <input type="text" id="tempItemNameInput" placeholder="Item Name">
-                <button onclick="saveTemporaryItem()">Save & Continue</button>
+                <h4>➕ Add New Item (1001)</h4>
+                <input type="text" id="tempItemNameInput" placeholder="Enter Item Name">
+                <button onclick="saveTemporaryItem()">Select This Item</button>
             </div>
         </div>
-
-        <div id="resultDisplay" style="display:none; padding:10px; background:#e9ecef; margin:10px 0;"></div>
+        <div id="resultDisplay" style="display:none; padding:10px; background:#e9ecef; margin:10px 0; font-weight:bold;"></div>
 
         <div class="input-group">
             <input type="number" id="qtyInput" placeholder="QTY">
@@ -44,31 +47,142 @@
         <button id="addButton" onclick="addItemToCart()" disabled>Add to Cart</button>
 
         <h3>Cart (<span id="cartCount">0</span>)</h3>
-        <div id="localCartDisplay"></div>
+        <div id="localCartDisplay" style="border:1px solid #ccc; padding:10px; min-height:50px; max-height:200px; overflow-y:auto;"></div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
             <button onclick="clearLocalCart()" style="background:#dc3545;">Clear Cart</button>
-            <button id="viewBillButton" onclick="viewLocalCartHTML()" style="background:#ffc107; color:#333;">View Bill</button>
+            <button onclick="viewLocalCartHTML()" style="background:#ffc107; color:#333;">Preview Bill</button>
         </div>
-        <button onclick="downloadSimpleXLSX()" style="background:#28a745; margin-top:10px;">Download Excel</button>
+        <button onclick="downloadSimpleXLSX()" style="background:#28a745; margin-top:10px;">Download Excel (.xlsx)</button>
 
-        <div id="billViewArea" style="display:none;"><div id="billContent"></div></div>
+        <div id="billViewArea" style="display:none; margin-top:20px;">
+            <hr>
+            <h3>Bill Preview</h3>
+            <div id="billContent"></div>
+        </div>
     </div>
 
     <script>
-        // ഇവിടെ നിങ്ങളുടെ പഴയ കോഡിലെ മുഴുവൻ JavaScript Logic (loadItemData, handleSearchInput, saveTemporaryItem, addItemToCart, downloadSimpleXLSX, etc.) ഉൾപ്പെടുത്തണം.
-        // സ്ഥലപരിമിതി കാരണം പ്രധാന ഫംഗ്ഷനുകൾ മാത്രം കാണിക്കുന്നു.
         const CART_STORAGE_KEY = 'kmartLocalCart';
-        let allItemData = []; let selectedItem = null;
+        let allItemData = [];
+        let selectedItem = null;
 
         async function loadItemData() {
-            const res = await fetch('./items.json');
-            allItemData = await res.json();
-            renderCart();
-            document.getElementById('message').textContent = 'Ready';
+            try {
+                const res = await fetch('./items.json');
+                allItemData = await res.json();
+                document.getElementById('message').textContent = 'System Ready';
+                renderCart();
+            } catch (e) { document.getElementById('message').textContent = 'Error loading items.json!'; }
         }
 
-        // ... (നിങ്ങളുടെ പഴയ ബാക്കി എല്ലാ ഫംഗ്ഷനുകളും ഇവിടെ റീപ്ലേസ് ചെയ്യുക) ...
+        // Search Functionality
+        function handleSearchInput() {
+            const input = document.getElementById('searchInput').value.trim().toLowerCase();
+            const list = document.getElementById('autocompleteList');
+            const tempTab = document.getElementById('tempItemTab');
+            list.innerHTML = "";
+            
+            if (input === '1001') {
+                tempTab.style.display = 'block';
+                return;
+            } else {
+                tempTab.style.display = 'none';
+            }
+
+            if (input.length < 2) return;
+
+            const matches = allItemData.filter(i => 
+                i.item.toLowerCase().includes(input) || 
+                String(i.code).includes(input)
+            ).slice(0, 10);
+
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `<strong>${item.code}</strong> - ${item.item}`;
+                div.onclick = () => selectItem(item);
+                list.appendChild(div);
+            });
+        }
+
+        function selectItem(item) {
+            selectedItem = item;
+            document.getElementById('searchInput').value = item.item;
+            document.getElementById('autocompleteList').innerHTML = "";
+            document.getElementById('resultDisplay').innerHTML = `Selected: ${item.item} (${item.code})`;
+            document.getElementById('resultDisplay').style.display = 'block';
+            document.getElementById('addButton').disabled = false;
+            document.getElementById('qtyInput').focus();
+        }
+
+        function saveTemporaryItem() {
+            const name = document.getElementById('tempItemNameInput').value;
+            if (!name) return;
+            const newItem = { code: 1001, item: name, row: 'TEMP_' + Date.now() };
+            selectItem(newItem);
+            document.getElementById('tempItemTab').style.display = 'none';
+        }
+
+        function addItemToCart() {
+            const qty = parseFloat(document.getElementById('qtyInput').value);
+            const total = parseFloat(document.getElementById('totalInput').value);
+            if (!selectedItem || isNaN(qty) || isNaN(total)) { alert("Fill all fields"); return; }
+
+            let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const id = selectedItem.row || selectedItem.code;
+            cart[id] = { code: selectedItem.code, item: selectedItem.item, qty: qty, total: total };
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+
+            // Reset
+            document.getElementById('qtyInput').value = "";
+            document.getElementById('totalInput').value = "";
+            document.getElementById('searchInput').value = "";
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('addButton').disabled = true;
+            renderCart();
+        }
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const items = Object.values(cart);
+            document.getElementById('cartCount').textContent = items.length;
+            document.getElementById('localCartDisplay').innerHTML = items.length > 0 ? 
+                items.map(i => `<div>${i.item} (x${i.qty}) - ₹${i.total}</div>`).join('') : "Cart Empty";
+        }
+
+        function clearLocalCart() {
+            if(confirm("Clear all items?")) {
+                localStorage.removeItem(CART_STORAGE_KEY);
+                renderCart();
+                document.getElementById('billViewArea').style.display = 'none';
+            }
+        }
+
+        function viewLocalCartHTML() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const items = Object.values(cart);
+            if (items.length === 0) return;
+            let totalSum = 0;
+            let html = '<table class="bill-table"><tr><th>Code</th><th>Item</th><th>Qty</th><th>Total</th></tr>';
+            items.forEach(i => {
+                html += `<tr><td>${i.code}</td><td>${i.item}</td><td>${i.qty}</td><td>${i.total}</td></tr>`;
+                totalSum += i.total;
+            });
+            html += `<tr style="font-weight:bold; background:#eee;"><td colspan="3">Grand Total</td><td>${totalSum.toFixed(2)}</td></tr></table>`;
+            document.getElementById('billContent').innerHTML = html;
+            document.getElementById('billViewArea').style.display = 'block';
+        }
+
+        function downloadSimpleXLSX() {
+            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
+            const data = Object.values(cart);
+            if (data.length === 0) return;
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "InvoiceData");
+            XLSX.writeFile(wb, "KMart_Invoice.xlsx");
+        }
     </script>
 </body>
 </html>
