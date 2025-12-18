@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADD NEW ITEM - K MART</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1e293b; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn-save { width: 100%; padding: 15px; background: #16a34a; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-save:disabled { background: #94a3b8; }
+        .home-btn { display: block; text-align: center; margin-top: 15px; color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2><i class="fas fa-plus-circle"></i> ADD NEW ITEM</h2>
+    <input type="text" id="itemCode" placeholder="Item Code (e.g. 101)">
+    <input type="text" id="itemName" placeholder="Item Name">
+    <input type="number" id="itemPrice" placeholder="Default Price (Column C)">
+    <button onclick="saveItem()" id="saveBtn" class="btn-save">SAVE TO SHEET</button>
+    <a href="index.html" class="home-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+</div>
+
+<script>
+    // നിങ്ങളുടെ പുതിയ Web App URL ഇവിടെ നൽകുക
+    const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
+
+    async function saveItem() {
+        const code = document.getElementById('itemCode').value;
+        const name = document.getElementById('itemName').value;
+        const price = document.getElementById('itemPrice').value;
+
+        if(!code || !name || !price) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
+
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = "SAVING...";
+        btn.disabled = true;
+
+        try {
+            // Google Apps Script-ലേക്ക് വിവരങ്ങൾ അയക്കുന്നു
+            await fetch(WEB_APP, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: 'add_new_item', code: code, name: name, price: price })
+            });
+            alert("ഐറ്റം വിജയകരമായി ഷീറ്റിൽ ചേർത്തു!");
+            document.getElementById('itemCode').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+        } catch (e) {
+            alert("Error: വിവരങ്ങൾ സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല.");
+        } finally {
+            btn.innerText = "SAVE TO SHEET";
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
