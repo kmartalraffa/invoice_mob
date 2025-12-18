@@ -35,7 +35,12 @@
     <div class="table-container">
         <table>
             <thead>
-                <tr><th style="width: 35px;">Cd</th><th style="text-align: left;">Item Name</th><th style="width: 60px;">Qty</th><th style="width: 55px;">Typ</th><th style="width: 55px;">Off</th></tr>
+                <tr>
+                    <th style="width: 35px;">Cd</th>
+                    <th style="text-align: left;">Item Name</th>
+                    <th style="width: 60px;">Ord.Qty</th> <th style="width: 55px;">Typ</th>
+                    <th style="width: 55px;">Off</th>
+                </tr>
             </thead>
             <tbody id="productBody"></tbody>
         </table>
@@ -58,13 +63,20 @@
                 const data = await res.text();
                 const rows = data.split('\n');
                 
-                // Date Check (A1 Starting, B1 Ending)
+                // Date Check Logic
                 const dates = rows[0].split(',');
                 const start = new Date(dates[0]);
                 const end = new Date(dates[1]);
+                
                 const today = new Date();
                 today.setHours(0,0,0,0);
-                isOfferDay = (today >= start && today <= end);
+                
+                const tomorrow = new Date();
+                tomorrow.setDate(today.getDate() + 1);
+                tomorrow.setHours(0,0,0,0);
+
+                // ഇന്ന് അല്ലെങ്കിൽ നാളെ ഓഫർ ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+                isOfferDay = (today >= start && today <= end) || (tomorrow >= start && tomorrow <= end);
 
                 rows.slice(1).forEach(r => {
                     const c = r.split(',');
