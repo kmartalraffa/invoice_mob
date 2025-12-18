@@ -7,96 +7,99 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --dark: #1e293b; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         
-        /* UI Components */
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .header { background: var(--dark); color: white; padding: 20px; border-radius: 15px; text-align: center; position: relative; margin-bottom: 20px; }
-        .home-link { position: absolute; left: 15px; top: 22px; color: white; font-size: 20px; }
+        .header { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
+        .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
         
-        input { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 12px; }
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
-        .btn-add { background: var(--primary); color: white; }
-        .btn-finish { background: var(--success); color: white; }
-        .btn-print { background: var(--dark); color: white; }
-        .btn-clear { background: #fee2e2; color: var(--danger); }
+        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
+        
+        /* Cart Styles */
+        .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .cart-info { font-size: 13px; line-height: 1.4; }
+        .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }
 
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #f1f5f9; border-radius: 12px; margin-bottom: 8px; background: #fff; }
-        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 10px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; }
-        .item-row { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
+        /* Button Grid Layout */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; color: white; }
+        .btn-add { background: var(--primary); width: 100%; margin-top: 5px; }
+        .btn-finish { background: var(--success); }
+        .btn-print { background: #334155; }
+        .btn-view { background: #64748b; }
+        .btn-clear { background: var(--danger); }
 
-        /* Print Specific Styles */
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-height: 150px; overflow-y: auto; }
+        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
+
+        /* Print Design */
+        #printArea { display: none; padding: 40px; }
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; }
             .no-print { display: none !important; }
         }
-
-        #printArea { display: none; background: white; font-family: 'Inter', sans-serif; }
-        .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .print-table th, .print-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .print-table th { background: #f2f2f2; }
+        .print-header { text-align: center; border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px; }
+        .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
+        .print-table th { background: #f8fafc; }
     </style>
 </head>
-<body onload="init()">
+<body>
 
 <div class="container no-print">
     <div class="header">
-        <a href="index.html" class="home-link"><i class="fas fa-house-chimney"></i></a>
-        <h2 style="margin:0; font-size: 18px;">K MART AL RAFFA</h2>
+        <a href="index.html" class="home-link"><i class="fas fa-home"></i></a>
+        <h3 style="margin:0;">K MART AL RAFFA</h3>
     </div>
 
-    <div id="priceWarning" style="display:none; color:red; text-align:center; font-weight:bold; margin-bottom:10px;">⚠️ OFFER PRICE LESSER THAN ITEM PRICE</div>
-
     <div style="position:relative">
-        <input type="text" id="search" placeholder="Search Item..." oninput="searchItems()" autocomplete="off">
+        <input type="text" id="search" placeholder="Search Item Name/Code..." oninput="searchItems()" autocomplete="off">
         <div id="list" class="autocomplete-list"></div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <input type="text" id="qty" placeholder="Qty" inputmode="decimal" onkeyup="handleDoubleDot(this, 'total')">
         <input type="text" id="total" placeholder="Total" inputmode="decimal" onkeyup="handleDoubleDot(this, 'add')">
     </div>
 
-    <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD ITEM</button>
-    <div id="cart" style="margin-top:20px;"></div>
+    <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD TO LIST</button>
     
-    <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-cloud-upload-alt"></i> FINISH & UPDATE SHEET</button>
-    <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> VIEW & PRINT BILL</button>
-    <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> CLEAR CART</button>
+    <div id="cart" style="margin-top:15px; max-height: 250px; overflow-y: auto;"></div>
+    
+    <div class="action-grid">
+        <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-sync"></i> FINISH</button>
+        <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> PRINT BILL</button>
+        <button onclick="toggleView()" class="btn btn-view"><i class="fas fa-eye"></i> VIEW BILL</button>
+        <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> CLEAR</button>
+    </div>
 </div>
 
 <div id="printArea">
     <div class="print-header">
-        <h1 style="margin:0;">K MART SUPERMARKET AL RAFFA</h1>
-        <p style="margin:5px 0;">Date: <span id="printDate"></span></p>
+        <h2 style="margin:0;">K MART SUPERMARKET AL RAFFA</h2>
+        <p>Date: <span id="printDate"></span></p>
     </div>
     <table class="print-table">
         <thead>
             <tr>
                 <th>Code</th>
-                <th>Item Description</th>
+                <th>Item</th>
                 <th>Qty</th>
-                <th>Rate (Inc)</th>
+                <th>Rate</th>
                 <th>Total</th>
             </tr>
         </thead>
         <tbody id="printBody"></tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4" style="text-align:right;"><b>Grand Total:</b></td>
-                <td><b id="printGrandTotal">0.00</b></td>
-            </tr>
-        </tfoot>
     </table>
+    <h3 style="text-align: right; margin-top: 20px;">Grand Total: ₹<span id="printGrandTotal">0.00</span></h3>
 </div>
 
 <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
-    const WEB_APP_SYNC = "https://script.google.com/macros/s/AKfycbzl1z71WXkJ6qdrBmxbg2yvfQUm6uoVC_anHJjOwbO_Ea9PAwqKYA58LYI43j1DgNXn2w/exec";
+    const WEB_APP = "https://script.google.com/macros/s/AKfycbzl1z71WXkJ6qdrBmxbg2yvfQUm6uoVC_anHJjOwbO_Ea9PAwqKYA58LYI43j1DgNXn2w/exec";
     let items = [], selected = null;
 
     async function init() {
@@ -106,7 +109,7 @@
             const c = r.split(',');
             return { code: c[0]?.trim(), name: c[1]?.trim(), ePrice: parseFloat(c[4]) || 0 };
         }).filter(i => i.name);
-        render();
+        renderCart();
     }
 
     function handleDoubleDot(input, action) {
@@ -136,58 +139,78 @@
     function addToCart() {
         const q = parseFloat(document.getElementById('qty').value);
         const t = parseFloat(document.getElementById('total').value);
-        if(!selected || isNaN(q) || isNaN(t)) return;
-
-        if((t/q) < selected.ePrice) document.getElementById('priceWarning').style.display="block";
-        else document.getElementById('priceWarning').style.display="none";
-
+        if(!selected || isNaN(q)) return;
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
-        cart[selected.code] = { ...selected, qty: q, total: t, rateInc: (t/q).toFixed(2) };
+        cart[selected.code] = { ...selected, qty: q, total: t, rate: (t/q).toFixed(2) };
         localStorage.setItem('k_cart', JSON.stringify(cart));
-
-        fetch(WEB_APP_SYNC, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
-        reset(); render(); document.getElementById('search').focus();
+        
+        fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
+        
+        resetInputs(); renderCart();
     }
 
-    function render() {
+    function renderCart() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         document.getElementById('cart').innerHTML = cart.map(i => `
             <div class="cart-item">
-                <div><b>${i.name}</b><br><small>Code: ${i.code} | Rate: ${i.rateInc}</small></div>
-                <b>₹${i.total}</b>
+                <div class="cart-info">
+                    <b>${i.name}</b><br>
+                    <small>Code: ${i.code} | Rate: ${i.rate} | Qty: ${i.qty}</small>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <b>₹${i.total}</b>
+                    <button class="edit-btn" onclick="editItem('${i.code}')">EDIT</button>
+                </div>
             </div>
         `).reverse().join('');
     }
 
+    function editItem(code) {
+        let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
+        const i = cart[code];
+        selected = { code: i.code, name: i.name, ePrice: i.ePrice };
+        document.getElementById('search').value = i.name;
+        document.getElementById('qty').value = i.qty;
+        document.getElementById('total').value = i.total;
+        document.getElementById('addBtn').disabled = false;
+        delete cart[code];
+        localStorage.setItem('k_cart', JSON.stringify(cart));
+        renderCart();
+    }
+
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(cart.length === 0) return alert("Cart is empty!");
-        
+        if(!cart.length) return alert("Cart is empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
-        let totalSum = 0;
+        let total = 0;
         document.getElementById('printBody').innerHTML = cart.map(i => {
-            totalSum += parseFloat(i.total);
-            return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rateInc}</td><td>${i.total}</td></tr>`;
+            total += parseFloat(i.total);
+            return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
         }).join('');
-        document.getElementById('printGrandTotal').innerText = totalSum.toFixed(2);
-        
-        document.getElementById('printArea').style.display = 'block';
+        document.getElementById('printGrandTotal').innerText = total.toFixed(2);
         window.print();
-        document.getElementById('printArea').style.display = 'none';
+    }
+
+    function toggleView() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if(!cart.length) return alert("Empty!");
+        let msg = cart.map(i => `${i.name}: ₹${i.total}`).join('\n');
+        alert("Current Bill:\n" + msg);
     }
 
     async function finishUpdate() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(cart.length === 0) return alert("Cart empty!");
         const btn = document.getElementById('finishBtn');
-        btn.innerHTML = 'SYNCING...'; btn.disabled = true;
-        await fetch(WEB_APP_SYNC, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
-        alert("Success! Sheet Updated.");
-        btn.innerHTML = 'FINISH & UPDATE SHEET'; btn.disabled = false;
+        btn.innerHTML = 'SYNCING...';
+        await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
+        alert("Updated!");
+        btn.innerHTML = '<i class="fas fa-sync"></i> FINISH';
     }
 
-    function clearCart() { localStorage.removeItem('k_cart'); render(); }
-    function reset() { document.getElementById('search').value = ""; document.getElementById('qty').value = ""; document.getElementById('total').value = ""; document.getElementById('addBtn').disabled = true; }
+    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
+    function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
+    
+    init();
 </script>
 </body>
 </html>
