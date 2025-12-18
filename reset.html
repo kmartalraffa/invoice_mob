@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BACKUP & RESET - K MART</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --secondary: #1e293b; --danger: #dc2626; --bg: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .reset-card { background: white; width: 92%; max-width: 400px; padding: 30px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; }
+        .icon-box { width: 80px; height: 80px; background: #fee2e2; color: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 35px; }
+        h2 { color: var(--secondary); margin-bottom: 10px; }
+        p { color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 25px; }
+        .home-btn { position: absolute; top: 20px; left: 20px; background: white; border: none; padding: 10px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; color: var(--secondary); text-decoration: none; }
+        
+        .btn-action { width: 100%; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-reset { background: var(--danger); color: white; margin-bottom: 12px; }
+        .btn-reset:active { transform: scale(0.98); }
+        .btn-reset:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        .status-msg { margin-top: 15px; font-size: 14px; font-weight: 600; display: none; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="home-btn"><i class="fas fa-arrow-left"></i></a>
+
+    <div class="reset-card">
+        <div class="icon-box">
+            <i class="fas fa-database"></i>
+        </div>
+        <h2>System Reset</h2>
+        <p>ഇത് ഇന്നത്തെ എല്ലാ ഡാറ്റയും ക്ലിയർ ചെയ്യുകയും ഗൂഗിൾ ഡ്രൈവിൽ ഒരു ബാക്കപ്പ് ഫയൽ സേവ് ചെയ്യുകയും ചെയ്യും. ഈ മാറ്റം പിന്നീട് മാറ്റാൻ സാധിക്കില്ല.</p>
+
+        <button id="resetBtn" onclick="handleReset()" class="btn-action btn-reset">
+            <i class="fas fa-sync-alt"></i> BACKUP & RESET NOW
+        </button>
+        
+        <div id="statusMsg" class="status-msg"></div>
+    </div>
+
+    <script>
+        // നിങ്ങളുടെ Web App URL ഇവിടെ നൽകുക
+        const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
+
+        async function handleReset() {
+            const confirmAction = confirm("⚠️ മുന്നറിയിപ്പ്!\n\nനിങ്ങൾ ഉറപ്പായും ഷീറ്റ് റീസെറ്റ് ചെയ്യാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?");
+            
+            if (!confirmAction) return;
+
+            const btn = document.getElementById('resetBtn');
+            const status = document.getElementById('statusMsg');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            status.style.display = 'block';
+            status.style.color = '#2563eb';
+            status.innerText = "Backing up data, please wait...";
+
+            try {
+                // 'backup_and_clear' എന്ന action script-ലേക്ക് അയക്കുന്നു
+                await fetch(WEB_APP, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: 'backup_and_clear' })
+                });
+
+                status.style.color = '#16a34a';
+                status.innerText = "✅ Successfully Backed up and Reset!";
+                alert("വിജയകരം! ഷീറ്റ് ക്ലിയർ ചെയ്യപ്പെട്ടു.");
+                setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+
+            } catch (err) {
+                status.style.color = '#dc2626';
+                status.innerText = "❌ Error occurred! Try again.";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> BACKUP & RESET NOW';
+            }
+        }
+    </script>
+</body>
+</html>
