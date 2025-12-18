@@ -3,32 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>K Mart Al Raffa - Portal</title>
+    <title>K MART AL RAFFA</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2563eb; --secondary: #1e293b; --success: #16a34a; --bg: #f1f5f9; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .main-card { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
-        .header-section { background: var(--secondary); color: white; padding: 25px 15px; border-radius: 18px; margin-bottom: 30px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .main-card { background: white; width: 92%; max-width: 400px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; box-sizing: border-box; }
+        .header-section { background: var(--secondary); color: white; padding: 25px 15px; border-radius: 18px; margin-bottom: 25px; }
         .header-section h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px; margin-bottom: 15px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; text-decoration: none; transition: 0.2s; cursor: pointer; box-sizing: border-box; }
+        .nav-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px; margin-bottom: 15px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; text-decoration: none; transition: 0.2s; box-sizing: border-box; }
         .btn-invoice { background: var(--primary); color: white; }
         .btn-order { background: var(--success); color: white; }
-        .btn-add-item { background: white; color: var(--primary); border: 2px solid var(--primary); }
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 20% auto; padding: 25px; border-radius: 20px; width: 85%; max-width: 350px; }
-        .modal-content input, .modal-content select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; }
+        .btn-add-item { background: white; color: var(--primary); border: 2px solid var(--primary); cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 15% auto; padding: 25px; border-radius: 20px; width: 88%; max-width: 360px; box-sizing: border-box; }
+        .modal-content input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .cat-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .cat-card { border: 2px solid #e2e8f0; padding: 15px 10px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .cat-card i { font-size: 20px; display: block; margin-bottom: 5px; }
+        .cat-card span { font-size: 14px; font-weight: 600; }
+        .cat-card.active { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
         .modal-actions { display: flex; gap: 10px; }
-        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .btn-save { flex: 2; background: var(--success); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .btn-cancel { flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 14px; border-radius: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="main-card">
-        <div class="header-section">
-            <i class="fas fa-shop" style="font-size:30px; margin-bottom:10px;"></i>
-            <h1>K MART AL RAFFA</h1>
-        </div>
+        <div class="header-section"><i class="fas fa-shop" style="font-size:30px; margin-bottom:10px; color:#60a5fa;"></i><h1>K MART AL RAFFA</h1></div>
         <a href="invoice.html" class="nav-btn btn-invoice"><i class="fas fa-file-invoice"></i> INVOICE MODE</a>
         <a href="order.html" class="nav-btn btn-order"><i class="fas fa-truck-ramp-box"></i> ORDER MODE</a>
         <button onclick="openAddModal()" class="nav-btn btn-add-item"><i class="fas fa-plus-circle"></i> ADD NEW PRODUCT</button>
@@ -36,37 +39,57 @@
 
     <div id="addModal" class="modal">
         <div class="modal-content">
-            <h3>Add New Product</h3>
-            <input type="number" id="newCode" placeholder="Product Code">
-            <input type="text" id="newName" placeholder="Product Name">
-            <select id="newCategory">
-                <option value="veg">Vegetable (Before 219)</option>
-                <option value="fruit">Fruit (Add to End)</option>
-            </select>
+            <h3 style="margin-top:0;">Add New Product</h3>
+            <input type="text" id="newCode" inputmode="numeric" pattern="[0-9]*" placeholder="Code" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <input type="text" id="newName" placeholder="Item Name">
+            <div class="cat-container">
+                <div class="cat-card active" id="cat-veg" onclick="setCategory('veg')"><i class="fas fa-carrot"></i><span>Vegetable</span></div>
+                <div class="cat-card" id="cat-fruit" onclick="setCategory('fruit')"><i class="fas fa-apple-whole"></i><span>Fruits</span></div>
+            </div>
             <div class="modal-actions">
-                <button id="saveBtn" onclick="submitNewItem()" class="modal-btn" style="background:var(--success); color:white;">ADD</button>
-                <button onclick="closeModal()" class="modal-btn" style="background:#f1f5f9;">CANCEL</button>
+                <button id="saveBtn" onclick="submitNewItem()" class="btn-save">ADD ITEM</button>
+                <button onclick="closeModal()" class="btn-cancel">CANCEL</button>
             </div>
         </div>
     </div>
 
     <script>
-        const webAppUrl = "https://script.google.com/macros/s/AKfycbx3MihOEOPqRfSbVyFMyHkpgFwhn18psCFBM0WDjTkqBNRqwAZ6QogH14kJEPrYEC9vNw/exec";
-        function openAddModal() { document.getElementById('addModal').style.display = 'block'; }
+        let selectedCategory = 'veg';
+        let existingItems = [];
+        const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+        const WEB_APP = "https://script.google.com/macros/s/AKfycbx3MihOEOPqRfSbVyFMyHkpgFwhn18psCFBM0WDjTkqBNRqwAZ6QogH14kJEPrYEC9vNw/exec";
+
+        async function loadExistingItems() {
+            try {
+                const res = await fetch(SHEET_CSV);
+                const csv = await res.text();
+                const rows = csv.split('\n').slice(1);
+                existingItems = rows.map(r => {
+                    const cols = r.split(',');
+                    return { code: cols[0]?.trim(), name: cols[1]?.trim().toLowerCase() };
+                });
+            } catch (e) { console.log("Sync Error"); }
+        }
+
+        function openAddModal() { loadExistingItems(); document.getElementById('addModal').style.display = 'block'; document.getElementById('newCode').focus(); }
         function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+        function setCategory(cat) { selectedCategory = cat; document.getElementById('cat-veg').classList.toggle('active', cat === 'veg'); document.getElementById('cat-fruit').classList.toggle('active', cat === 'fruit'); }
+
         async function submitNewItem() {
-            const code = document.getElementById('newCode').value;
-            const itemName = document.getElementById('newName').value;
-            const category = document.getElementById('newCategory').value;
-            if(!code || !itemName) { alert("Please fill all fields!"); return; }
+            const code = document.getElementById('newCode').value.trim();
+            const name = document.getElementById('newName').value.trim();
+            if(!code || !name) { alert("Fill all fields"); return; }
+            if(existingItems.some(i => i.code === code)) { alert("Code already exists!"); return; }
+            if(existingItems.some(i => i.name === name.toLowerCase())) { alert("Name already exists!"); return; }
+
             const btn = document.getElementById('saveBtn');
             btn.textContent = "Saving..."; btn.disabled = true;
+
             try {
-                await fetch(webAppUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ code, itemName, category }) });
-                alert("Success! Item added to Google Sheet.");
-                closeModal();
-            } catch (err) { alert("Error connecting to script!"); }
-            finally { btn.textContent = "ADD"; btn.disabled = false; }
+                await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ code, itemName: name, category: selectedCategory }) });
+                alert("Success!"); closeModal();
+            } catch (err) { alert("Error"); } 
+            finally { btn.textContent = "ADD ITEM"; btn.disabled = false; }
         }
     </script>
 </body>
