@@ -24,13 +24,13 @@
         .btn-plus { background: var(--success); }
         .saved-val { font-size: 13px; font-weight: 700; color: var(--primary); display: block; text-transform: uppercase; }
         .row-active { background-color: var(--highlight) !important; }
-        .off-col-view { font-weight: 700; color: #64748b; font-size: 12px; }
+        .off-col-view { font-weight: 800; color: #ef4444; font-size: 13px; }
     </style>
 </head>
 <body onload="initAll()">
     <div class="header">
         <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
-        <h2 style="margin:0; font-size: 16px;">ORDER MODE (MASTER)</h2>
+        <h2 style="margin:0; font-size: 16px;">ORDER MODE (OFFLINE)</h2>
     </div>
     <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
     <div class="table-container">
@@ -49,11 +49,12 @@
     </div>
 
     <script>
-        const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
         const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
         
         let products = [], orderData = {}, activeRow = null, activeField = null, offerItems = {}, isOfferDay = false;
 
+        // തീയതി ഫോർമാറ്റ് DD/MM/YYYY തിരിച്ചറിയാൻ
         function parseDate(dateStr) {
             if(!dateStr) return null;
             if(dateStr.includes('/')) {
@@ -66,7 +67,7 @@
         async function initAll() {
             try {
                 await fetchOffers();
-                await fetchProducts();
+                await fetchList();
             } catch (e) { console.error("Init Error"); }
         }
 
@@ -81,7 +82,7 @@
                     const today = new Date(); today.setHours(0,0,0,0);
                     const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1); tomorrow.setHours(0,0,0,0);
                     
-                    // ഇന്ന് അല്ലെങ്കിൽ നാളെ ഓഫർ ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
+                    // ഇന്ന് അല്ലെങ്കിൽ നാളെ ഓഫർ പിരീഡിലാണോ എന്ന് നോക്കുന്നു
                     isOfferDay = start && end && ((today >= start && today <= end) || (tomorrow >= start && tomorrow <= end));
                     
                     rows.slice(1).forEach(r => {
@@ -89,14 +90,14 @@
                         if(c[0]) offerItems[c[0].trim()] = c[1]?.trim();
                     });
                 }
-            } catch (e) { console.error("Offer Error"); }
+            } catch (e) { console.error("Offer Fetch Error"); }
         }
 
-        async function fetchProducts() {
+        async function fetchList() {
             const savedData = localStorage.getItem('k_order_local');
             if(savedData) orderData = JSON.parse(savedData);
             try {
-                const res = await fetch(MAIN_CSV + "&t=" + new Date().getTime());
+                const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const data = await res.text();
                 const rows = data.split('\n').slice(1);
                 products = rows.map(r => {
@@ -107,7 +108,7 @@
                     return { code, name: c[1]?.trim() };
                 }).filter(p => p && p.name);
                 renderTable(products);
-            } catch (e) { console.error("Product Error"); }
+            } catch (e) { console.error("Product Fetch Error"); }
         }
 
         function renderTable(dataList) {
@@ -157,6 +158,7 @@
         }
 
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
+        
         function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
