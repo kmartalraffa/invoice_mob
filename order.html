@@ -9,35 +9,29 @@
     <style>
         :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; --highlight: #fef9c3; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
-        
         .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
         .home-icon { position: absolute; left: 12px; top: 15px; color: inherit; text-decoration: none; }
         .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
-
         .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         th { background: #f1f5f9; padding: 8px 4px; text-align: center; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; }
-
-        /* Font & Input Sync */
-        .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; }
+        .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; line-height: 1.2; }
         .qty-input, .offer-input { width: 48px; font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1.5px solid var(--primary); padding: 6px 2px; display: none; background: white; }
-
         .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
         .btn-plus { background: var(--success); }
         .btn-type { background: var(--primary); font-weight: 800; font-size: 10px; }
-        .btn-offer { background: #f59e0b; }
-        .btn-disabled { background: #e2e8f0 !important; color: #94a3b8 !important; cursor: not-allowed; }
-
-        /* Saved state look */
         .saved-val { font-size: 14px; font-weight: 700; color: var(--primary); display: block; }
         .row-active { background-color: var(--highlight) !important; }
+        .edit-name-btn { background: none; border: none; color: #94a3b8; font-size: 12px; padding-left: 5px; cursor: pointer; }
 
-        /* Modal */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 35% auto; padding: 20px; border-radius: 15px; width: 80%; text-align: center; }
-        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .type-opt { padding: 15px; background: #f1f5f9; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        /* Numeric Selection Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { background: white; margin: 25% auto; padding: 20px; border-radius: 20px; width: 85%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .unit-hidden-input { position: absolute; opacity: 0; height: 0; pointer-events: none; }
+        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .type-opt { padding: 15px; background: #f1f5f9; border-radius: 12px; font-weight: 800; border: 2px solid transparent; }
+        .type-opt span { display: block; font-size: 10px; color: var(--primary); margin-bottom: 4px; }
     </style>
 </head>
 <body onload="fetchList()">
@@ -66,14 +60,17 @@
 
     <div id="typeModal" class="modal">
         <div class="modal-content">
-            <h3>Select Unit</h3>
+            <h3 style="margin:0 0 10px 0;">Select Unit</h3>
+            <p style="font-size: 12px; color: #64748b;">Press 1, 2, 3 or 4</p>
+            <input type="text" id="unitTrigger" inputmode="numeric" class="unit-hidden-input" oninput="handleUnitKeyPress(this)">
+            
             <div class="type-grid">
-                <div class="type-opt" onclick="selectType('PCS')">PCS</div>
-                <div class="type-opt" onclick="selectType('KG')">KG</div>
-                <div class="type-opt" onclick="selectType('BOX')">BOX</div>
-                <div class="type-opt" onclick="selectType('BAG')">BAG</div>
+                <div class="type-opt"><span>Press 1</span>BOX</div>
+                <div class="type-opt"><span>Press 2</span>PCS</div>
+                <div class="type-opt"><span>Press 3</span>KG</div>
+                <div class="type-opt"><span>Press 4</span>BAG</div>
             </div>
-            <button onclick="closeModal()" style="margin-top:15px; border:none; background:none; color:red; font-weight:700;">CANCEL</button>
+            <button onclick="closeModal()" style="margin-top:20px; border:none; background:none; color:red; font-weight:700;">CANCEL</button>
         </div>
     </div>
 
@@ -82,11 +79,11 @@
         const WEB_APP = "https://script.google.com/macros/s/AKfycbyaPIbKl-9hF0yZSFfkjGSZ3UY_oyGfn61BK-RSpcVqEGoQz5PjNEusTCfD4Dj4w-uzyg/exec";
         
         let products = [], orderData = {}, activeRow = null, activeCode = null;
+        const unitMap = { "1": "BOX", "2": "PCS", "3": "KG", "4": "BAG" };
 
         async function fetchList() {
             const savedData = localStorage.getItem('k_order_local');
             if(savedData) orderData = JSON.parse(savedData);
-
             try {
                 const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const data = await res.text();
@@ -107,12 +104,12 @@
                 const d = orderData[p.code];
                 const isEditing = activeRow === p.code;
                 const hasQty = d.qty !== '';
-
                 return `
                 <tr id="row-${p.code}" class="${isEditing ? 'row-active' : ''}">
                     <td style="color:#94a3b8;">${p.code}</td>
-                    <td class="item-name-cell" onclick="activateRow('${p.code}')">
+                    <td style="text-align:left;" onclick="activateRow('${p.code}')">
                         <span class="item-name-text">${d.customName}</span>
+                        <button class="edit-name-btn" onclick="event.stopPropagation(); editName('${p.code}')"><i class="fas fa-edit"></i></button>
                     </td>
                     <td>
                         <button class="circle-btn btn-plus" style="display:${(!isEditing && !d.qty) ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
@@ -125,7 +122,7 @@
                         </button>
                     </td>
                     <td>
-                        <button class="circle-btn btn-offer ${hasQty ? '' : 'btn-disabled'}" style="display:${(!isEditing && !d.offer) ? 'flex' : 'none'}" ${hasQty ? '' : 'disabled'} onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
+                        <button class="circle-btn btn-plus" style="background:#f59e0b; display:${(!isEditing && !d.offer) ? 'flex' : 'none'}" ${hasQty ? '' : 'disabled'} onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
                         <span class="saved-val" style="display:${(!isEditing && d.offer) ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
                         <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${isEditing ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
                     </td>
@@ -134,50 +131,41 @@
         }
 
         function activateRow(code, field) {
-            if(activeRow && activeRow !== code) syncToSheet(activeRow); // പഴയ വരി സേവ് ചെയ്യുന്നു
+            if(activeRow && activeRow !== code) syncToSheet(activeRow);
             activeRow = code;
             renderTable(filterTable(true));
-            if(field) {
-                const input = document.getElementById(`in-${field}-${code}`);
-                input.focus();
-            }
+            if(field) setTimeout(() => document.getElementById(`in-${field}-${code}`).focus(), 50);
         }
 
         function handleKey(input, code, type) {
             if (input.value.includes('..')) {
                 input.value = input.value.replace('..', '');
-                if(type === 'q' && input.value) {
-                    orderData[code].qty = input.value;
-                    saveLocal();
-                    openType(code);
-                } else {
-                    orderData[code].offer = input.value;
-                    saveLocal();
-                    syncToSheet(code);
-                    activeRow = null;
-                    renderTable(filterTable(true));
-                }
+                orderData[code][type === 'q' ? 'qty' : 'offer'] = input.value;
+                saveLocal();
+                if(type === 'q' && input.value) { input.blur(); openType(code); }
+                else { syncToSheet(code); activeRow = null; renderTable(filterTable(true)); }
             } else {
-                if(type === 'q') orderData[code].qty = input.value;
-                else orderData[code].offer = input.value;
+                orderData[code][type === 'q' ? 'qty' : 'offer'] = input.value;
                 saveLocal();
             }
         }
 
-        async function syncToSheet(code) {
-            const d = orderData[code];
-            // ടൈപ്പ് ഇല്ലെങ്കിൽ ഷീറ്റിലേക്ക് വാല്യൂ അയക്കില്ല
-            const typeToSend = d.type === '' ? '' : d.type; 
-            if(!d.qty) return;
-
-            fetch(WEB_APP, {
-                method: 'POST', mode: 'no-cors',
-                body: JSON.stringify({ action: 'order_update', code: code, qty: d.qty, type: typeToSend, offer: d.offer })
-            });
+        function openType(code) {
+            activeCode = code;
+            document.getElementById('typeModal').style.display = 'block';
+            const trigger = document.getElementById('unitTrigger');
+            trigger.value = "";
+            setTimeout(() => trigger.focus(), 100);
         }
 
-        function openType(code) { activeCode = code; document.getElementById('typeModal').style.display = 'block'; }
-        
+        function handleUnitKeyPress(input) {
+            const key = input.value.slice(-1);
+            if (unitMap[key]) {
+                selectType(unitMap[key]);
+            }
+            input.value = ""; 
+        }
+
         function selectType(unit) {
             orderData[activeCode].type = unit;
             document.getElementById('typeModal').style.display = 'none';
@@ -186,9 +174,18 @@
             renderTable(filterTable(true));
         }
 
+        async function syncToSheet(code) {
+            const d = orderData[code];
+            if(!d.qty || d.type === '') return;
+            fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'order_update', code, qty: d.qty, type: d.type, offer: d.offer }) });
+        }
+
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
         function closeModal() { document.getElementById('typeModal').style.display = 'none'; }
-        
+        function editName(code) {
+            const n = prompt("Edit Item Name:", orderData[code].customName);
+            if(n) { orderData[code].customName = n; saveLocal(); renderTable(filterTable(true)); }
+        }
         function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
