@@ -66,7 +66,6 @@
                 today.setHours(0,0,0,0);
                 isOfferDay = (today >= start && today <= end);
 
-                // Offer List
                 rows.slice(1).forEach(r => {
                     const c = r.split(',');
                     if(c[0]) offerItems[c[0].trim()] = c[1]?.trim();
