@@ -11,18 +11,15 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
         .header { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-icon { position: absolute; left: 15px; top: 18px; color: white; text-decoration: none; }
-        
         .table-container { background: white; border-radius: 15px; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 14px; }
         th { background: #f1f5f9; padding: 12px; text-align: left; color: var(--dark); font-weight: 700; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        
         .qty-control { display: flex; align-items: center; gap: 8px; }
         .qty-display { font-weight: 700; color: var(--primary); min-width: 25px; text-align: center; }
-        .btn-plus { background: #16a34a; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-plus { background: #16a34a; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-plus:active { transform: scale(0.9); }
-        
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; font-family: 'Inter'; }
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; font-family: 'Inter'; font-size: 16px; }
     </style>
 </head>
 <body onload="fetchList()">
@@ -32,35 +29,41 @@
         <h2 style="margin:0; font-size: 18px;">K MART ORDER MODE</h2>
     </div>
 
-    <input type="text" id="searchInput" class="search-bar" placeholder="Search products..." oninput="filterTable()">
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search by name or code..." oninput="filterTable()">
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 50px;">Code</th>
+                    <th style="width: 80px;">Code</th>
                     <th>Product Name</th>
-                    <th style="width: 100px;">Quantity</th>
+                    <th style="width: 120px;">Order Qty</th>
                 </tr>
             </thead>
-            <tbody id="productBody">
-                </tbody>
+            <tbody id="productBody"></tbody>
         </table>
     </div>
 
     <script>
+        // GID കൃത്യമാണെന്ന് ഉറപ്പുവരുത്തിയിട്ടുണ്ട്
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
         let products = [];
+        let orderData = {}; // ക്വാണ്ടിറ്റി സേവ് ചെയ്യാൻ
 
         async function fetchList() {
             try {
-                const res = await fetch(CSV_URL);
+                // പുതിയ ഐറ്റംസ് ഉടൻ കിട്ടാൻ cache busting ചേർത്തു
+                const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const data = await res.text();
                 const rows = data.split('\n').slice(1);
+                
                 products = rows.map(r => {
                     const c = r.split(',');
-                    return { code: c[0]?.trim(), name: c[1]?.trim() };
+                    const code = c[0]?.trim();
+                    if(!orderData[code]) orderData[code] = 0; // Initialize qty
+                    return { code: code, name: c[1]?.trim() };
                 }).filter(p => p.name);
+                
                 renderTable(products);
             } catch (e) {
                 console.error("Error loading CSV:", e);
@@ -69,23 +72,26 @@
 
         function renderTable(dataList) {
             const body = document.getElementById('productBody');
-            body.innerHTML = dataList.map((p, index) => `
+            body.innerHTML = dataList.map((p) => `
                 <tr>
                     <td><b>#${p.code}</b></td>
                     <td>${p.name}</td>
                     <td>
                         <div class="qty-control">
-                            <div id="q-${index}" class="qty-display">0</div>
-                            <button class="btn-plus" onclick="increment(${index})"><i class="fas fa-plus"></i></button>
+                            <div id="q-${p.code}" class="qty-display">${orderData[p.code] || 0}</div>
+                            <button class="btn-plus" onclick="increment('${p.code}')">
+                                <i class="fas fa-plus"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function increment(idx) {
-            const el = document.getElementById(`q-${idx}`);
-            el.innerText = parseInt(el.innerText) + 1;
+        function increment(code) {
+            orderData[code] = (orderData[code] || 0) + 1;
+            const el = document.getElementById(`q-${code}`);
+            if(el) el.innerText = orderData[code];
         }
 
         function filterTable() {
