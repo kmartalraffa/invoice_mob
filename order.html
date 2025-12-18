@@ -29,32 +29,26 @@
 </head>
 <body onload="initAll()">
     <div class="header">
-        <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
-        <h2 style="margin:0; font-size: 16px;">ORDER MODE (OFFLINE)</h2>
+        <a href="index.html" class="home-icon"><i class="fas fa-home"></i></a>
+        <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
     </div>
     <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
     <div class="table-container">
         <table>
             <thead>
-                <tr>
-                    <th style="width: 35px;">Cd</th>
-                    <th style="text-align: left;">Item Name</th>
-                    <th style="width: 60px;">Ord.Qty</th>
-                    <th style="width: 55px;">Typ</th>
-                    <th style="width: 55px;">Off</th>
-                </tr>
+                <tr><th style="width: 35px;">Cd</th><th style="text-align: left;">Item Name</th><th style="width: 60px;">Ord.Qty</th><th style="width: 55px;">Typ</th><th style="width: 55px;">Off</th></tr>
             </thead>
             <tbody id="productBody"></tbody>
         </table>
     </div>
 
     <script>
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+        const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
         const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
-        
+        const WEB_APP = "https://script.google.com/macros/s/AKfycbziJnIdJQ8KuBcjGMS3IpcdRwIz9VfM_nl_hQoFiz6ZB_OOOauI_U53sWX2EzQtofH89w/exec";
+
         let products = [], orderData = {}, activeRow = null, activeField = null, offerItems = {}, isOfferDay = false;
 
-        // തീയതി ഫോർമാറ്റ് DD/MM/YYYY തിരിച്ചറിയാൻ
         function parseDate(dateStr) {
             if(!dateStr) return null;
             if(dateStr.includes('/')) {
@@ -81,34 +75,29 @@
                     const start = parseDate(dates[0]); const end = parseDate(dates[1]);
                     const today = new Date(); today.setHours(0,0,0,0);
                     const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1); tomorrow.setHours(0,0,0,0);
-                    
-                    // ഇന്ന് അല്ലെങ്കിൽ നാളെ ഓഫർ പിരീഡിലാണോ എന്ന് നോക്കുന്നു
                     isOfferDay = start && end && ((today >= start && today <= end) || (tomorrow >= start && tomorrow <= end));
-                    
                     rows.slice(1).forEach(r => {
                         const c = r.split(',');
                         if(c[0]) offerItems[c[0].trim()] = c[1]?.trim();
                     });
                 }
-            } catch (e) { console.error("Offer Fetch Error"); }
+            } catch (e) { console.error("Offer Error"); }
         }
 
         async function fetchList() {
             const savedData = localStorage.getItem('k_order_local');
             if(savedData) orderData = JSON.parse(savedData);
-            try {
-                const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
-                const data = await res.text();
-                const rows = data.split('\n').slice(1);
-                products = rows.map(r => {
-                    const c = r.split(',');
-                    const code = c[0]?.trim();
-                    if(!code) return null;
-                    if(!orderData[code]) orderData[code] = { qty: '', type: '', customName: c[1]?.trim() };
-                    return { code, name: c[1]?.trim() };
-                }).filter(p => p && p.name);
-                renderTable(products);
-            } catch (e) { console.error("Product Fetch Error"); }
+            const res = await fetch(MAIN_CSV + "&t=" + new Date().getTime());
+            const data = await res.text();
+            const rows = data.split('\n').slice(1);
+            products = rows.map(r => {
+                const c = r.split(',');
+                const code = c[0]?.trim();
+                if(!code) return null;
+                if(!orderData[code]) orderData[code] = { qty: '', type: '', customName: c[1]?.trim() };
+                return { code, name: c[1]?.trim() };
+            }).filter(p => p && p.name);
+            renderTable(products);
         }
 
         function renderTable(dataList) {
@@ -134,17 +123,9 @@
                         <span class="saved-val" style="display:${(isEditing && activeField === 't') ? 'none' : (d.type ? 'block' : 'none')}" onclick="activateRow('${p.code}', 't')">${d.type}</span>
                         <input type="text" id="in-t-${p.code}" class="type-input" style="display:${(isEditing && activeField === 't') ? 'block' : 'none'}" value="${d.type}" oninput="handleKey(this, '${p.code}', 't')">
                     </td>
-                    <td class="off-col-view">
-                        ${hasOffer ? offerItems[p.code] : '-'}
-                    </td>
+                    <td class="off-col-view">${hasOffer ? offerItems[p.code] : '-'}</td>
                 </tr>`;
             }).join('');
-        }
-
-        function activateRow(code, field) {
-            activeRow = code; activeField = field || null;
-            renderTable(filterTable(true));
-            if(field) setTimeout(() => { const el = document.getElementById(`in-${field}-${code}`); if(el) el.focus(); }, 100);
         }
 
         function handleKey(input, code, type) {
@@ -152,18 +133,19 @@
                 const val = input.value.replace('..', ''); input.value = val;
                 orderData[code][type === 'q' ? 'qty' : 'type'] = val;
                 saveLocal();
+                syncOrder(code, orderData[code].qty, orderData[code].type);
                 if (type === 'q' && val) activateRow(code, 't');
                 else { activeRow = null; activeField = null; renderTable(filterTable(true)); }
             } else { orderData[code][type === 'q' ? 'qty' : 'type'] = input.value; saveLocal(); }
         }
 
-        function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
-        
-        function filterTable(returnData = false) {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
-            if(returnData) return filtered; renderTable(filtered);
+        function syncOrder(code, q, t) {
+            fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'order_update', code: code, ordQty: q, type: t }) });
         }
+
+        function activateRow(code, field) { activeRow = code; activeField = field || null; renderTable(filterTable(true)); if(field) setTimeout(() => document.getElementById(`in-${field}-${code}`).focus(), 100); }
+        function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
+        function filterTable(returnData = false) { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query)); if(returnData) return filtered; renderTable(filtered); }
     </script>
 </body>
 </html>
