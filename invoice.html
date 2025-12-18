@@ -12,6 +12,10 @@
         .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
+        
+        /* Warning Message Box */
+        .warning-box { display: none; background: #fee2e2; color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid #fecaca; }
+        
         input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; color: white; text-transform: uppercase; }
@@ -49,6 +53,10 @@
     <div class="header-ui">
         <a href="index.html" class="home-link"><i class="fas fa-home"></i></a>
         <h3 style="margin:0;">K MART INVOICE</h3>
+    </div>
+
+    <div id="priceWarning" class="warning-box">
+        <i class="fas fa-exclamation-triangle"></i> OFFER PRICE LESSER THAN ITEM PRICE
     </div>
 
     <div style="position:relative">
@@ -128,6 +136,7 @@
                 selected = i; document.getElementById('search').value = i.name;
                 l.innerHTML = ""; document.getElementById('addBtn').disabled = false;
                 document.getElementById('qty').focus();
+                document.getElementById('priceWarning').style.display = 'none';
             };
             l.appendChild(d);
         });
@@ -140,8 +149,16 @@
         const t = parseFloat(tInput.value);
         if(!selected || isNaN(q) || isNaN(t)) return alert("Check Qty/Total");
 
+        // Offer Price Warning Logic
+        const unitPrice = t / q;
+        if (unitPrice < selected.ePrice) {
+            document.getElementById('priceWarning').style.display = 'block';
+        } else {
+            document.getElementById('priceWarning').style.display = 'none';
+        }
+
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
-        cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: (t/q).toFixed(2) };
+        cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: unitPrice.toFixed(2) };
         localStorage.setItem('k_cart', JSON.stringify(cart));
         
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
