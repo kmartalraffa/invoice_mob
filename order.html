@@ -76,7 +76,6 @@
             body.innerHTML = dataList.map(p => {
                 const d = orderData[p.code];
                 const isEditing = activeRow === p.code;
-                const hasQty = d.qty !== '';
 
                 return `
                 <tr id="row-${p.code}" class="${isEditing ? 'row-active' : ''}">
@@ -90,14 +89,14 @@
                         <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${activeRow === p.code && activeField === 'q' ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
                     </td>
                     <td>
-                        <button class="circle-btn btn-plus" style="background:var(--primary); display:${activeField !== 't' && !d.type ? 'flex' : 'none'}" ${hasQty ? '' : 'disabled'} onclick="activateRow('${p.code}', 't')"><i class="fas fa-plus"></i></button>
+                        <button class="circle-btn btn-plus" style="background:var(--primary); display:${activeField !== 't' && !d.type ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 't')"><i class="fas fa-plus"></i></button>
                         <span class="saved-val" style="display:${activeField !== 't' && d.type ? 'block' : 'none'}" onclick="activateRow('${p.code}', 't')">${d.type}</span>
                         <input type="text" id="in-t-${p.code}" class="type-input" style="display:${activeRow === p.code && activeField === 't' ? 'block' : 'none'}" value="${d.type}" oninput="handleKey(this, '${p.code}', 't')">
                     </td>
                     <td>
-                        <button class="circle-btn btn-plus" style="background:#f59e0b; display:${activeField !== 'o' && !d.offer ? 'flex' : 'none'}" ${hasQty ? '' : 'disabled'} onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
+                        <button class="circle-btn btn-plus" style="background:#f59e0b; display:${activeField !== 'o' && !d.offer ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
                         <span class="saved-val" style="display:${activeField !== 'o' && d.offer ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
-                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${activeRow === p.code && activeField === 'o' ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
+                        <input type="text" id="in-o-${p.code}" class="offer-input" style="display:${activeRow === p.code && activeField === 'o' ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
                     </td>
                 </tr>`;
             }).join('');
@@ -121,8 +120,8 @@
                 saveLocal();
                 input.blur();
                 
-                if (type === 'q' && val) activateRow(code, 't'); // Qty കഴിഞ്ഞാൽ Type-ലേക്ക്
-                else if (type === 't' && val) activateRow(code, 'o'); // Type കഴിഞ്ഞാൽ Offer-ലേക്ക്
+                if (type === 'q' && val) activateRow(code, 't');
+                else if (type === 't' && val) activateRow(code, 'o');
                 else {
                     syncToSheet(code);
                     activeRow = null; activeField = null;
@@ -136,8 +135,13 @@
 
         async function syncToSheet(code) {
             const d = orderData[code];
-            if(!d.qty) return;
-            fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'order_update', code, qty: d.qty, type: d.type, offer: d.offer }) });
+            // Qty nirbandhamanu, allenkil save aakilla
+            if(!d.qty || d.qty.trim() === "") return;
+
+            fetch(WEB_APP, { 
+                method: 'POST', mode: 'no-cors', 
+                body: JSON.stringify({ action: 'order_update', code, qty: d.qty, type: d.type, offer: d.offer }) 
+            });
         }
 
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
