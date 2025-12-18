@@ -21,12 +21,7 @@
         .item-green { background: var(--safe-bg) !important; border-color: #bbf7d0 !important; }
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
         .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
-        
-        @media print {
-            .no-print { display: none; }
-            #printArea { display: block !important; }
-            .print-warn { color: red; font-weight: bold; margin-top: 10px; font-size: 12px; }
-        }
+        @media print { .no-print { display: none; } #printArea { display: block !important; padding: 10mm; font-family: monospace; } .print-warn { color: red; font-weight: bold; margin-top: 10px; font-size: 12px; } }
     </style>
 </head>
 <body onload="initAll()">
@@ -35,12 +30,10 @@
         <a href="index.html" class="home-link"><i class="fas fa-home"></i></a>
         <h3 style="margin:0;">K MART INVOICE</h3>
     </div>
-
     <div id="priceWarning" class="warning-box">
         <span style="display: block; margin-bottom: 5px;">⚠️ PRICE ALERT: EXCEEDS OFFER!</span>
         <div id="warningList" style="font-size: 11px; font-weight: 400;"></div>
     </div>
-
     <div style="position:relative">
         <input type="text" id="search" placeholder="Search Item..." oninput="searchItems()" autocomplete="off">
         <div id="list" class="autocomplete-list"></div>
@@ -55,7 +48,7 @@
     <button onclick="clearCart()" class="btn" style="background:var(--danger); margin-top:10px;">CLEAR ALL</button>
 </div>
 
-<div id="printArea" style="display:none; padding: 10mm; font-family: monospace;">
+<div id="printArea" style="display:none;">
     <h3 style="text-align:center;">K MART INVOICE</h3>
     <hr>
     <table style="width:100%; text-align: left; border-collapse: collapse;">
@@ -85,12 +78,15 @@
             const dates = rows[0].split(',');
             const start = new Date(dates[0]); const end = new Date(dates[1]);
             const today = new Date(); today.setHours(0,0,0,0);
+
+            // ഇൻവോയ്‌സ് പേജിൽ ഇന്നത്തെ തീയതി മാത്രം പരിശോധിക്കുന്നു
             isOfferDay = (today >= start && today <= end);
+
             rows.slice(1).forEach(r => {
                 const c = r.split(',');
                 if(c[0]) offerItems[c[0].trim()] = parseFloat(c[1]);
             });
-        } catch (e) { console.log("Offer Error"); }
+        } catch (e) { console.log("Offer Fetch Error"); }
     }
 
     async function fetchItems() {
@@ -129,6 +125,7 @@
         const offerPrice = offerItems[selected.code];
         let status = 'normal';
         
+        // വില താരതമ്യം ചെയ്യുന്ന ലോജിക്
         if (isOfferDay && offerPrice) {
             status = (parseFloat(rate) > offerPrice) ? 'high' : 'safe';
         }
@@ -152,7 +149,7 @@
             let css = '';
             if(i.status === 'high') {
                 css = 'item-red';
-                warnings.push(`⚠️ ${i.name}: Sale Rate ${i.rate} is Higher than Offer ${i.offPrice}`);
+                warnings.push(`⚠️ ${i.name}: Sale Rate ${i.rate} > Offer ${i.offPrice}`);
             } else if(i.status === 'safe') {
                 css = 'item-green';
             }
@@ -169,7 +166,6 @@
             warnBox.style.display = 'none';
         }
         
-        // Prepare print
         document.getElementById('printBody').innerHTML = cart.map(i => 
             `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`
         ).join('');
