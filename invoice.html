@@ -2,182 +2,149 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vegetable & Fruits Invoice</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>K MART AL RAFFA - INVOICE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .header-card { background: linear-gradient(135deg, #1e293b, #334155); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; position: relative; }
-        .header-card h2 { margin: 0; font-size: 20px; }
-        .home-icon { position: absolute; left: 20px; top: 22px; color: white; font-size: 20px; }
-        .status-badge { display: inline-block; font-size: 11px; color: #4ade80; margin-top: 8px; }
-        
-        .input-box { margin-bottom: 15px; position: relative; }
-        input { padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; width: 100%; box-sizing: border-box; font-family: 'Inter'; outline: none; }
-        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 8px; max-height: 250px; overflow-y: auto; width: 100%; z-index: 1000; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
-        .autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .autocomplete-item:hover { background: #f8fafc; color: var(--primary); }
-        
-        .btn { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
-        .btn-add { background: var(--primary); color: white; margin-top: 10px; }
-        .cart-item { background: #fff; border: 1px solid #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .bill-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        .bill-table th, .bill-table td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --dark: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header { background: var(--dark); color: white; padding: 20px; border-radius: 15px; text-align: center; position: relative; margin-bottom: 20px; }
+        .home-link { position: absolute; left: 15px; top: 22px; color: white; font-size: 20px; }
+        .warning-box { display: none; background: #fee2e2; color: var(--danger); padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-bottom: 15px; text-align: center; border: 1px solid #fecaca; }
+        .input-row { margin-bottom: 15px; position: relative; }
+        input { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; box-sizing: border-box; outline: none; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-finish { background: var(--success); color: white; margin-top: 25px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 10px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; }
+        .item-row { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f1f5f9; background: white; border-radius: 10px; margin-bottom: 5px; }
     </style>
 </head>
-<body onload="loadItemData()">
-    <div class="container">
-        <div class="header-card">
-            <a href="index.html" class="home-icon"><i class="fas fa-home"></i></a>
-            <h2>VEGETABLE & FRUITS INVOICE</h2>
-            <div id="message" class="status-badge"><i class="fas fa-sync-alt fa-spin"></i> SYNCING LIVE...</div>
-        </div>
+<body onload="init()">
 
-        <div class="input-box">
-            <input type="text" id="searchInput" placeholder="Search item..." oninput="handleSearchInput()">
-            <div id="autocompleteList" class="autocomplete-list"></div>
-        </div>
-
-        <div id="resultDisplay" style="display:none; padding:10px; background:#f1f7ff; margin-bottom:15px; font-weight:600; font-size:14px; border-radius:5px;"></div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-            <input type="number" id="qtyInput" placeholder="Qty" onkeydown="handleEnter(event, 'totalInput')">
-            <input type="number" id="totalInput" placeholder="Total" onkeydown="handleEnter(event, 'addItem')">
-        </div>
-        <button id="addButton" onclick="addItemToCart()" class="btn btn-add" disabled>ADD TO INVOICE</button>
-
-        <h3 style="font-size:16px; margin-top:25px; border-bottom:1px solid #eee; padding-bottom:10px;">ADDED ITEMS (<span id="cartCount">0</span>)</h3>
-        <div id="localCartDisplay"></div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:20px;">
-            <button onclick="clearLocalCart()" style="background:#f1f5f9; color:var(--danger);" class="btn">CLEAR ALL</button>
-            <button onclick="viewLocalCartHTML()" style="background:#f1f5f9; color:#475569;" class="btn">PREVIEW BILL</button>
-        </div>
-        <button onclick="downloadSimpleXLSX()" style="background:var(--success); color:white; margin-top:12px;" class="btn"><i class="fas fa-file-excel"></i> DOWNLOAD EXCEL</button>
-
-        <div id="billViewArea" style="display:none; margin-top:25px;">
-            <div id="billContent"></div>
-        </div>
+<div class="container">
+    <div class="header">
+        <a href="index.html" class="home-link"><i class="fas fa-house-chimney"></i></a>
+        <h2 style="margin:0; font-size: 20px; letter-spacing: 1px;">K MART INVOICE</h2>
     </div>
 
-    <script>
-        const CART_STORAGE_KEY = 'kmartLocalCart';
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
-        let allItemData = [];
-        let selectedItem = null;
+    <div id="priceWarning" class="warning-box">
+        <i class="fas fa-exclamation-triangle"></i> OFFER PRICE LESSER THAN ITEM PRICE
+    </div>
 
-        async function loadItemData() {
-            try {
-                const res = await fetch(SHEET_URL);
-                const csvData = await res.text();
-                const rows = csvData.split('\n').slice(1);
-                allItemData = rows.map((row, index) => {
-                    const cols = row.split(',');
-                    return cols.length >= 2 ? { code: cols[0].trim(), item: cols[1].trim(), row: index } : null;
-                }).filter(i => i);
-                document.getElementById('message').innerHTML = '<i class="fas fa-check-circle"></i> LIVE SYNC ACTIVE';
-                renderCart();
-            } catch (e) { document.getElementById('message').textContent = 'Sync Error!'; }
-        }
+    <div class="input-row">
+        <input type="text" id="search" placeholder="Search Item Name or Code..." oninput="searchItems()">
+        <div id="list" class="autocomplete-list"></div>
+    </div>
 
-        function handleSearchInput() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const list = document.getElementById('autocompleteList');
-            list.innerHTML = "";
-            if (input.length < 2) return;
-            const matches = allItemData.filter(i => i.item.toLowerCase().includes(input) || i.code.includes(input)).slice(0, 10);
-            matches.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-item';
-                div.innerHTML = `#${item.code} - ${item.item}`;
-                div.onclick = () => selectItem(item);
-                list.appendChild(div);
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <input type="number" id="qty" placeholder="Qty" inputmode="decimal" onkeydown="if(event.key==='Enter') document.getElementById('total').focus()">
+        <input type="number" id="total" placeholder="Total" inputmode="decimal" onkeydown="if(event.key==='Enter') addToCart()">
+    </div>
+
+    <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled>ADD TO CART</button>
+
+    <div style="margin-top:25px">
+        <h3 style="font-size: 16px;">Added Items (<span id="count">0</span>)</h3>
+        <div id="cart"></div>
+    </div>
+
+    <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish">
+        <i class="fas fa-check-double"></i> FINISH & UPDATE SHEET
+    </button>
+</div>
+
+<script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+    const WEB_APP_SYNC = "https://script.google.com/macros/s/AKfycbzl1z71WXkJ6qdrBmxbg2yvfQUm6uoVC_anHJjOwbO_Ea9PAwqKYA58LYI43j1DgNXn2w/exec";
+    
+    let items = [], selected = null;
+
+    async function init() {
+        const res = await fetch(CSV_URL);
+        const data = await res.text();
+        items = data.split('\n').slice(1).map(r => {
+            const c = r.split(',');
+            return { code: c[0]?.trim(), name: c[1]?.trim(), ePrice: parseFloat(c[4]) || 0 };
+        }).filter(i => i.name);
+        render();
+    }
+
+    function searchItems() {
+        const q = document.getElementById('search').value.toLowerCase();
+        const l = document.getElementById('list'); l.innerHTML = "";
+        if(q.length < 2) return;
+        items.filter(i => i.name.toLowerCase().includes(q) || i.code.includes(q)).slice(0,8).forEach(i => {
+            const d = document.createElement('div'); d.className = 'item-row';
+            d.innerHTML = `<b>#${i.code}</b> - ${i.name}`; 
+            d.onclick = () => {
+                selected = i; document.getElementById('search').value = i.name;
+                l.innerHTML = ""; document.getElementById('addBtn').disabled = false;
+                document.getElementById('qty').focus();
+            };
+            l.appendChild(d);
+        });
+    }
+
+    async function addToCart() {
+        const q = parseFloat(document.getElementById('qty').value);
+        const t = parseFloat(document.getElementById('total').value);
+        if(!selected || !q || !t) return;
+
+        if((t/q) < selected.ePrice) document.getElementById('priceWarning').style.display="block";
+        else document.getElementById('priceWarning').style.display="none";
+
+        let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
+        cart[selected.code] = { ...selected, qty: q, total: t };
+        localStorage.setItem('k_cart', JSON.stringify(cart));
+
+        fetch(WEB_APP_SYNC, { 
+            method: 'POST', mode: 'no-cors', 
+            body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) 
+        });
+
+        reset(); render(); document.getElementById('search').focus();
+    }
+
+    async function finishUpdate() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if(cart.length === 0) return alert("Cart empty!");
+        const btn = document.getElementById('finishBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SYNCING...'; btn.disabled = true;
+
+        try {
+            await fetch(WEB_APP_SYNC, { 
+                method: 'POST', mode: 'no-cors', 
+                body: JSON.stringify({ action:'finish_billing', cartItems: cart })
             });
+            alert("Sheet Updated (G, J, K Columns)!");
+            localStorage.removeItem('k_cart');
+            render();
+        } catch (e) { alert("Error!"); }
+        finally {
+            btn.innerHTML = '<i class="fas fa-check-double"></i> FINISH & UPDATE SHEET';
+            btn.disabled = false;
         }
+    }
 
-        function selectItem(item) {
-            selectedItem = item;
-            document.getElementById('searchInput').value = item.item;
-            document.getElementById('autocompleteList').innerHTML = "";
-            document.getElementById('resultDisplay').innerHTML = `Selected: ${item.item}`;
-            document.getElementById('resultDisplay').style.display = 'block';
-            document.getElementById('addButton').disabled = false;
-            document.getElementById('qtyInput').focus();
-        }
+    function render() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        document.getElementById('count').innerText = cart.length;
+        document.getElementById('cart').innerHTML = cart.map(i => `
+            <div class="cart-item">
+                <span><b>${i.name}</b><br><small>Qty: ${i.qty}</small></span>
+                <b style="color:var(--primary)">₹${i.total}</b>
+            </div>
+        `).reverse().join('');
+    }
 
-        function handleEnter(e, target) {
-            if (e.key === "Enter") {
-                if (target === 'addItem') addItemToCart();
-                else document.getElementById(target).focus();
-            }
-        }
-
-        function addItemToCart() {
-            const qty = parseFloat(document.getElementById('qtyInput').value);
-            const total = parseFloat(document.getElementById('totalInput').value);
-            if (!selectedItem || isNaN(qty) || isNaN(total)) return;
-
-            let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
-            cart[selectedItem.row || selectedItem.code] = { code: selectedItem.code, item: selectedItem.item, qty, total, id: selectedItem.row };
-            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-
-            document.getElementById('qtyInput').value = "";
-            document.getElementById('totalInput').value = "";
-            document.getElementById('searchInput').value = "";
-            document.getElementById('resultDisplay').style.display = 'none';
-            document.getElementById('addButton').disabled = true;
-            renderCart();
-            document.getElementById('searchInput').focus();
-        }
-
-        function renderCart() {
-            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
-            const items = Object.values(cart);
-            document.getElementById('cartCount').textContent = items.length;
-            document.getElementById('localCartDisplay').innerHTML = items.reverse().map(i => `
-                <div class="cart-item">
-                    <div style="font-size:14px;"><b>${i.item}</b><br><small>Qty: ${i.qty} | ₹${i.total}</small></div>
-                    <button onclick="editItem('${i.id || i.code}')" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-edit"></i></button>
-                </div>`).join('');
-        }
-
-        function editItem(id) {
-            let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
-            const item = cart[id];
-            selectedItem = { code: item.code, item: item.item, row: id };
-            document.getElementById('searchInput').value = item.item;
-            document.getElementById('qtyInput').value = item.qty;
-            document.getElementById('totalInput').value = item.total;
-            delete cart[id];
-            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-            renderCart();
-            document.getElementById('qtyInput').focus();
-        }
-
-        function clearLocalCart() { if(confirm("Clear Invoice?")) { localStorage.removeItem(CART_STORAGE_KEY); renderCart(); } }
-
-        function viewLocalCartHTML() {
-            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
-            const items = Object.values(cart);
-            let sum = 0;
-            let html = '<table class="bill-table"><tr><th>Item</th><th>Qty</th><th>Total</th></tr>';
-            items.forEach(i => { html += `<tr><td>${i.item}</td><td>${i.qty}</td><td>${i.total}</td></tr>`; sum += i.total; });
-            html += `<tr><td colspan="2" align="right"><b>Grand Total</b></td><td><b>₹${sum.toFixed(2)}</b></td></tr></table>`;
-            document.getElementById('billContent').innerHTML = html;
-            document.getElementById('billViewArea').style.display = 'block';
-        }
-
-        function downloadSimpleXLSX() {
-            const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '{}');
-            const ws = XLSX.utils.json_to_sheet(Object.values(cart));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Invoice");
-            XLSX.writeFile(wb, "Invoice_" + Date.now() + ".xlsx");
-        }
-    </script>
+    function reset() {
+        document.getElementById('search').value = ""; document.getElementById('qty').value = "";
+        document.getElementById('total').value = ""; document.getElementById('addBtn').disabled = true;
+    }
+</script>
 </body>
 </html>
