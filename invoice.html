@@ -23,24 +23,22 @@
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
-        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 
-        /* Print Specifics */
+        /* Print Specifics - No Margins for Header/Footer */
         #printArea { display: none; }
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; padding: 5mm; }
-            .no-print { display: none !important; }
             @page { size: A4; margin: 0; }
+            body { margin: 0; padding: 0; background: white; }
+            .no-print { display: none !important; }
+            #printArea { display: block !important; width: 100%; position: relative; min-height: 100vh; }
+            .print-header-img { width: 100%; display: block; margin: 0; }
+            .print-footer-img { width: 100%; position: absolute; bottom: 0; left: 0; }
+            .print-content { padding: 0 15mm; } /* Internal padding for content only */
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .print-table th { background: #808080 !important; color: white !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #666; font-size: 13px; }
+            .print-table td { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #ccc; font-size: 12px; }
+            .total-box { border: 2px solid #000; background: #fee2e2 !important; -webkit-print-color-adjust: exact; padding: 8px 20px; font-weight: 800; font-size: 18px; }
         }
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .print-table th, .print-table td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 13px; }
-        .print-table th { background: #e2e8f0; font-size: 12px; }
-        .total-box { border: 2px solid #000; background: #fee2e2; padding: 8px 20px; font-weight: 800; font-size: 18px; }
-
-        /* Bill Preview on Screen */
-        #billDisplay { display: none; margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 10px; }
     </style>
 </head>
 <body>
@@ -62,7 +60,6 @@
     </div>
 
     <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD TO LIST</button>
-    
     <div id="cart" style="max-height: 200px; overflow-y: auto; margin-top: 15px;"></div>
     
     <div class="action-grid">
@@ -71,37 +68,35 @@
         <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> Print Bill</button>
         <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-sync"></i> Finish</button>
     </div>
-
-    <div id="billDisplay">
-        <h4 style="text-align: center;">PREVIEW</h4>
-        <table style="width:100%; border-collapse:collapse; font-size:12px;">
-            <tbody id="billBody"></tbody>
-        </table>
-    </div>
 </div>
 
 <div id="printArea">
-    <div style="text-align: center;">
-        <img src="header.png" style="width: 100%; max-height: 200px; object-fit: contain;">
-    </div>
-    <div style="text-align: center; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #000;">Vegetable and Fruits Invoice</div>
-    <div style="text-align: right; font-size: 12px; margin-bottom: 5px;">Date: <span id="printDate"></span></div>
+    <img src="header.png" class="print-header-img">
     
-    <table class="print-table">
-        <thead>
-            <tr><th>CODE</th><th>ITEM NAME</th><th>QTY</th><th>RATE.inc</th><th>TOTAL</th></tr>
-        </thead>
-        <tbody id="printBodyActual"></tbody>
-    </table>
+    <div class="print-content">
+        <div style="text-align: center; font-weight: bold; font-size: 18px; margin-top: 10px;">Vegetable and Fruits Invoice</div>
+        <div style="text-align: right; font-size: 13px; margin-bottom: 10px;">Date: <span id="printDate"></span></div>
 
-    <div style="display: flex; justify-content: flex-end; margin-top: 20px; align-items: center;">
-        <div style="margin-right: 15px; font-weight: bold;">GRAND TOTAL:</div>
-        <div class="total-box"><span id="printGrandTotal">0.00</span></div>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width:10%;">CODE</th>
+                    <th style="width:45%;">ITEM NAME</th>
+                    <th style="width:15%;">QTY</th>
+                    <th style="width:15%;">RATE.inc</th>
+                    <th style="width:15%;">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody id="printBodyActual"></tbody>
+        </table>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; align-items: center;">
+            <div style="margin-right: 15px; font-weight: bold; font-size: 16px;">GRAND TOTAL:</div>
+            <div class="total-box"><span id="printGrandTotal">0.00</span></div>
+        </div>
     </div>
 
-    <div style="text-align: center; margin-top: 30px;">
-        <img src="footer.png" style="width: 100%; object-fit: contain;">
-    </div>
+    <img src="footer.png" class="print-footer-img">
 </div>
 
 <script>
@@ -180,15 +175,6 @@
         renderCart();
     }
 
-    function toggleBillView() {
-        const display = document.getElementById('billDisplay');
-        if (display.style.display === "block") { display.style.display = "none"; return; }
-        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if (!cart.length) return alert("Cart empty!");
-        document.getElementById('billBody').innerHTML = cart.map(i => `<tr><td>${i.name}</td><td>₹${i.total}</td></tr>`).join('');
-        display.style.display = "block";
-    }
-
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         if(!cart.length) return alert("Empty!");
@@ -202,16 +188,7 @@
         window.print();
     }
 
-    async function finishUpdate() {
-        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        const btn = document.getElementById('finishBtn');
-        btn.innerHTML = 'SYNCING...';
-        await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
-        alert("Updated!");
-        btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
-    }
-
-    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); document.getElementById('billDisplay').style.display="none"; }
+    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
     function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
     init();
 </script>
