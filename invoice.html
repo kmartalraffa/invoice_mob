@@ -13,7 +13,8 @@
         .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
         
-        .warning-box { display: none; background: var(--warn-bg); color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid var(--warn-border); line-height: 1.5; }
+        /* വാർണിംഗ് ബോക്സ് ഡിസൈൻ */
+        .warning-box { display: none; background: var(--warn-bg); color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid var(--warn-border); line-height: 1.6; }
         
         input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -25,33 +26,37 @@
         .btn-finish { background: var(--success); }
         
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* കാർട്ടിലെ വാർണിംഗ് ഐറ്റത്തിനുള്ള പിങ്ക് ഷേഡിംഗ് */
         .cart-warning { background: var(--warn-bg) !important; border: 1px solid var(--warn-border) !important; color: var(--danger) !important; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
         .cart-warning .edit-btn { background: #fff; border: 1px solid var(--warn-border); }
 
-        /* On-Screen Bill Preview Table */
         #billPreview { display: none; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px; }
         .bill-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
         .bill-table th, .bill-table td { padding: 10px; border: 1px solid #eee; text-align: left; }
-        .bill-table th { background: #555; color: white; -webkit-print-color-adjust: exact; }
+        .bill-table th { background: #555; color: white; }
 
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
         .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 
+        /* പ്രിന്റ് ഏരിയ സ്ക്രീനിൽ ഹൈഡ് ചെയ്യുന്നു */
+        #printArea { display: none !important; }
+
         @media print {
             @page { size: A4; margin: 0; }
-            body { margin: 0; padding: 0; background: white; }
+            html, body { background: #fff; margin: 0; padding: 0; }
             .no-print { display: none !important; }
-            #printArea { display: block !important; width: 100%; }
+            #printArea { display: block !important; visibility: visible !important; width: 100%; position: absolute; left: 0; top: 0; }
             .print-header-img { width: 100%; display: block; margin: 0; }
-            .print-header-row { display: flex; justify-content: space-between; padding: 5px 10mm; font-weight: 700; font-size: 14px; border-bottom: 1px solid #000; }
-            .print-table-container { padding: 0 10mm; }
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 2px; }
-            .print-table th { background: #555555 !important; color: white !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #333; font-size: 12px; }
-            .print-table td { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; }
+            .print-header-row { display: flex; justify-content: space-between; padding: 5px 10mm; font-weight: 700; font-size: 14px; border-bottom: 1.5px solid #000; }
+            .print-table-container { padding: 0 10mm; margin-top: 5px; }
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-table th { background: #555555 !important; color: white !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1.5px solid #333; font-size: 12px; }
+            .print-table td { background: #fff !important; padding: 8px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; }
             .total-section { display: flex; justify-content: flex-end; margin-top: 15px; align-items: center; padding-right: 10mm; }
             .total-box { border: 2px solid #000; background: #fee2e2 !important; -webkit-print-color-adjust: exact; padding: 8px 20px; font-weight: 900; font-size: 18px; }
-            .print-warning-list { margin-top: 15px; color: red; font-weight: bold; font-size: 12px; padding: 0 10mm; }
+            .print-warning-list { margin-top: 10px; color: red; font-weight: bold; font-size: 11px; padding: 0 10mm; line-height: 1.4; }
         }
     </style>
 </head>
@@ -64,8 +69,8 @@
     </div>
 
     <div id="priceWarning" class="warning-box">
-        OFFER PRICE LESSER THAN ITEM PRICE<br>
-        <span id="warningItems" style="font-size: 11px;"></span>
+        <span style="font-size: 14px; display: block; margin-bottom: 5px;">⚠️ OFFER PRICE LESSER THAN ITEM PRICE</span>
+        <div id="warningItems" style="font-size: 11px; font-weight: 400;"></div>
     </div>
 
     <div style="position:relative">
@@ -167,14 +172,18 @@
         const t = parseFloat(document.getElementById('total').value);
         if(!selected || isNaN(q) || isNaN(t)) return alert("Check Qty/Total");
 
-        const rate = t / q;
+        const rate = (t / q).toFixed(2);
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
+        
+        // Smart Warning Logic
+        const hasWarning = (selected.ePrice > 0 && rate > selected.ePrice);
+
         cart[selected.code] = { 
             ...selected, 
             qty: q.toFixed(3), 
             total: t.toFixed(2), 
-            rate: rate.toFixed(2),
-            isOverPrice: rate > selected.ePrice 
+            rate: rate,
+            isOverPrice: hasWarning 
         };
         localStorage.setItem('k_cart', JSON.stringify(cart));
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
@@ -185,11 +194,12 @@
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         const warningDiv = document.getElementById('priceWarning');
         const warningItemsSpan = document.getElementById('warningItems');
-        let warningList = cart.filter(i => i.isOverPrice).map(i => i.name);
         
-        if(warningList.length > 0) {
+        let warningDetails = cart.filter(i => i.isOverPrice).map(i => `${i.name} (Rate: ${i.rate}, Offer: ${i.ePrice})`);
+        
+        if(warningDetails.length > 0) {
             warningDiv.style.display = 'block';
-            warningItemsSpan.innerText = "Items: " + warningList.join(", ");
+            warningItemsSpan.innerHTML = warningDetails.join("<br>");
         } else {
             warningDiv.style.display = 'none';
         }
@@ -243,7 +253,7 @@
         let total = 0, warnings = [];
         document.getElementById('printBodyActual').innerHTML = cart.map(i => {
             total += parseFloat(i.total);
-            if(i.isOverPrice) warnings.push("OFFER PRICE LESSER THAN ITEM PRICE: " + i.name);
+            if(i.isOverPrice) warnings.push(`⚠️ OFFER PRICE LESSER THAN ITEM PRICE: ${i.name} (Rate: ${i.rate}, Offer: ${i.ePrice})`);
             return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
         }).join('');
         document.getElementById('printWarnings').innerHTML = warnings.join("<br>");
@@ -261,9 +271,8 @@
         btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
     }
 
-    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); document.getElementById('billPreview').style.display="none"; }
+    function clearCart() { if(confirm("Clear Cart?")) { localStorage.removeItem('k_cart'); renderCart(); document.getElementById('billPreview').style.display="none"; } }
     function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
-    init();
 </script>
 </body>
 </html>
