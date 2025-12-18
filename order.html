@@ -3,103 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>K MART - ORDER LIST</title>
+    <title>K MART - ORDER MODE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .header { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
-        .home-icon { position: absolute; left: 15px; top: 18px; color: white; text-decoration: none; }
-        .table-container { background: white; border-radius: 15px; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; font-size: 14px; }
-        th { background: #f1f5f9; padding: 12px; text-align: left; color: var(--dark); font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        .qty-control { display: flex; align-items: center; gap: 8px; }
-        .qty-display { font-weight: 700; color: var(--primary); min-width: 25px; text-align: center; }
-        .btn-plus { background: #16a34a; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-plus:active { transform: scale(0.9); }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; outline: none; font-family: 'Inter'; font-size: 16px; }
+        :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
+        .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
+        .home-icon { position: absolute; left: 12px; top: 15px; color: white; text-decoration: none; }
+        
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+
+        .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        th { background: #f1f5f9; padding: 8px 4px; text-align: left; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; word-wrap: break-word; }
+
+        /* Inputs & Buttons */
+        .qty-input { width: 45px; padding: 6px 2px; border: 1px solid var(--primary); border-radius: 4px; text-align: center; font-weight: 700; font-size: 14px; display: none; }
+        .offer-input { width: 50px; padding: 6px 2px; border: 1px solid #f59e0b; border-radius: 4px; text-align: center; font-size: 13px; display: none; }
+        .circle-btn { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; margin: auto; }
+        .btn-plus { background: var(--success); }
+        .btn-type { background: var(--primary); font-weight: 700; font-size: 10px; }
+        .btn-offer { background: #f59e0b; }
+
+        /* Modal for Type Selection */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 30% auto; padding: 20px; border-radius: 15px; width: 80%; text-align: center; }
+        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .type-opt { padding: 15px; background: #f1f5f9; border-radius: 10px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body onload="fetchList()">
 
     <div class="header">
-        <a href="index.html" class="home-icon"><i class="fas fa-house-chimney"></i></a>
-        <h2 style="margin:0; font-size: 18px;">K MART ORDER MODE</h2>
+        <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
+        <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
     </div>
 
-    <input type="text" id="searchInput" class="search-bar" placeholder="Search by name or code..." oninput="filterTable()">
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 80px;">Code</th>
-                    <th>Product Name</th>
-                    <th style="width: 120px;">Order Qty</th>
+                    <th style="width: 35px;">Cd</th>
+                    <th>Item</th>
+                    <th style="width: 50px; text-align: center;">Qty</th>
+                    <th style="width: 40px; text-align: center;">Typ</th>
+                    <th style="width: 40px; text-align: center;">Off</th>
+                    <th id="offHead" style="width: 55px; display: none;">Price</th>
                 </tr>
             </thead>
             <tbody id="productBody"></tbody>
         </table>
     </div>
 
+    <div id="typeModal" class="modal">
+        <div class="modal-content">
+            <h3>Select Unit</h3>
+            <div class="type-grid">
+                <div class="type-opt" onclick="selectType('PCS')">PCS</div>
+                <div class="type-opt" onclick="selectType('KG')">KG</div>
+                <div class="type-opt" onclick="selectType('BOX')">BOX</div>
+                <div class="type-opt" onclick="selectType('BAG')">BAG</div>
+            </div>
+            <button onclick="closeModal()" style="margin-top:20px; border:none; background:none; color:red; font-weight:700;">CANCEL</button>
+        </div>
+    </div>
+
     <script>
-        // GID കൃത്യമാണെന്ന് ഉറപ്പുവരുത്തിയിട്ടുണ്ട്
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
-        let products = [];
-        let orderData = {}; // ക്വാണ്ടിറ്റി സേവ് ചെയ്യാൻ
+        let products = [], orderData = {}, activeCode = null;
 
         async function fetchList() {
             try {
-                // പുതിയ ഐറ്റംസ് ഉടൻ കിട്ടാൻ cache busting ചേർത്തു
                 const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const data = await res.text();
                 const rows = data.split('\n').slice(1);
-                
                 products = rows.map(r => {
                     const c = r.split(',');
                     const code = c[0]?.trim();
-                    if(!orderData[code]) orderData[code] = 0; // Initialize qty
+                    if(!orderData[code]) orderData[code] = { qty: '', type: '+', offer: '' };
                     return { code: code, name: c[1]?.trim() };
                 }).filter(p => p.name);
-                
                 renderTable(products);
-            } catch (e) {
-                console.error("Error loading CSV:", e);
-            }
+            } catch (e) { console.error("CSV Error"); }
         }
 
         function renderTable(dataList) {
             const body = document.getElementById('productBody');
-            body.innerHTML = dataList.map((p) => `
+            body.innerHTML = dataList.map(p => {
+                const d = orderData[p.code];
+                return `
                 <tr>
-                    <td><b>#${p.code}</b></td>
-                    <td>${p.name}</td>
+                    <td style="color:#64748b;">${p.code}</td>
+                    <td style="font-weight:600;">${p.name}</td>
                     <td>
-                        <div class="qty-control">
-                            <div id="q-${p.code}" class="qty-display">${orderData[p.code] || 0}</div>
-                            <button class="btn-plus" onclick="increment('${p.code}')">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                        <button id="btn-q-${p.code}" class="circle-btn btn-plus" style="display:${d.qty ? 'none' : 'flex'}" onclick="showInput('${p.code}')"><i class="fas fa-plus"></i></button>
+                        <input type="number" id="in-q-${p.code}" class="qty-input" style="display:${d.qty ? 'block' : 'none'}" value="${d.qty}" oninput="updateQty('${p.code}', this.value)" onblur="checkEmpty('${p.code}', this.value)">
                     </td>
-                </tr>
-            `).join('');
+                    <td>
+                        <button class="circle-btn btn-type" onclick="openTypeModal('${p.code}')">${d.type}</button>
+                    </td>
+                    <td>
+                        <button class="circle-btn btn-offer" onclick="toggleOfferCol('${p.code}')"><i class="fas fa-tag"></i></button>
+                    </td>
+                    <td class="offCol" style="display:none">
+                        <input type="number" id="in-o-${p.code}" class="offer-input" style="display:block" value="${d.offer}" oninput="orderData['${p.code}'].offer = this.value">
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
-        function increment(code) {
-            orderData[code] = (orderData[code] || 0) + 1;
-            const el = document.getElementById(`q-${code}`);
-            if(el) el.innerText = orderData[code];
+        function showInput(code) {
+            document.getElementById(`btn-q-${code}`).style.display = 'none';
+            const input = document.getElementById(`in-q-${code}`);
+            input.style.display = 'block';
+            input.focus();
         }
 
-        function filterTable() {
+        function updateQty(code, val) {
+            orderData[code].qty = val;
+        }
+
+        function checkEmpty(code, val) {
+            if(!val) {
+                document.getElementById(`in-q-${code}`).style.display = 'none';
+                document.getElementById(`btn-q-${code}`).style.display = 'flex';
+                orderData[code].qty = '';
+            }
+        }
+
+        function openTypeModal(code) {
+            activeCode = code;
+            document.getElementById('typeModal').style.display = 'block';
+        }
+
+        function selectType(unit) {
+            orderData[activeCode].type = unit;
+            renderTable(filterTable(true));
+            closeModal();
+        }
+
+        function closeModal() { document.getElementById('typeModal').style.display = 'none'; }
+
+        function toggleOfferCol(code) {
+            const head = document.getElementById('offHead');
+            const cols = document.querySelectorAll('.offCol');
+            const isHidden = head.style.display === 'none';
+            head.style.display = isHidden ? 'table-cell' : 'none';
+            cols.forEach(c => c.style.display = isHidden ? 'table-cell' : 'none');
+        }
+
+        function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = products.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                p.code.includes(query)
-            );
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
+            if(returnData) return filtered;
             renderTable(filtered);
         }
     </script>
