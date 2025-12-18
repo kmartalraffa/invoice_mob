@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>K MART - ORDER MODE</title>
+    <title>K MART - ORDER MODE (OFFLINE)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -11,52 +11,38 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
         .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
         .home-icon { position: absolute; left: 12px; top: 15px; color: inherit; text-decoration: none; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
-        
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
         .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         th { background: #f1f5f9; padding: 8px 4px; text-align: center; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; }
-        
         .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; line-height: 1.2; }
-        .qty-input, .type-input, .offer-input { width: 48px; font-size: 13px; font-weight: 700; text-align: center; border-radius: 4px; border: 1.5px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; text-transform: uppercase; }
-        
+        .qty-input, .type-input, .offer-input { width: 52px; font-size: 13px; font-weight: 700; text-align: center; border-radius: 4px; border: 2px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; text-transform: uppercase; }
         .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
         .btn-plus { background: var(--success); }
+        .btn-type { background: var(--primary); }
+        .btn-offer { background: #f59e0b; }
         .saved-val { font-size: 13px; font-weight: 700; color: var(--primary); display: block; text-transform: uppercase; }
         .row-active { background-color: var(--highlight) !important; }
     </style>
 </head>
 <body onload="fetchList()">
-
     <div class="header">
         <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
-        <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
+        <h2 style="margin:0; font-size: 16px;">ORDER MODE (OFFLINE)</h2>
     </div>
-
     <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
-
     <div class="table-container">
         <table>
             <thead>
-                <tr>
-                    <th style="width: 35px;">Cd</th>
-                    <th style="text-align: left;">Item Name</th>
-                    <th style="width: 55px;">Qty</th>
-                    <th style="width: 55px;">Typ</th>
-                    <th style="width: 55px;">Off</th>
-                </tr>
+                <tr><th style="width: 35px;">Cd</th><th style="text-align: left;">Item Name</th><th style="width: 60px;">Qty</th><th style="width: 55px;">Typ</th><th style="width: 55px;">Off</th></tr>
             </thead>
             <tbody id="productBody"></tbody>
         </table>
     </div>
-
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
-        const WEB_APP = "https://script.google.com/macros/s/AKfycbyaPIbKl-9hF0yZSFfkjGSZ3UY_oyGfn61BK-RSpcVqEGoQz5PjNEusTCfD4Dj4w-uzyg/exec";
-        
         let products = [], orderData = {}, activeRow = null, activeField = null;
-
         async function fetchList() {
             const savedData = localStorage.getItem('k_order_local');
             if(savedData) orderData = JSON.parse(savedData);
@@ -71,82 +57,51 @@
                     return { code: code, name: c[1]?.trim() };
                 }).filter(p => p.name);
                 renderTable(products);
-            } catch (e) { console.error("Sync Error"); }
+            } catch (e) { console.error("CSV Fetch Error"); }
         }
-
         function renderTable(dataList) {
             const body = document.getElementById('productBody');
             body.innerHTML = dataList.map(p => {
                 const d = orderData[p.code];
                 const isEditing = activeRow === p.code;
-
                 return `
                 <tr id="row-${p.code}" class="${isEditing ? 'row-active' : ''}">
                     <td style="color:#94a3b8;">${p.code}</td>
-                    <td style="text-align:left;" onclick="activateRow('${p.code}')">
-                        <span class="item-name-text">${d.customName}</span>
+                    <td style="text-align:left;" onclick="activateRow('${p.code}')"><span class="item-name-text">${d.customName}</span></td>
+                    <td>
+                        <button class="circle-btn btn-plus" style="display:${(isEditing && activeField === 'q') ? 'none' : (d.qty ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
+                        <span class="saved-val" style="display:${(isEditing && activeField === 'q') ? 'none' : (d.qty ? 'block' : 'none')}" onclick="activateRow('${p.code}', 'q')">${d.qty}</span>
+                        <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${(isEditing && activeField === 'q') ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
                     </td>
                     <td>
-                        <button class="circle-btn btn-plus" style="display:${activeField === 'q' && isEditing ? 'none' : (d.qty ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
-                        <span class="saved-val" style="display:${activeField !== 'q' && d.qty ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'q')">${d.qty}</span>
-                        <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${activeRow === p.code && activeField === 'q' ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
+                        <button class="circle-btn btn-type" style="display:${(isEditing && activeField === 't') ? 'none' : (d.type ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 't')"><i class="fas fa-plus"></i></button>
+                        <span class="saved-val" style="display:${(isEditing && activeField === 't') ? 'none' : (d.type ? 'block' : 'none')}" onclick="activateRow('${p.code}', 't')">${d.type}</span>
+                        <input type="text" id="in-t-${p.code}" class="type-input" style="display:${(isEditing && activeField === 't') ? 'block' : 'none'}" value="${d.type}" oninput="handleKey(this, '${p.code}', 't')">
                     </td>
                     <td>
-                        <button class="circle-btn btn-plus" style="background:var(--primary); display:${activeField === 't' && isEditing ? 'none' : (d.type ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 't')"><i class="fas fa-plus"></i></button>
-                        <span class="saved-val" style="display:${activeField !== 't' && d.type ? 'block' : 'none'}" onclick="activateRow('${p.code}', 't')">${d.type}</span>
-                        <input type="text" id="in-t-${p.code}" class="type-input" style="display:${activeRow === p.code && activeField === 't' ? 'block' : 'none'}" value="${d.type}" oninput="handleKey(this, '${p.code}', 't')">
-                    </td>
-                    <td>
-                        <button class="circle-btn btn-plus" style="background:#f59e0b; display:${activeField === 'o' && isEditing ? 'none' : (d.offer ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
-                        <span class="saved-val" style="display:${activeField !== 'o' && d.offer ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
-                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${activeRow === p.code && activeField === 'o' ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
+                        <button class="circle-btn btn-offer" style="display:${(isEditing && activeField === 'o') ? 'none' : (d.offer ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
+                        <span class="saved-val" style="display:${(isEditing && activeField === 'o') ? 'none' : (d.offer ? 'block' : 'none')}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
+                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${(isEditing && activeField === 'o') ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
                     </td>
                 </tr>`;
             }).join('');
         }
-
         function activateRow(code, field) {
-            if(activeRow && activeRow !== code) syncToSheet(activeRow);
-            activeRow = code;
-            activeField = field || null;
+            activeRow = code; activeField = field || null;
             renderTable(filterTable(true));
-            if(field) {
-                setTimeout(() => { document.getElementById(`in-${field}-${code}`).focus(); }, 100);
-            }
+            if(field) { setTimeout(() => { const el = document.getElementById(`in-${field}-${code}`); if(el) el.focus(); }, 100); }
         }
-
         function handleKey(input, code, type) {
             if (input.value.includes('..')) {
                 const val = input.value.replace('..', '');
                 input.value = val;
                 orderData[code][type === 'q' ? 'qty' : (type === 't' ? 'type' : 'offer')] = val;
                 saveLocal();
-                input.blur();
-                
                 if (type === 'q' && val) activateRow(code, 't');
                 else if (type === 't' && val) activateRow(code, 'o');
-                else {
-                    syncToSheet(code);
-                    activeRow = null; activeField = null;
-                    renderTable(filterTable(true));
-                }
-            } else {
-                orderData[code][type === 'q' ? 'qty' : (type === 't' ? 'type' : 'offer')] = input.value;
-                saveLocal();
-            }
+                else { activeRow = null; activeField = null; renderTable(filterTable(true)); }
+            } else { orderData[code][type === 'q' ? 'qty' : (type === 't' ? 'type' : 'offer')] = input.value; saveLocal(); }
         }
-
-        async function syncToSheet(code) {
-            const d = orderData[code];
-            // RULE: Qty-ഉം Type-ഉം ഉണ്ടെങ്കിൽ മാത്രമേ ഷീറ്റിലേക്ക് ഡാറ്റ അയക്കൂ
-            if(!d.qty || !d.type) return;
-
-            fetch(WEB_APP, { 
-                method: 'POST', mode: 'no-cors', 
-                body: JSON.stringify({ action: 'order_update', code, qty: d.qty, type: d.type, offer: d.offer }) 
-            });
-        }
-
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
         function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
