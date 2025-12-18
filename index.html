@@ -1,58 +1,103 @@
-<div style="margin: 20px; text-align: center;">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>K MART AL RAFFA - DASHBOARD</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .container { max-width: 450px; width: 100%; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .logo-area { margin-bottom: 20px; }
+        .logo-area i { font-size: 50px; color: var(--primary); }
+        h2 { color: var(--dark); margin-bottom: 5px; }
+        p { color: #64748b; font-size: 14px; margin-bottom: 25px; }
+        
+        /* Dashboard Grid */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        
+        .nav-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: white; color: var(--dark); padding: 20px; border-radius: 15px; text-decoration: none; font-weight: 700; font-size: 14px; border: 1px solid #e2e8f0; transition: 0.3s; }
+        .nav-card i { font-size: 24px; color: var(--primary); }
+        .nav-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        /* Special Cards */
+        .card-full { grid-column: span 2; flex-direction: row; gap: 15px; background: #eff6ff; border: none; }
+        .card-add { color: var(--success); }
+        .card-add i { color: var(--success); }
+
+        /* ADMIN RESET BUTTON */
+        .admin-reset-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: var(--danger); border: 2px solid var(--danger); padding: 15px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .admin-reset-btn:hover { background: var(--danger); color: white; }
+        .admin-reset-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-area">
+        <i class="fas fa-store"></i>
+    </div>
+    <h2>K MART AL RAFFA</h2>
+    <p>Management Dashboard</p>
+
+    <div class="menu-grid">
+        <a href="invoice.html" class="nav-card card-full">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>CREATE INVOICE</span>
+        </a>
+
+        <a href="order.html" class="nav-card">
+            <i class="fas fa-truck-loading"></i>
+            <span>PLACE ORDER</span>
+        </a>
+
+        <a href="add_item.html" class="nav-card card-add">
+            <i class="fas fa-plus-circle"></i>
+            <span>ADD NEW ITEM</span>
+        </a>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
     <button onclick="confirmClearSheet()" class="admin-reset-btn">
-        <i class="fas fa-database"></i> BACKUP & RESET TODAY'S DATA
+        <i class="fas fa-database"></i> BACKUP & RESET SHEET
     </button>
 </div>
 
-<style>
-.admin-reset-btn {
-    background: #dc2626;
-    color: white;
-    border: none;
-    padding: 15px 25px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.admin-reset-btn:active { transform: scale(0.98); }
-</style>
-
 <script>
-// നാം നേരത്തെ സെറ്റ് ചെയ്ത അതേ WEB_APP URL ഇവിടെ നൽകുക
-const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
+    // നാം ഉപയോഗിക്കുന്ന ഗൂഗിൾ ആപ്പ് സ്ക്രിപ്റ്റ് URL
+    const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
 
-async function confirmClearSheet() {
-    const msg = "⚠️ ശ്രദ്ധിക്കുക:\n\nഇത് ഷീറ്റിന്റെ ബാക്കപ്പ് എടുക്കുകയും ഇന്നത്തെ എൻട്രികൾ (F, G, H, J, K) ക്ലിയർ ചെയ്യുകയും ചെയ്യും. ഇത് ഉറപ്പാണോ?";
-    
-    if (confirm(msg)) {
-        const btn = document.querySelector('.admin-reset-btn');
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
-        btn.style.opacity = "0.7";
-        btn.disabled = true;
+    async function confirmClearSheet() {
+        // ഉപയോക്താവിനുള്ള മുന്നറിയിപ്പ് സന്ദേശം
+        const msg = "⚠️ ശ്രദ്ധിക്കുക:\n\nഇത് ഷീറ്റിന്റെ ബാക്കപ്പ് എടുക്കുകയും ഇന്നത്തെ ഡാറ്റ (F, G, H, J, K) ക്ലിയർ ചെയ്യുകയും ചെയ്യും.\n\nതുടരണോ?";
+        
+        if (confirm(msg)) {
+            const btn = document.querySelector('.admin-reset-btn');
+            const originalContent = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
+            btn.disabled = true;
 
-        try {
-            await fetch(WEB_APP, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ action: 'backup_and_clear' })
-            });
-            alert("✅ വിജയകരം! ബാക്കപ്പ് എടുക്കുകയും ഷീറ്റ് റീസെറ്റ് ചെയ്യുകയും ചെയ്തു.");
-        } catch (e) {
-            alert("❌ പരാജയപ്പെട്ടു! ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക.");
-        } finally {
-            btn.innerHTML = originalContent;
-            btn.style.opacity = "1";
-            btn.disabled = false;
+            try {
+                // ആക്ഷൻ അയക്കുന്നു
+                await fetch(WEB_APP, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ action: 'backup_and_clear' })
+                });
+                alert("✅ വിജയകരം! ബാക്കപ്പ് സേവ് ചെയ്തു, ഡാറ്റ റീസെറ്റ് ആയി.");
+            } catch (e) {
+                alert("❌ പരാജയപ്പെട്ടു! ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക.");
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
         }
     }
-}
 </script>
+
+</body>
+</html>
