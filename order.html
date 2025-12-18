@@ -15,24 +15,23 @@
         .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
 
         .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         th { background: #f1f5f9; padding: 8px 4px; text-align: center; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; }
 
-        .item-name-cell { text-align: left; font-size: 14px; font-weight: 600; }
-        .qty-input, .offer-input { width: 45px; font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1px solid var(--primary); padding: 6px 2px; display: none; }
-        
-        .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; transition: 0.2s; }
+        /* Font & Input Sync */
+        .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; }
+        .qty-input, .offer-input { width: 48px; font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1.5px solid var(--primary); padding: 6px 2px; display: none; background: white; }
+
+        .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
         .btn-plus { background: var(--success); }
-        .btn-val { background: var(--primary); font-weight: 800; font-size: 10px; border-radius: 8px; width: auto; min-width: 32px; padding: 0 5px; }
+        .btn-type { background: var(--primary); font-weight: 800; font-size: 10px; }
+        .btn-offer { background: #f59e0b; }
         .btn-disabled { background: #e2e8f0 !important; color: #94a3b8 !important; cursor: not-allowed; }
 
-        /* Action Buttons */
-        .action-btn { border: none; border-radius: 6px; padding: 6px 8px; font-size: 10px; font-weight: 800; color: white; cursor: pointer; width: 45px; }
-        .btn-save { background: var(--primary); }
-        .btn-edit { background: var(--success); }
-
-        .row-saved td { background-color: #f0fdf4 !important; } /* Light green for saved rows */
+        /* Saved state look */
+        .saved-val { font-size: 14px; font-weight: 700; color: var(--primary); display: block; }
+        .row-active { background-color: var(--highlight) !important; }
 
         /* Modal */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
@@ -54,12 +53,11 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 30px;">Cd</th>
+                    <th style="width: 35px;">Cd</th>
                     <th style="text-align: left;">Item Name</th>
-                    <th style="width: 45px;">Qty</th>
-                    <th style="width: 45px;">Typ</th>
-                    <th style="width: 45px;">Off</th>
-                    <th style="width: 50px;">Act</th>
+                    <th style="width: 55px;">Qty</th>
+                    <th style="width: 50px;">Typ</th>
+                    <th style="width: 55px;">Off</th>
                 </tr>
             </thead>
             <tbody id="productBody"></tbody>
@@ -75,6 +73,7 @@
                 <div class="type-opt" onclick="selectType('BOX')">BOX</div>
                 <div class="type-opt" onclick="selectType('BAG')">BAG</div>
             </div>
+            <button onclick="closeModal()" style="margin-top:15px; border:none; background:none; color:red; font-weight:700;">CANCEL</button>
         </div>
     </div>
 
@@ -82,7 +81,7 @@
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
         const WEB_APP = "https://script.google.com/macros/s/AKfycbyaPIbKl-9hF0yZSFfkjGSZ3UY_oyGfn61BK-RSpcVqEGoQz5PjNEusTCfD4Dj4w-uzyg/exec";
         
-        let products = [], orderData = {}, activeCode = null;
+        let products = [], orderData = {}, activeRow = null, activeCode = null;
 
         async function fetchList() {
             const savedData = localStorage.getItem('k_order_local');
@@ -95,7 +94,7 @@
                 products = rows.map(r => {
                     const c = r.split(',');
                     const code = c[0]?.trim();
-                    if(!orderData[code]) orderData[code] = { qty: '', type: '', offer: '', isSaved: false, customName: c[1]?.trim() };
+                    if(!orderData[code]) orderData[code] = { qty: '', type: '', offer: '', customName: c[1]?.trim() };
                     return { code: code, name: c[1]?.trim() };
                 }).filter(p => p.name);
                 renderTable(products);
@@ -106,97 +105,95 @@
             const body = document.getElementById('productBody');
             body.innerHTML = dataList.map(p => {
                 const d = orderData[p.code];
-                const isLocked = d.isSaved;
+                const isEditing = activeRow === p.code;
                 const hasQty = d.qty !== '';
 
                 return `
-                <tr id="row-${p.code}" class="${isLocked ? 'row-saved' : ''}">
+                <tr id="row-${p.code}" class="${isEditing ? 'row-active' : ''}">
                     <td style="color:#94a3b8;">${p.code}</td>
-                    <td class="item-name-cell">${d.customName}</td>
-                    <td>
-                        <button class="circle-btn ${d.qty ? 'btn-val' : 'btn-plus'}" style="display:${(isLocked || d.qty) ? 'none' : 'flex'}" onclick="toggleInput('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
-                        <span style="display:${(isLocked && d.qty) ? 'block' : 'none'}" onclick="${isLocked ? '' : "toggleInput('"+p.code+"', 'q')"}" class="btn-val circle-btn">${d.qty}</span>
-                        <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${(!isLocked && d.qty) ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')" onblur="blurCheck('${p.code}', 'q')">
+                    <td class="item-name-cell" onclick="activateRow('${p.code}')">
+                        <span class="item-name-text">${d.customName}</span>
                     </td>
                     <td>
-                        <button class="circle-btn ${d.type ? 'btn-val' : 'btn-plus'} ${hasQty ? '' : 'btn-disabled'}" ${hasQty && !isLocked ? '' : 'disabled'} onclick="openType('${p.code}')">
+                        <button class="circle-btn btn-plus" style="display:${(!isEditing && !d.qty) ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
+                        <span class="saved-val" style="display:${(!isEditing && d.qty) ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'q')">${d.qty}</span>
+                        <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${isEditing ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
+                    </td>
+                    <td>
+                        <button class="circle-btn btn-type ${hasQty ? '' : 'btn-disabled'}" ${hasQty ? '' : 'disabled'} onclick="openType('${p.code}')">
                             ${d.type ? d.type : '<i class="fas fa-plus"></i>'}
                         </button>
                     </td>
                     <td>
-                        <button class="circle-btn ${d.offer ? 'btn-val' : 'btn-plus'} ${hasQty ? '' : 'btn-disabled'}" style="display:${(isLocked || d.offer) ? 'none' : 'flex'}" ${hasQty && !isLocked ? '' : 'disabled'} onclick="toggleInput('${p.code}', 'o')"><i class="fas fa-plus"></i></button>
-                        <span style="display:${(isLocked && d.offer) ? 'block' : 'none'}" class="btn-val circle-btn">${d.offer}</span>
-                        <input type="text" id="in-o-${p.code}" class="offer-input" style="display:${(!isLocked && d.offer) ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')" onblur="blurCheck('${p.code}', 'o')">
-                    </td>
-                    <td>
-                        <button class="action-btn ${isLocked ? 'btn-edit' : 'btn-save'}" onclick="toggleAction('${p.code}')">
-                            ${isLocked ? 'EDIT' : 'SAVE'}
-                        </button>
+                        <button class="circle-btn btn-offer ${hasQty ? '' : 'btn-disabled'}" style="display:${(!isEditing && !d.offer) ? 'flex' : 'none'}" ${hasQty ? '' : 'disabled'} onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
+                        <span class="saved-val" style="display:${(!isEditing && d.offer) ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
+                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${isEditing ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
                     </td>
                 </tr>`;
             }).join('');
         }
 
-        function toggleInput(code, type) {
-            if(orderData[code].isSaved) return;
-            const input = document.getElementById(`in-${type}-${code}`);
-            const btn = document.querySelector(`#row-${code} .btn-plus`);
-            input.style.display = 'block';
-            input.focus();
+        function activateRow(code, field) {
+            if(activeRow && activeRow !== code) syncToSheet(activeRow); // പഴയ വരി സേവ് ചെയ്യുന്നു
+            activeRow = code;
+            renderTable(filterTable(true));
+            if(field) {
+                const input = document.getElementById(`in-${field}-${code}`);
+                input.focus();
+            }
         }
 
         function handleKey(input, code, type) {
             if (input.value.includes('..')) {
                 input.value = input.value.replace('..', '');
-                input.blur();
-                if(type === 'q' && input.value) openType(code);
-            }
-            if(type === 'q') orderData[code].qty = input.value;
-            else orderData[code].offer = input.value;
-            saveLocal();
-        }
-
-        function blurCheck(code, type) {
-            const val = orderData[code][type === 'q' ? 'qty' : 'offer'];
-            if(!val) renderTable(filterTable(true));
-        }
-
-        async function toggleAction(code) {
-            const d = orderData[code];
-            if(!d.qty) return alert("Enter Qty first");
-            
-            if(!d.isSaved) {
-                // SAVE Mode
-                d.isSaved = true;
-                saveLocal();
-                renderTable(filterTable(true));
-                // Sync to Sheet
-                fetch(WEB_APP, {
-                    method: 'POST', mode: 'no-cors',
-                    body: JSON.stringify({ action: 'order_update', code: code, qty: d.qty, type: d.type, offer: d.offer })
-                });
+                if(type === 'q' && input.value) {
+                    orderData[code].qty = input.value;
+                    saveLocal();
+                    openType(code);
+                } else {
+                    orderData[code].offer = input.value;
+                    saveLocal();
+                    syncToSheet(code);
+                    activeRow = null;
+                    renderTable(filterTable(true));
+                }
             } else {
-                // EDIT Mode
-                d.isSaved = false;
+                if(type === 'q') orderData[code].qty = input.value;
+                else orderData[code].offer = input.value;
                 saveLocal();
-                renderTable(filterTable(true));
             }
+        }
+
+        async function syncToSheet(code) {
+            const d = orderData[code];
+            // ടൈപ്പ് ഇല്ലെങ്കിൽ ഷീറ്റിലേക്ക് വാല്യൂ അയക്കില്ല
+            const typeToSend = d.type === '' ? '' : d.type; 
+            if(!d.qty) return;
+
+            fetch(WEB_APP, {
+                method: 'POST', mode: 'no-cors',
+                body: JSON.stringify({ action: 'order_update', code: code, qty: d.qty, type: typeToSend, offer: d.offer })
+            });
         }
 
         function openType(code) { activeCode = code; document.getElementById('typeModal').style.display = 'block'; }
+        
         function selectType(unit) {
             orderData[activeCode].type = unit;
             document.getElementById('typeModal').style.display = 'none';
             saveLocal();
+            syncToSheet(activeCode);
             renderTable(filterTable(true));
         }
 
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
-        function filterTable() {
+        function closeModal() { document.getElementById('typeModal').style.display = 'none'; }
+        
+        function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
+            if(returnData) return filtered;
             renderTable(filtered);
-            return filtered;
         }
     </script>
 </body>
