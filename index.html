@@ -7,221 +7,67 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #1e293b;
-            --success: #16a34a;
-            --bg: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .main-card {
-            background: white;
-            width: 90%;
-            max-width: 400px;
-            padding: 25px;
-            border-radius: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        /* Top Heading Card */
-        .header-section {
-            background: var(--secondary);
-            color: white;
-            padding: 25px 15px;
-            border-radius: 18px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-        }
-
-        .header-section i {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #60a5fa;
-        }
-
-        .header-section h1 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        /* Action Buttons */
-        .nav-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            padding: 16px;
-            margin-bottom: 15px;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            box-sizing: border-box;
-        }
-
+        :root { --primary: #2563eb; --secondary: #1e293b; --success: #16a34a; --bg: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .main-card { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; }
+        .header-section { background: var(--secondary); color: white; padding: 25px 15px; border-radius: 18px; margin-bottom: 30px; }
+        .header-section h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px; margin-bottom: 15px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; text-decoration: none; transition: 0.2s; cursor: pointer; box-sizing: border-box; }
         .btn-invoice { background: var(--primary); color: white; }
         .btn-order { background: var(--success); color: white; }
-        
-        /* Add Item Button - Uniform Style */
-        .btn-add-item { 
-            background: white; 
-            color: var(--primary); 
-            border: 2px solid var(--primary);
-            cursor: pointer;
-        }
-
-        .nav-btn:active { transform: scale(0.96); }
-
-        /* Modal / Popup Styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 20% auto;
-            padding: 25px;
-            border-radius: 20px;
-            width: 85%;
-            max-width: 350px;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-content h3 { margin-top: 0; color: var(--secondary); font-size: 18px; margin-bottom: 20px; }
-        
-        .modal-content input, .modal-content select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-family: 'Inter', sans-serif;
-            box-sizing: border-box;
-        }
-
+        .btn-add-item { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 20% auto; padding: 25px; border-radius: 20px; width: 85%; max-width: 350px; }
+        .modal-content input, .modal-content select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; }
         .modal-actions { display: flex; gap: 10px; }
         .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
-        .btn-save { background: var(--success); color: white; }
-        .btn-cancel { background: #f1f5f9; color: #64748b; }
-
-        .footer { margin-top: 20px; font-size: 11px; color: #94a3b8; font-weight: 500; }
     </style>
 </head>
 <body>
-
     <div class="main-card">
         <div class="header-section">
-            <i class="fas fa-shop"></i>
+            <i class="fas fa-shop" style="font-size:30px; margin-bottom:10px;"></i>
             <h1>K MART AL RAFFA</h1>
         </div>
-        
-        <a href="invoice.html" class="nav-btn btn-invoice">
-            <i class="fas fa-file-invoice"></i> INVOICE MODE
-        </a>
-        
-        <a href="order.html" class="nav-btn btn-order">
-            <i class="fas fa-truck-ramp-box"></i> ORDER MODE
-        </a>
-
-        <button onclick="openAddModal()" class="nav-btn btn-add-item">
-            <i class="fas fa-plus-circle"></i> ADD NEW PRODUCT
-        </button>
-        
-        <div class="footer">MANAGEMENT PORTAL v2.0</div>
+        <a href="invoice.html" class="nav-btn btn-invoice"><i class="fas fa-file-invoice"></i> INVOICE MODE</a>
+        <a href="order.html" class="nav-btn btn-order"><i class="fas fa-truck-ramp-box"></i> ORDER MODE</a>
+        <button onclick="openAddModal()" class="nav-btn btn-add-item"><i class="fas fa-plus-circle"></i> ADD NEW PRODUCT</button>
     </div>
 
     <div id="addModal" class="modal">
         <div class="modal-content">
             <h3>Add New Product</h3>
-            <input type="number" id="newCode" placeholder="Enter Product Code">
-            <input type="text" id="newName" placeholder="Enter Product Name">
+            <input type="number" id="newCode" placeholder="Product Code">
+            <input type="text" id="newName" placeholder="Product Name">
             <select id="newCategory">
                 <option value="veg">Vegetable (Before 219)</option>
                 <option value="fruit">Fruit (Add to End)</option>
             </select>
             <div class="modal-actions">
-                <button onclick="submitNewItem()" class="modal-btn btn-save">ADD</button>
-                <button onclick="closeModal()" class="modal-btn btn-cancel">CANCEL</button>
+                <button id="saveBtn" onclick="submitNewItem()" class="modal-btn" style="background:var(--success); color:white;">ADD</button>
+                <button onclick="closeModal()" class="modal-btn" style="background:#f1f5f9;">CANCEL</button>
             </div>
         </div>
     </div>
 
     <script>
-        function openAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('addModal').style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('addModal')) closeModal();
-        }
-
+        const webAppUrl = "https://script.google.com/macros/s/AKfycbx3MihOEOPqRfSbVyFMyHkpgFwhn18psCFBM0WDjTkqBNRqwAZ6QogH14kJEPrYEC9vNw/exec";
+        function openAddModal() { document.getElementById('addModal').style.display = 'block'; }
+        function closeModal() { document.getElementById('addModal').style.display = 'none'; }
         async function submitNewItem() {
             const code = document.getElementById('newCode').value;
             const itemName = document.getElementById('newName').value;
             const category = document.getElementById('newCategory').value;
-            const webAppUrl = "YOUR_APPS_SCRIPT_WEB_APP_URL"; // REPLACE THIS
-
-            if(!code || !itemName) {
-                alert("Please fill all fields!");
-                return;
-            }
-
-            // Button loading state
-            const btn = document.querySelector('.btn-save');
-            btn.textContent = "Saving...";
-            btn.disabled = true;
-
+            if(!code || !itemName) { alert("Please fill all fields!"); return; }
+            const btn = document.getElementById('saveBtn');
+            btn.textContent = "Saving..."; btn.disabled = true;
             try {
-                await fetch(webAppUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ code, itemName, category })
-                });
-                alert("Item added successfully to Google Sheet!");
+                await fetch(webAppUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ code, itemName, category }) });
+                alert("Success! Item added to Google Sheet.");
                 closeModal();
-            } catch (err) {
-                alert("Error connecting to script!");
-            } finally {
-                btn.textContent = "ADD";
-                btn.disabled = false;
-            }
+            } catch (err) { alert("Error connecting to script!"); }
+            finally { btn.textContent = "ADD"; btn.disabled = false; }
         }
     </script>
-
 </body>
 </html>
