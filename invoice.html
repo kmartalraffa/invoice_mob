@@ -164,9 +164,7 @@
         const hasWarning = (selected.ePrice > 0 && rate > selected.ePrice);
         cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: rate, isOverPrice: hasWarning };
         localStorage.setItem('k_cart', JSON.stringify(cart));
-        fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
-        resetInputs(); renderCart();
-    }
+       fetch(WEB_APP, { method: 'POST', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: 'live_update', code: selected.code, qty: q, total: t }) });
 
     function renderCart() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
@@ -237,7 +235,15 @@
         if(!cart.length) return;
         const btn = document.getElementById('finishBtn');
         btn.innerHTML = 'SYNCING...';
-        await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
+        await fetch(WEB_APP, {
+    method: 'POST',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        action: 'finish_billing',
+        cartItems: cart
+    })
+});
+
         alert("Updated!");
         btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
     }
