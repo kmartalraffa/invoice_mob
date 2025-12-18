@@ -10,58 +10,49 @@
         :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
         .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        
-        .header { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
+        .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
-        
         input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
-        
-        /* Cart Styles */
-        .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .cart-info { font-size: 13px; }
-        .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }
-
-        /* Action Buttons Grid */
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; text-transform: uppercase; }
-        
-        .btn-add { background: var(--primary); width: 100%; margin-bottom: 10px; }
+        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; color: white; text-transform: uppercase; }
+        .btn-add { background: var(--primary); width: 100%; }
         .btn-clear { background: var(--danger); }
         .btn-view { background: #64748b; }
         .btn-print { background: #334155; }
         .btn-finish { background: var(--success); }
-
+        .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
-        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
+        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 
-        /* On-Screen Bill Table */
-        #billDisplay { display: none; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px; }
-        .bill-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
-        .bill-table th, .bill-table td { padding: 10px; border: 1px solid #eee; text-align: left; }
-        .bill-table th { background: #f8fafc; }
-
-        /* Print Design */
+        /* Print Specifics */
         #printArea { display: none; }
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; padding: 20px; }
-            .print-header { text-align: center; margin-bottom: 30px; }
-            .print-table { width: 100%; border-collapse: collapse; }
-            .print-table th, .print-table td { border: 1px solid #000; padding: 10px; text-align: left; }
+            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; padding: 5mm; }
+            .no-print { display: none !important; }
+            @page { size: A4; margin: 0; }
         }
+        .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .print-table th, .print-table td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 13px; }
+        .print-table th { background: #e2e8f0; font-size: 12px; }
+        .total-box { border: 2px solid #000; background: #fee2e2; padding: 8px 20px; font-weight: 800; font-size: 18px; }
+
+        /* Bill Preview on Screen */
+        #billDisplay { display: none; margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container no-print">
-    <div class="header">
+    <div class="header-ui">
         <a href="index.html" class="home-link"><i class="fas fa-home"></i></a>
-        <h3 style="margin:0;">K MART AL RAFFA</h3>
+        <h3 style="margin:0;">K MART INVOICE</h3>
     </div>
 
     <div style="position:relative">
-        <input type="text" id="search" placeholder="Search Item Name/Code..." oninput="searchItems()" autocomplete="off">
+        <input type="text" id="search" placeholder="Search Item..." oninput="searchItems()" autocomplete="off">
         <div id="list" class="autocomplete-list"></div>
     </div>
 
@@ -72,7 +63,7 @@
 
     <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD TO LIST</button>
     
-    <div id="cart" style="max-height: 200px; overflow-y: auto;"></div>
+    <div id="cart" style="max-height: 200px; overflow-y: auto; margin-top: 15px;"></div>
     
     <div class="action-grid">
         <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> Clear</button>
@@ -82,29 +73,35 @@
     </div>
 
     <div id="billDisplay">
-        <h4 style="text-align: center; margin-bottom: 10px;">BILL PREVIEW</h4>
-        <table class="bill-table">
-            <thead>
-                <tr><th>Code</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
-            </thead>
+        <h4 style="text-align: center;">PREVIEW</h4>
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
             <tbody id="billBody"></tbody>
         </table>
-        <h3 style="text-align: right; margin-right: 10px;">Total: ₹<span id="screenGrandTotal">0.00</span></h3>
     </div>
 </div>
 
 <div id="printArea">
-    <div class="print-header">
-        <h2 style="margin:0;">K MART SUPERMARKET AL RAFFA</h2>
-        <p style="margin:5px 0;">Date: <span id="printDate"></span></p>
+    <div style="text-align: center;">
+        <img src="header.png" style="width: 100%; max-height: 200px; object-fit: contain;">
     </div>
+    <div style="text-align: center; font-weight: bold; margin: 10px 0; border-bottom: 1px solid #000;">Vegetable and Fruits Invoice</div>
+    <div style="text-align: right; font-size: 12px; margin-bottom: 5px;">Date: <span id="printDate"></span></div>
+    
     <table class="print-table">
         <thead>
-            <tr><th>Code</th><th>Description</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
+            <tr><th>CODE</th><th>ITEM NAME</th><th>QTY</th><th>RATE.inc</th><th>TOTAL</th></tr>
         </thead>
-        <tbody id="printBody"></tbody>
+        <tbody id="printBodyActual"></tbody>
     </table>
-    <h3 style="text-align: right; margin-top: 20px;">Grand Total: ₹<span id="printGrandTotal">0.00</span></h3>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 20px; align-items: center;">
+        <div style="margin-right: 15px; font-weight: bold;">GRAND TOTAL:</div>
+        <div class="total-box"><span id="printGrandTotal">0.00</span></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <img src="footer.png" style="width: 100%; object-fit: contain;">
+    </div>
 </div>
 
 <script>
@@ -151,7 +148,7 @@
         const t = parseFloat(document.getElementById('total').value);
         if(!selected || isNaN(q)) return;
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
-        cart[selected.code] = { ...selected, qty: q, total: t, rate: (t/q).toFixed(2) };
+        cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: (t/q).toFixed(2) };
         localStorage.setItem('k_cart', JSON.stringify(cart));
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
         resetInputs(); renderCart();
@@ -161,8 +158,8 @@
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         document.getElementById('cart').innerHTML = cart.map(i => `
             <div class="cart-item">
-                <div class="cart-info"><b>${i.name}</b><br><small>#${i.code} | Rt: ${i.rate} | Qty: ${i.qty}</small></div>
-                <div style="display:flex; gap:10px; align-items:center;">
+                <div style="font-size:12px;"><b>${i.name}</b><br>#${i.code} | Rt: ${i.rate} | Qty: ${i.qty}</div>
+                <div style="display:flex; gap:8px; align-items:center;">
                     <b>₹${i.total}</b>
                     <button class="edit-btn" onclick="editItem('${i.code}')">EDIT</button>
                 </div>
@@ -188,12 +185,7 @@
         if (display.style.display === "block") { display.style.display = "none"; return; }
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         if (!cart.length) return alert("Cart empty!");
-        let total = 0;
-        document.getElementById('billBody').innerHTML = cart.map(i => {
-            total += i.total;
-            return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
-        }).join('');
-        document.getElementById('screenGrandTotal').innerText = total.toFixed(2);
+        document.getElementById('billBody').innerHTML = cart.map(i => `<tr><td>${i.name}</td><td>₹${i.total}</td></tr>`).join('');
         display.style.display = "block";
     }
 
@@ -202,7 +194,7 @@
         if(!cart.length) return alert("Empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
         let total = 0;
-        document.getElementById('printBody').innerHTML = cart.map(i => {
+        document.getElementById('printBodyActual').innerHTML = cart.map(i => {
             total += parseFloat(i.total);
             return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
         }).join('');
@@ -212,7 +204,6 @@
 
     async function finishUpdate() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return;
         const btn = document.getElementById('finishBtn');
         btn.innerHTML = 'SYNCING...';
         await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
