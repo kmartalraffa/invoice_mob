@@ -23,6 +23,7 @@
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 
         /* Print Settings */
         #printArea { display: none; }
@@ -32,28 +33,17 @@
             .no-print { display: none !important; }
             #printArea { display: block !important; width: 100%; }
             .print-header-img { width: 100%; display: block; margin: 0; }
-            
-            .print-header-row { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                padding: 5px 10mm; 
-                font-weight: 700; 
-                font-size: 14px;
-                border-bottom: 1px solid #000;
-            }
-
+            .print-header-row { display: flex; justify-content: space-between; padding: 5px 10mm; font-weight: 700; font-size: 14px; border-bottom: 1px solid #000; }
             .print-table-container { padding: 0 10mm; }
             .print-table { width: 100%; border-collapse: collapse; margin-top: 2px; }
             .print-table th { background: #555555 !important; color: white !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #333; font-size: 12px; }
             .print-table td { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; }
-            
             .total-section { display: flex; justify-content: flex-end; margin-top: 15px; align-items: center; padding-right: 10mm; }
             .total-box { border: 2px solid #000; background: #fee2e2 !important; -webkit-print-color-adjust: exact; padding: 8px 20px; font-weight: 900; font-size: 18px; }
         }
     </style>
 </head>
-<body>
+<body onload="init()">
 
 <div class="container no-print">
     <div class="header-ui">
@@ -84,26 +74,17 @@
 
 <div id="printArea">
     <img src="header.png" class="print-header-img">
-    
     <div class="print-header-row">
         <span>Vegetable and Fruits Invoice</span>
         <span>Date: <span id="printDate"></span></span>
     </div>
-
     <div class="print-table-container">
         <table class="print-table">
             <thead>
-                <tr>
-                    <th style="width:10%;">CODE</th>
-                    <th style="width:45%;">ITEM NAME</th>
-                    <th style="width:15%;">QTY</th>
-                    <th style="width:15%;">RATE.inc</th>
-                    <th style="width:15%;">TOTAL</th>
-                </tr>
+                <tr><th>CODE</th><th>ITEM NAME</th><th>QTY</th><th>RATE.inc</th><th>TOTAL</th></tr>
             </thead>
             <tbody id="printBodyActual"></tbody>
         </table>
-
         <div class="total-section">
             <div style="margin-right: 15px; font-weight: bold;">GRAND TOTAL:</div>
             <div class="total-box"><span id="printGrandTotal">0.00</span></div>
@@ -117,13 +98,15 @@
     let items = [], selected = null;
 
     async function init() {
-        const res = await fetch(CSV_URL);
-        const data = await res.text();
-        items = data.split('\n').slice(1).map(r => {
-            const c = r.split(',');
-            return { code: c[0]?.trim(), name: c[1]?.trim(), ePrice: parseFloat(c[4]) || 0 };
-        }).filter(i => i.name);
-        renderCart();
+        try {
+            const res = await fetch(CSV_URL);
+            const data = await res.text();
+            items = data.split('\n').slice(1).map(r => {
+                const c = r.split(',');
+                return { code: c[0]?.trim(), name: c[1]?.trim(), ePrice: parseFloat(c[4]) || 0 };
+            }).filter(i => i.name);
+            renderCart();
+        } catch (e) { console.log("Init Error"); }
     }
 
     function handleDoubleDot(input, action) {
@@ -151,13 +134,18 @@
     }
 
     function addToCart() {
-        const q = parseFloat(document.getElementById('qty').value);
-        const t = parseFloat(document.getElementById('total').value);
-        if(!selected || isNaN(q)) return;
+        const qInput = document.getElementById('qty');
+        const tInput = document.getElementById('total');
+        const q = parseFloat(qInput.value);
+        const t = parseFloat(tInput.value);
+        if(!selected || isNaN(q) || isNaN(t)) return alert("Check Qty/Total");
+
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
         cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: (t/q).toFixed(2) };
         localStorage.setItem('k_cart', JSON.stringify(cart));
+        
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
+        
         resetInputs(); renderCart();
     }
 
@@ -185,11 +173,19 @@
         delete cart[code];
         localStorage.setItem('k_cart', JSON.stringify(cart));
         renderCart();
+        document.getElementById('qty').focus();
+    }
+
+    function toggleBillView() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if(!cart.length) return alert("Cart empty!");
+        let msg = "CURRENT BILL:\n\n" + cart.map(i => `${i.name}: ₹${i.total}`).join('\n');
+        alert(msg);
     }
 
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Empty!");
+        if(!cart.length) return alert("Cart empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
         let total = 0;
         document.getElementById('printBodyActual').innerHTML = cart.map(i => {
@@ -200,9 +196,29 @@
         window.print();
     }
 
-    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
-    function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
-    init();
+    async function finishUpdate() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if(!cart.length) return alert("Nothing to sync");
+        const btn = document.getElementById('finishBtn');
+        btn.innerHTML = 'SYNCING...'; btn.disabled = true;
+        try {
+            await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
+            alert("Success! Sheet updated (G, J, K Columns)");
+        } catch(e) { alert("Sync Failed"); }
+        btn.innerHTML = '<i class="fas fa-sync"></i> Finish'; btn.disabled = false;
+    }
+
+    function clearCart() { 
+        if(confirm("Clear Cart?")) { localStorage.removeItem('k_cart'); renderCart(); }
+    }
+
+    function resetInputs() { 
+        document.getElementById('search').value=""; 
+        document.getElementById('qty').value=""; 
+        document.getElementById('total').value=""; 
+        document.getElementById('addBtn').disabled = true;
+        document.getElementById('search').focus(); 
+    }
 </script>
 </body>
 </html>
