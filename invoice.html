@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; }
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; --warn-bg: #fee2e2; --warn-border: #fecaca; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
         .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
         
-        /* Warning Message Box */
-        .warning-box { display: none; background: #fee2e2; color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid #fecaca; }
+        /* Matching Colors for Warning Box and Cart Shading */
+        .warning-box { display: none; background: var(--warn-bg); color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid var(--warn-border); line-height: 1.5; }
         
         input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
@@ -24,13 +24,17 @@
         .btn-view { background: #64748b; }
         .btn-print { background: #334155; }
         .btn-finish { background: var(--success); }
+        
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Shading for items with warnings - Matches Warning Box */
+        .cart-warning { background: var(--warn-bg) !important; border: 1px solid var(--warn-border) !important; color: var(--danger) !important; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        .cart-warning .edit-btn { background: #fff; border: 1px solid var(--warn-border); }
+
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
         .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
 
-        /* Print Settings */
-        #printArea { display: none; }
         @media print {
             @page { size: A4; margin: 0; }
             body { margin: 0; padding: 0; background: white; }
@@ -44,6 +48,7 @@
             .print-table td { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #ccc; font-size: 12px; font-weight: 600; }
             .total-section { display: flex; justify-content: flex-end; margin-top: 15px; align-items: center; padding-right: 10mm; }
             .total-box { border: 2px solid #000; background: #fee2e2 !important; -webkit-print-color-adjust: exact; padding: 8px 20px; font-weight: 900; font-size: 18px; }
+            .print-warning-list { margin-top: 15px; color: red; font-weight: bold; font-size: 12px; padding: 0 10mm; }
         }
     </style>
 </head>
@@ -56,7 +61,8 @@
     </div>
 
     <div id="priceWarning" class="warning-box">
-        <i class="fas fa-exclamation-triangle"></i> OFFER PRICE LESSER THAN ITEM PRICE
+        OFFER PRICE LESSER THAN ITEM PRICE<br>
+        <span id="warningItems" style="font-size: 11px;"></span>
     </div>
 
     <div style="position:relative">
@@ -93,6 +99,7 @@
             </thead>
             <tbody id="printBodyActual"></tbody>
         </table>
+        <div id="printWarnings" class="print-warning-list"></div>
         <div class="total-section">
             <div style="margin-right: 15px; font-weight: bold;">GRAND TOTAL:</div>
             <div class="total-box"><span id="printGrandTotal">0.00</span></div>
@@ -136,40 +143,46 @@
                 selected = i; document.getElementById('search').value = i.name;
                 l.innerHTML = ""; document.getElementById('addBtn').disabled = false;
                 document.getElementById('qty').focus();
-                document.getElementById('priceWarning').style.display = 'none';
             };
             l.appendChild(d);
         });
     }
 
     function addToCart() {
-        const qInput = document.getElementById('qty');
-        const tInput = document.getElementById('total');
-        const q = parseFloat(qInput.value);
-        const t = parseFloat(tInput.value);
+        const q = parseFloat(document.getElementById('qty').value);
+        const t = parseFloat(document.getElementById('total').value);
         if(!selected || isNaN(q) || isNaN(t)) return alert("Check Qty/Total");
 
-        // Offer Price Warning Logic
-        const unitPrice = t / q;
-        if (unitPrice < selected.ePrice) {
-            document.getElementById('priceWarning').style.display = 'block';
-        } else {
-            document.getElementById('priceWarning').style.display = 'none';
-        }
-
+        const rate = t / q;
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
-        cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate: unitPrice.toFixed(2) };
+        cart[selected.code] = { 
+            ...selected, 
+            qty: q.toFixed(3), 
+            total: t.toFixed(2), 
+            rate: rate.toFixed(2),
+            isOverPrice: rate > selected.ePrice 
+        };
         localStorage.setItem('k_cart', JSON.stringify(cart));
-        
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
-        
         resetInputs(); renderCart();
     }
 
     function renderCart() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        const warningDiv = document.getElementById('priceWarning');
+        const warningItemsSpan = document.getElementById('warningItems');
+        
+        let warningList = cart.filter(i => i.isOverPrice).map(i => i.name);
+        
+        if(warningList.length > 0) {
+            warningDiv.style.display = 'block';
+            warningItemsSpan.innerText = "Items: " + warningList.join(", ");
+        } else {
+            warningDiv.style.display = 'none';
+        }
+
         document.getElementById('cart').innerHTML = cart.map(i => `
-            <div class="cart-item">
+            <div class="cart-item ${i.isOverPrice ? 'cart-warning' : ''}">
                 <div style="font-size:12px;"><b>${i.name}</b><br>#${i.code} | Rt: ${i.rate} | Qty: ${i.qty}</div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <b>₹${i.total}</b>
@@ -190,52 +203,40 @@
         delete cart[code];
         localStorage.setItem('k_cart', JSON.stringify(cart));
         renderCart();
-        document.getElementById('qty').focus();
-    }
-
-    function toggleBillView() {
-        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Cart empty!");
-        let msg = "CURRENT BILL:\n\n" + cart.map(i => `${i.name}: ₹${i.total}`).join('\n');
-        alert(msg);
     }
 
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Cart empty!");
+        if(!cart.length) return alert("Empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
+        
         let total = 0;
+        let warnings = [];
+        
         document.getElementById('printBodyActual').innerHTML = cart.map(i => {
             total += parseFloat(i.total);
+            if(i.isOverPrice) warnings.push("OFFER PRICE LESSER THAN ITEM PRICE: " + i.name);
             return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
         }).join('');
+        
+        document.getElementById('printWarnings').innerHTML = warnings.join("<br>");
         document.getElementById('printGrandTotal').innerText = total.toFixed(2);
         window.print();
     }
 
     async function finishUpdate() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Nothing to sync");
+        if(!cart.length) return;
         const btn = document.getElementById('finishBtn');
-        btn.innerHTML = 'SYNCING...'; btn.disabled = true;
-        try {
-            await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
-            alert("Success! Sheet updated (G, J, K Columns)");
-        } catch(e) { alert("Sync Failed"); }
-        btn.innerHTML = '<i class="fas fa-sync"></i> Finish'; btn.disabled = false;
+        btn.innerHTML = 'SYNCING...';
+        await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
+        alert("Updated!");
+        btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
     }
 
-    function clearCart() { 
-        if(confirm("Clear Cart?")) { localStorage.removeItem('k_cart'); renderCart(); }
-    }
-
-    function resetInputs() { 
-        document.getElementById('search').value=""; 
-        document.getElementById('qty').value=""; 
-        document.getElementById('total').value=""; 
-        document.getElementById('addBtn').disabled = true;
-        document.getElementById('search').focus(); 
-    }
+    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
+    function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
+    init();
 </script>
 </body>
 </html>
