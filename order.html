@@ -23,14 +23,14 @@
         .btn-type { background: var(--primary); font-weight: 800; font-size: 10px; }
         .saved-val { font-size: 14px; font-weight: 700; color: var(--primary); display: block; }
         .row-active { background-color: var(--highlight) !important; }
-        .edit-name-btn { background: none; border: none; color: #94a3b8; font-size: 12px; padding-left: 5px; cursor: pointer; }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
-        .modal-content { background: white; margin: 25% auto; padding: 20px; border-radius: 20px; width: 85%; text-align: center; position: relative; }
-        .unit-hidden-input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; border: none; z-index: 1; }
-        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; position: relative; z-index: 2; pointer-events: none; }
-        .type-opt { padding: 15px; background: #f1f5f9; border-radius: 12px; font-weight: 800; }
-        .type-opt span { display: block; font-size: 10px; color: var(--primary); margin-bottom: 4px; }
+        /* Modal & Keyboard Trigger Style */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .modal-content { background: white; margin: 20% auto; padding: 25px; border-radius: 20px; width: 85%; text-align: center; box-sizing: border-box; }
+        .unit-box-input { width: 60px; height: 50px; font-size: 24px; text-align: center; border: 2px solid var(--primary); border-radius: 10px; margin-bottom: 20px; font-weight: 700; outline: none; caret-color: var(--primary); }
+        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .type-opt { padding: 12px; background: #f1f5f9; border-radius: 12px; font-weight: 800; font-size: 14px; border: 1px solid #e2e8f0; }
+        .type-opt span { display: block; font-size: 10px; color: var(--primary); margin-bottom: 2px; }
     </style>
 </head>
 <body onload="fetchList()">
@@ -59,18 +59,18 @@
 
     <div id="typeModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin:0 0 10px 0;">Select Unit</h3>
-            <p style="font-size: 12px; color: #64748b;">Numeric keyboard vannillengil thazhe click cheyyuka</p>
+            <h3 style="margin:0 0 15px 0;">Select Unit</h3>
             
-            <input type="number" id="unitTrigger" inputmode="numeric" class="unit-hidden-input" oninput="handleUnitKeyPress(this)">
+            <input type="number" id="unitTrigger" inputmode="numeric" class="unit-box-input" placeholder="0" oninput="handleUnitKeyPress(this)">
             
             <div class="type-grid">
-                <div class="type-opt"><span>Press 1</span>BOX</div>
-                <div class="type-opt"><span>Press 2</span>PCS</div>
-                <div class="type-opt"><span>Press 3</span>KG</div>
-                <div class="type-opt"><span>Press 4</span>BAG</div>
+                <div class="type-opt"><span>1</span>BOX</div>
+                <div class="type-opt"><span>2</span>PCS</div>
+                <div class="type-opt"><span>3</span>KG</div>
+                <div class="type-opt"><span>4</span>BAG</div>
             </div>
-            <button onclick="closeModal()" style="margin-top:20px; border:none; background:none; color:red; font-weight:700; position:relative; z-index:3;">CANCEL</button>
+            
+            <button onclick="closeModal()" style="margin-top:20px; border:none; background:none; color:red; font-weight:700;">CANCEL</button>
         </div>
     </div>
 
@@ -111,7 +111,7 @@
                         <span class="item-name-text">${d.customName}</span>
                     </td>
                     <td>
-                        <button class="circle-btn btn-plus" style="display:${(activeField !== 'q' && activeRow !== p.code && !d.qty) || (activeRow === p.code && activeField !== 'q' && !d.qty) ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
+                        <button class="circle-btn btn-plus" style="display:${activeField !== 'q' && !d.qty ? 'flex' : 'none'}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
                         <span class="saved-val" style="display:${activeField !== 'q' && d.qty ? 'block' : 'none'}" onclick="activateRow('${p.code}', 'q')">${d.qty}</span>
                         <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${activeRow === p.code && activeField === 'q' ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
                     </td>
@@ -135,20 +135,18 @@
             activeField = field || null;
             renderTable(filterTable(true));
             if(field) {
-                setTimeout(() => {
-                    const el = document.getElementById(`in-${field}-${code}`);
-                    el.focus();
-                }, 50);
+                setTimeout(() => { document.getElementById(`in-${field}-${code}`).focus(); }, 50);
             }
         }
 
         function handleKey(input, code, type) {
             if (input.value.includes('..')) {
-                input.value = input.value.replace('..', '');
-                orderData[code][type === 'q' ? 'qty' : 'offer'] = input.value;
+                const val = input.value.replace('..', '');
+                input.value = val;
+                orderData[code][type === 'q' ? 'qty' : 'offer'] = val;
                 saveLocal();
-                if(type === 'q' && input.value) { 
-                    activeField = null;
+                if(type === 'q' && val) { 
+                    activeField = null; 
                     renderTable(filterTable(true));
                     openType(code); 
                 } else { 
@@ -168,10 +166,7 @@
             document.getElementById('typeModal').style.display = 'block';
             const trigger = document.getElementById('unitTrigger');
             trigger.value = "";
-            setTimeout(() => {
-                trigger.focus();
-                trigger.click(); // Mobile browser numeric force
-            }, 150);
+            setTimeout(() => { trigger.focus(); }, 200);
         }
 
         function handleUnitKeyPress(input) {
