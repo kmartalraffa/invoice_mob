@@ -17,7 +17,7 @@
         th { background: #f1f5f9; padding: 8px 4px; text-align: center; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
         td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; }
         .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; line-height: 1.2; }
-        .qty-input, .offer-input { width: 48px; font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1.5px solid var(--primary); padding: 6px 2px; display: none; background: white; }
+        .qty-input, .offer-input { width: 48px; font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1.5px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; }
         .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
         .btn-plus { background: var(--success); }
         .btn-type { background: var(--primary); font-weight: 800; font-size: 10px; }
@@ -27,10 +27,10 @@
         /* Modal & Keyboard Trigger Style */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
         .modal-content { background: white; margin: 20% auto; padding: 25px; border-radius: 20px; width: 85%; text-align: center; box-sizing: border-box; }
-        .unit-box-input { width: 60px; height: 50px; font-size: 24px; text-align: center; border: 2px solid var(--primary); border-radius: 10px; margin-bottom: 20px; font-weight: 700; outline: none; caret-color: var(--primary); }
-        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .type-opt { padding: 12px; background: #f1f5f9; border-radius: 12px; font-weight: 800; font-size: 14px; border: 1px solid #e2e8f0; }
-        .type-opt span { display: block; font-size: 10px; color: var(--primary); margin-bottom: 2px; }
+        .unit-box-input { width: 80%; height: 50px; font-size: 24px; text-align: center; border: 2px solid var(--primary); border-radius: 10px; margin-bottom: 15px; font-weight: 700; outline: none; background: #fff; }
+        .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; pointer-events: none; }
+        .type-opt { padding: 10px; background: #f1f5f9; border-radius: 12px; font-weight: 800; font-size: 13px; border: 1px solid #e2e8f0; }
+        .type-opt span { display: block; font-size: 9px; color: var(--primary); }
     </style>
 </head>
 <body onload="fetchList()">
@@ -58,10 +58,11 @@
     </div>
 
     <div id="typeModal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin:0 0 15px 0;">Select Unit</h3>
+        <div class="modal-content" onclick="forceFocus()">
+            <h3 style="margin:0 0 10px 0;">Select Unit</h3>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;">Type 1, 2, 3 or 4</p>
             
-            <input type="number" id="unitTrigger" inputmode="numeric" class="unit-box-input" placeholder="0" oninput="handleUnitKeyPress(this)">
+            <input type="number" id="unitTrigger" inputmode="numeric" class="unit-box-input" placeholder="Type here..." oninput="handleUnitKeyPress(this)">
             
             <div class="type-grid">
                 <div class="type-opt"><span>1</span>BOX</div>
@@ -135,7 +136,7 @@
             activeField = field || null;
             renderTable(filterTable(true));
             if(field) {
-                setTimeout(() => { document.getElementById(`in-${field}-${code}`).focus(); }, 50);
+                setTimeout(() => { document.getElementById(`in-${field}-${code}`).focus(); }, 100);
             }
         }
 
@@ -164,15 +165,21 @@
         function openType(code) {
             activeCode = code;
             document.getElementById('typeModal').style.display = 'block';
+            // ഉപയോക്താവ് ടാബ് ചെയ്താൽ കീബോർഡ് വരാൻ
+            setTimeout(() => { forceFocus(); }, 300);
+        }
+
+        function forceFocus() {
             const trigger = document.getElementById('unitTrigger');
-            trigger.value = "";
-            setTimeout(() => { trigger.focus(); }, 200);
+            trigger.focus();
+            trigger.click(); 
         }
 
         function handleUnitKeyPress(input) {
             const key = input.value.slice(-1);
             if (unitMap[key]) {
                 selectType(unitMap[key]);
+                input.blur();
             }
             input.value = ""; 
         }
