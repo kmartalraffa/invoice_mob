@@ -9,22 +9,26 @@
     <style>
         :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; --highlight: #fef9c3; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
-        .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
-        .home-icon { position: absolute; left: 12px; top: 15px; color: white; text-decoration: none; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
         
+        /* Dynamic Header Styles */
+        .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; transition: 0.5s; }
+        .header.making { background: var(--highlight) !important; color: #854d0e !important; border: 2px solid #facc15; }
+        .home-icon { position: absolute; left: 12px; top: 15px; color: inherit; text-decoration: none; }
+        
+        /* Status Blinking Effect */
+        .status-badge { font-size: 11px; font-weight: 800; text-transform: uppercase; display: none; margin-top: 4px; }
+        .header.making .status-badge { display: block; animation: blinker 1.2s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
         .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         th { background: #f1f5f9; padding: 8px 4px; text-align: left; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 8px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; word-wrap: break-word; transition: background 0.3s; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; word-wrap: break-word; }
 
-        /* Highlight Row when Offer exists */
         .offer-active td { background-color: var(--highlight) !important; }
-
-        /* Font Synchronization */
         .item-name-text { font-size: 14px; font-weight: 600; color: var(--dark); }
         .qty-input, .offer-input { font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1px solid var(--primary); padding: 6px 2px; box-sizing: border-box; }
-
         .qty-input { width: 45px; display: none; }
         .offer-input { width: 45px; border-color: #f59e0b; display: none; }
 
@@ -43,9 +47,10 @@
 </head>
 <body onload="fetchList()">
 
-    <div class="header">
+    <div id="mainHeader" class="header">
         <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
+        <div class="status-badge"><i class="fas fa-spinner"></i> Order Making...</div>
     </div>
 
     <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
@@ -99,11 +104,16 @@
 
         function renderTable(dataList) {
             const body = document.getElementById('productBody');
+            let filledCount = 0;
+
             body.innerHTML = dataList.map(p => {
                 const d = orderData[p.code];
                 const hasQty = d.qty && d.qty > 0;
+                const hasType = d.type !== '+';
                 const hasOffer = d.offer && d.offer.length > 0;
                 
+                if(hasQty && hasType) filledCount++;
+
                 return `
                 <tr id="row-${p.code}" class="${hasOffer ? 'offer-active' : ''}">
                     <td style="color:#64748b;">${p.code}</td>
@@ -126,7 +136,6 @@
                         <button id="btn-o-${p.code}" class="circle-btn btn-offer ${hasQty ? '' : 'btn-disabled'}" 
                             style="display:${d.offer ? 'none' : 'flex'}"
                             ${hasQty ? '' : 'disabled'} onclick="showInput('o', '${p.code}')"><i class="fas fa-tag"></i></button>
-                        
                         <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" 
                             style="display:${d.offer ? 'block' : 'none'}" 
                             value="${d.offer}" 
@@ -135,6 +144,11 @@
                     </td>
                 </tr>`;
             }).join('');
+
+            // Update Header Status
+            const header = document.getElementById('mainHeader');
+            if(filledCount >= 3) header.classList.add('making');
+            else header.classList.remove('making');
         }
 
         function showInput(type, code) {
@@ -153,13 +167,22 @@
             }
             if(type === 'q') orderData[code].qty = input.value;
             else orderData[code].offer = input.value;
+            updateHeaderStatus(); // Immediate Check
+        }
+
+        function updateHeaderStatus() {
+            let count = 0;
+            Object.values(orderData).forEach(d => { if(d.qty > 0 && d.type !== '+') count++; });
+            const header = document.getElementById('mainHeader');
+            if(count >= 3) header.classList.add('making');
+            else header.classList.remove('making');
         }
 
         function checkEmpty(type, code, val) {
             if(!val || val <= 0) {
                 document.getElementById(`in-${type}-${code}`).style.display = 'none';
                 document.getElementById(`btn-${type}-${code}`).style.display = 'flex';
-                if(type === 'q') orderData[code].qty = '';
+                if(type === 'q') { orderData[code].qty = ''; orderData[code].type = '+'; }
                 else orderData[code].offer = '';
             }
             renderTable(filterTable(true));
