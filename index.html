@@ -2,106 +2,226 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KMart Utility Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>K Mart Al Raffa - Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .selector-card { background: white; padding: 40px 30px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; max-width: 400px; width: 90%; }
-        h2 { color: #1e293b; margin-bottom: 30px; font-size: 24px; letter-spacing: 1px; }
-        .btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 18px; margin: 12px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s; }
-        .btn-invoice { background: #2563eb; color: white; }
-        .btn-order { background: #16a34a; color: white; }
-        .btn-add { background: #ffffff; color: #475569; border: 2px dashed #cbd5e1; }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e293b;
+            --success: #16a34a;
+            --bg: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-card {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        /* Top Heading Card */
+        .header-section {
+            background: var(--secondary);
+            color: white;
+            padding: 25px 15px;
+            border-radius: 18px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        .header-section i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #60a5fa;
+        }
+
+        .header-section h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Action Buttons */
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .btn-invoice { background: var(--primary); color: white; }
+        .btn-order { background: var(--success); color: white; }
         
-        /* Modal Style */
-        .modal { display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
-        .modal-content { background:white; margin:12% auto; padding:30px; border-radius:20px; width:85%; max-width:380px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .modal-content h3 { margin-top: 0; color: #1e293b; font-size: 18px; display: flex; align-items: center; gap: 10px; }
-        input, select { padding: 12px; border: 1px solid #e2e8f0; width: 100%; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-family: 'Inter'; font-size: 14px; outline: none; }
-        input:focus { border-color: #2563eb; }
-        .btn-submit { background: #2563eb; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .btn-cancel { background: none; border: none; color: #64748b; width: 100%; margin-top: 10px; cursor: pointer; font-size: 14px; }
+        /* Add Item Button - Uniform Style */
+        .btn-add-item { 
+            background: white; 
+            color: var(--primary); 
+            border: 2px solid var(--primary);
+            cursor: pointer;
+        }
+
+        .nav-btn:active { transform: scale(0.96); }
+
+        /* Modal / Popup Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 20% auto;
+            padding: 25px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 350px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h3 { margin-top: 0; color: var(--secondary); font-size: 18px; margin-bottom: 20px; }
+        
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .btn-save { background: var(--success); color: white; }
+        .btn-cancel { background: #f1f5f9; color: #64748b; }
+
+        .footer { margin-top: 20px; font-size: 11px; color: #94a3b8; font-weight: 500; }
     </style>
 </head>
 <body>
-    <div class="selector-card">
-        <i class="fas fa-store" style="font-size: 45px; color: #2563eb; margin-bottom: 20px;"></i>
-        <h2>KMART UTILITY</h2>
-        <a href="invoice.html" class="btn btn-invoice"><i class="fas fa-file-invoice"></i> INVOICE MODE</a>
-        <a href="order.html" class="btn btn-order"><i class="fas fa-cart-plus"></i> ORDER MODE</a>
-        <button onclick="openModal()" class="btn btn-add"><i class="fas fa-plus-circle"></i> ADD NEW PRODUCT</button>
+
+    <div class="main-card">
+        <div class="header-section">
+            <i class="fas fa-shop"></i>
+            <h1>K MART AL RAFFA</h1>
+        </div>
+        
+        <a href="invoice.html" class="nav-btn btn-invoice">
+            <i class="fas fa-file-invoice"></i> INVOICE MODE
+        </a>
+        
+        <a href="order.html" class="nav-btn btn-order">
+            <i class="fas fa-truck-ramp-box"></i> ORDER MODE
+        </a>
+
+        <button onclick="openAddModal()" class="nav-btn btn-add-item">
+            <i class="fas fa-plus-circle"></i> ADD NEW PRODUCT
+        </button>
+        
+        <div class="footer">MANAGEMENT PORTAL v2.0</div>
     </div>
 
     <div id="addModal" class="modal">
         <div class="modal-content">
-            <h3><i class="fas fa-plus-circle"></i> Add New Product</h3>
-            <input type="text" id="newCode" placeholder="Enter Item Code (e.g. 105)">
-            <input type="text" id="newName" placeholder="Enter Item Name">
+            <h3>Add New Product</h3>
+            <input type="number" id="newCode" placeholder="Enter Product Code">
+            <input type="text" id="newName" placeholder="Enter Product Name">
             <select id="newCategory">
-                <option value="veg">Vegetable (Add above 219)</option>
+                <option value="veg">Vegetable (Before 219)</option>
                 <option value="fruit">Fruit (Add to End)</option>
             </select>
-            <button onclick="submitNewItem()" id="submitBtn" class="btn-submit">ADD TO MAIN DATA</button>
-            <button onclick="closeModal()" class="btn-cancel">Cancel</button>
+            <div class="modal-actions">
+                <button onclick="submitNewItem()" class="modal-btn btn-save">ADD</button>
+                <button onclick="closeModal()" class="modal-btn btn-cancel">CANCEL</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Your Deployed Apps Script URL
-        const webAppUrl = "https://script.google.com/macros/s/AKfycbx3MihOEOPqRfSbVyFMyHkpgFwhn18psCFBM0WDjTkqBNRqwAZ6QogH14kJEPrYEC9vNw/exec";
-
-        function openModal() {
+        function openAddModal() {
             document.getElementById('addModal').style.display = 'block';
-            document.getElementById('newCode').focus();
         }
 
         function closeModal() {
             document.getElementById('addModal').style.display = 'none';
-            // Reset fields
-            document.getElementById('newCode').value = "";
-            document.getElementById('newName').value = "";
         }
 
-        function submitNewItem() {
-            const code = document.getElementById('newCode').value.trim();
-            const itemName = document.getElementById('newName').value.trim();
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('addModal')) closeModal();
+        }
+
+        async function submitNewItem() {
+            const code = document.getElementById('newCode').value;
+            const itemName = document.getElementById('newName').value;
             const category = document.getElementById('newCategory').value;
-            const btn = document.getElementById('submitBtn');
+            const webAppUrl = "YOUR_APPS_SCRIPT_WEB_APP_URL"; // REPLACE THIS
 
             if(!code || !itemName) {
-                alert("Please fill both Code and Item Name");
+                alert("Please fill all fields!");
                 return;
             }
-            
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Adding...";
+
+            // Button loading state
+            const btn = document.querySelector('.btn-save');
+            btn.textContent = "Saving...";
             btn.disabled = true;
 
-            fetch(webAppUrl, {
-                method: 'POST',
-                mode: 'no-cors', // Essential for Apps Script
-                cache: 'no-cache',
-                body: JSON.stringify({ code, itemName, category })
-            }).then(() => {
-                alert("Success! The item will be added to the 'MAIN DATA' sheet.");
+            try {
+                await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ code, itemName, category })
+                });
+                alert("Item added successfully to Google Sheet!");
                 closeModal();
-                btn.innerHTML = "ADD TO MAIN DATA";
+            } catch (err) {
+                alert("Error connecting to script!");
+            } finally {
+                btn.textContent = "ADD";
                 btn.disabled = false;
-            }).catch(err => {
-                console.error(err);
-                alert("Error connecting to the script. Check console for details.");
-                btn.innerHTML = "ADD TO MAIN DATA";
-                btn.disabled = false;
-            });
-        }
-
-        // Close modal if clicked outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('addModal');
-            if (event.target == modal) closeModal();
+            }
         }
     </script>
+
 </body>
 </html>
