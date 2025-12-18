@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,17 +19,16 @@
         .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; line-height: 1.2; }
         .offer-badge { background: var(--success); color: white; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 800; margin-left: 5px; }
         .offer-price-txt { color: var(--offer); font-size: 11px; font-weight: 700; display: block; margin-top: 2px; }
-        .qty-input, .type-input { width: 52px; font-size: 13px; font-weight: 700; text-align: center; border-radius: 4px; border: 2px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; text-transform: uppercase; }
+        .qty-input, .type-input, .offer-input { width: 52px; font-size: 13px; font-weight: 700; text-align: center; border-radius: 4px; border: 2px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; text-transform: uppercase; }
         .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
         .btn-plus { background: var(--success); }
         .saved-val { font-size: 13px; font-weight: 700; color: var(--primary); display: block; text-transform: uppercase; }
         .row-active { background-color: var(--highlight) !important; }
-        .off-col-view { font-weight: 800; color: #ef4444; font-size: 13px; }
     </style>
 </head>
 <body onload="initAll()">
     <div class="header">
-        <a href="index.html" class="home-icon"><i class="fas fa-home"></i></a>
+        <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
         <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
     </div>
     <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
@@ -45,46 +44,46 @@
     <script>
         const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
         const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
-        const WEB_APP = "https://script.google.com/macros/s/AKfycbziJnIdJQ8KuBcjGMS3IpcdRwIz9VfM_nl_hQoFiz6ZB_OOOauI_U53sWX2EzQtofH89w/exec";
-
+        
         let products = [], orderData = {}, activeRow = null, activeField = null, offerItems = {}, isOfferDay = false;
 
         function parseDate(dateStr) {
             if(!dateStr) return null;
             if(dateStr.includes('/')) {
-                const parts = dateStr.trim().split('/');
+                const parts = dateStr.split('/');
                 return new Date(parts[2], parts[1]-1, parts[0]);
             }
-            return new Date(dateStr.trim());
+            return new Date(dateStr);
         }
 
         async function initAll() {
+            const body = document.getElementById('productBody');
+            body.innerHTML = '<tr><td colspan="5" style="padding:20px;">Loading...</td></tr>';
             try {
                 await fetchOffers();
-                await fetchList();
-            } catch (e) { console.error("Init Error"); }
+                await fetchProducts();
+            } catch (e) { body.innerHTML = '<tr><td colspan="5">Connection Error.</td></tr>'; }
         }
 
         async function fetchOffers() {
-            try {
-                const res = await fetch(OFFER_CSV + "&t=" + new Date().getTime());
-                const data = await res.text();
-                const rows = data.split('\n');
-                if(rows.length > 0) {
-                    const dates = rows[0].split(',');
-                    const start = parseDate(dates[0]); const end = parseDate(dates[1]);
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1); tomorrow.setHours(0,0,0,0);
-                    isOfferDay = start && end && ((today >= start && today <= end) || (tomorrow >= start && tomorrow <= end));
-                    rows.slice(1).forEach(r => {
-                        const c = r.split(',');
-                        if(c[0]) offerItems[c[0].trim()] = c[1]?.trim();
-                    });
-                }
-            } catch (e) { console.error("Offer Error"); }
+            const res = await fetch(OFFER_CSV + "&t=" + new Date().getTime());
+            const data = await res.text();
+            const rows = data.split('\n');
+            if(rows.length > 0) {
+                const dates = rows[0].split(',');
+                const start = parseDate(dates[0]);
+                const end = parseDate(dates[1]);
+                const today = new Date(); today.setHours(0,0,0,0);
+                const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1); tomorrow.setHours(0,0,0,0);
+                isOfferDay = (start && end) && ((today >= start && today <= end) || (tomorrow >= start && tomorrow <= end));
+                rows.slice(1).forEach(r => {
+                    const c = r.split(',');
+                    if(c[0]) offerItems[c[0].trim()] = c[1]?.trim();
+                });
+            }
         }
 
-        async function fetchList() {
+        async function fetchProducts() {
             const savedData = localStorage.getItem('k_order_local');
             if(savedData) orderData = JSON.parse(savedData);
             const res = await fetch(MAIN_CSV + "&t=" + new Date().getTime());
@@ -94,7 +93,7 @@
                 const c = r.split(',');
                 const code = c[0]?.trim();
                 if(!code) return null;
-                if(!orderData[code]) orderData[code] = { qty: '', type: '', customName: c[1]?.trim() };
+                if(!orderData[code]) orderData[code] = { qty: '', type: '', offer: '', customName: c[1]?.trim() };
                 return { code, name: c[1]?.trim() };
             }).filter(p => p && p.name);
             renderTable(products);
@@ -123,29 +122,37 @@
                         <span class="saved-val" style="display:${(isEditing && activeField === 't') ? 'none' : (d.type ? 'block' : 'none')}" onclick="activateRow('${p.code}', 't')">${d.type}</span>
                         <input type="text" id="in-t-${p.code}" class="type-input" style="display:${(isEditing && activeField === 't') ? 'block' : 'none'}" value="${d.type}" oninput="handleKey(this, '${p.code}', 't')">
                     </td>
-                    <td class="off-col-view">${hasOffer ? offerItems[p.code] : '-'}</td>
+                    <td>
+                        <button class="circle-btn" style="background:#f59e0b; display:${(isEditing && activeField === 'o') ? 'none' : (d.offer ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'o')"><i class="fas fa-tag"></i></button>
+                        <span class="saved-val" style="display:${(isEditing && activeField === 'o') ? 'none' : (d.offer ? 'block' : 'none')}" onclick="activateRow('${p.code}', 'o')">${d.offer}</span>
+                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${(isEditing && activeField === 'o') ? 'block' : 'none'}" value="${d.offer}" oninput="handleKey(this, '${p.code}', 'o')">
+                    </td>
                 </tr>`;
             }).join('');
+        }
+
+        function activateRow(code, field) {
+            activeRow = code; activeField = field || null;
+            renderTable(filterTable(true));
+            if(field) setTimeout(() => { const el = document.getElementById(`in-${field}-${code}`); if(el) el.focus(); }, 100);
         }
 
         function handleKey(input, code, type) {
             if (input.value.includes('..')) {
                 const val = input.value.replace('..', ''); input.value = val;
-                orderData[code][type === 'q' ? 'qty' : 'type'] = val;
-                saveLocal();
-                syncOrder(code, orderData[code].qty, orderData[code].type);
+                orderData[code][type==='q'?'qty':(type==='t'?'type':'offer')] = val; saveLocal();
                 if (type === 'q' && val) activateRow(code, 't');
+                else if (type === 't' && val) activateRow(code, 'o');
                 else { activeRow = null; activeField = null; renderTable(filterTable(true)); }
-            } else { orderData[code][type === 'q' ? 'qty' : 'type'] = input.value; saveLocal(); }
+            } else { orderData[code][type==='q'?'qty':(type==='t'?'type':'offer')] = input.value; saveLocal(); }
         }
 
-        function syncOrder(code, q, t) {
-            fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'order_update', code: code, ordQty: q, type: t }) });
-        }
-
-        function activateRow(code, field) { activeRow = code; activeField = field || null; renderTable(filterTable(true)); if(field) setTimeout(() => document.getElementById(`in-${field}-${code}`).focus(), 100); }
         function saveLocal() { localStorage.setItem('k_order_local', JSON.stringify(orderData)); }
-        function filterTable(returnData = false) { const query = document.getElementById('searchInput').value.toLowerCase(); const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query)); if(returnData) return filtered; renderTable(filtered); }
+        function filterTable(returnData = false) {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
+            if(returnData) return filtered; renderTable(filtered);
+        }
     </script>
 </body>
 </html>
