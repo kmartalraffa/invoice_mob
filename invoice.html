@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>K MART - INVOICE (CLEAN)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; --bg: #f1f5f9; --dark: #1e293b; --warn-bg: #fee2e2; --safe-bg: #f0fdf4; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
+        .home-link { position: absolute; left: 12px; top: 18px; color: white; text-decoration: none; }
+        .warning-box { display: none; background: var(--warn-bg); color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; border: 1px solid #fecaca; }
+        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
+        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; color: white; text-transform: uppercase; width: 100%; }
+        .btn-add { background: var(--primary); }
+        .cart-item { padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .item-red { background: var(--warn-bg) !important; border-color: #fecaca !important; }
+        .item-green { background: var(--safe-bg) !important; border-color: #bbf7d0 !important; }
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
+        .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+        @media print { .no-print { display: none; } #printArea { display: block !important; padding: 10mm; font-family: monospace; } .print-warn { color: red; font-weight: bold; margin-top: 10px; font-size: 12px; } }
+    </style>
+</head>
+<body onload="initAll()">
+<div class="container no-print">
+    <div class="header-ui">
+        <a href="index.html" class="home-link"><i class="fas fa-home"></i></a>
+        <h3 style="margin:0;">K MART INVOICE</h3>
+    </div>
+
+    <div id="priceWarning" class="warning-box">
+        <span style="display: block; margin-bottom: 5px;">⚠️ PRICE ALERT: EXCEEDS OFFER!</span>
+        <div id="warningList" style="font-size: 11px; font-weight: 400;"></div>
+    </div>
+
+    <div style="position:relative">
+        <input type="text" id="search" placeholder="Search Item..." oninput="searchItems()" autocomplete="off">
+        <div id="list" class="autocomplete-list"></div>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <input type="text" id="qty" placeholder="Qty" inputmode="decimal" onkeyup="handleDoubleDot(this, 'total')">
+        <input type="text" id="total" placeholder="Total" inputmode="decimal" onkeyup="handleDoubleDot(this, 'add')">
+    </div>
+    <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled>ADD TO LIST</button>
+    <div id="cart" style="margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
+    <button onclick="window.print()" class="btn" style="background:#334155; margin-top:10px;">PRINT BILL</button>
+    <button onclick="clearCart()" class="btn" style="background:var(--danger); margin-top:10px;">CLEAR ALL</button>
+</div>
+
+<div id="printArea" style="display:none;">
+    <h3 style="text-align:center;">K MART INVOICE</h3>
+    <hr>
+    <table style="width:100%; text-align: left; border-collapse: collapse;">
+        <thead><tr style="border-bottom: 1px solid #000;"><th>ITEM</th><th>QTY</th><th>RATE</th><th>TOTAL</th></tr></thead>
+        <tbody id="printBody"></tbody>
+    </table>
+    <div id="printWarningMsg" class="print-warn"></div>
+</div>
+
+<script>
+    const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+    const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
+    
+    let items = [], offerItems = {}, selected = null;
+
+    async function initAll() {
+        await fetchOffers();
+        await fetchItems();
+        renderCart();
+    }
+
+    // ഓഫർ ഷീറ്റിലെ വിവരങ്ങൾ എടുക്കുന്നു (തീയതി ലോജിക് ഇല്ല)
+    async function fetchOffers() {
+        try {
+            const res = await fetch(OFFER_CSV + "&t=" + new Date().getTime());
+            const data = await res.text();
+            const rows = data.split('\n');
+            // ആദ്യ വരി ഹെഡിംഗ് ആയതുകൊണ്ട് രണ്ടാമത്തെ വരി മുതൽ നോക്കുന്നു
+            rows.slice(1).forEach(r => {
+                const c = r.split(',');
+                if(c[0] && c[1]) offerItems[c[0].trim()] = parseFloat(c[1]);
+            });
+        } catch (e) { console.log("Offer Fetch Error"); }
+    }
+
+    async function fetchItems() {
+        try {
+            const res = await fetch(MAIN_CSV);
+            const data = await res.text();
+            items = data.split('\n').slice(1).map(r => {
+                const c = r.split(',');
+                return { code: c[0]?.trim(), name: c[1]?.trim() };
+            }).filter(i => i.name);
+        } catch (e) { console.log("Items Error"); }
+    }
+
+    function searchItems() {
+        const q = document.getElementById('search').value.toLowerCase();
+        const l = document.getElementById('list'); l.innerHTML = "";
+        if(q.length < 2) return;
+        items.filter(i => i.name.toLowerCase().includes(q) || i.code.includes(q)).slice(0,6).forEach(i => {
+            const d = document.createElement('div'); d.className = 'item-row';
+            d.innerHTML = `<b>#${i.code}</b> ${i.name}`;
+            d.onclick = () => {
+                selected = i; document.getElementById('search').value = i.name;
+                l.innerHTML = ""; document.getElementById('addBtn').disabled = false;
+                document.getElementById('qty').focus();
+            };
+            l.appendChild(d);
+        });
+    }
+
+    function addToCart() {
+        const q = parseFloat(document.getElementById('qty').value);
+        const t = parseFloat(document.getElementById('total').value);
+        if(!selected || isNaN(q) || isNaN(t)) return;
+        
+        const rate = (t / q).toFixed(2);
+        const offerPrice = offerItems[selected.code];
+        let status = 'normal';
+        
+        // വിലകൾ നേരിട്ട് താരതമ്യം ചെയ്യുന്നു
+        if (offerPrice) {
+            status = (parseFloat(rate) > offerPrice) ? 'high' : 'safe';
+        }
+
+        let cart = JSON.parse(localStorage.getItem('k_invoice_local_v3') || '{}');
+        cart[selected.code] = { ...selected, qty: q.toFixed(3), total: t.toFixed(2), rate, status, offPrice: offerPrice };
+        localStorage.setItem('k_invoice_local_v3', JSON.stringify(cart));
+        
+        resetInputs(); renderCart();
+    }
+
+    function renderCart() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_invoice_local_v3') || '{}'));
+        const warnBox = document.getElementById('priceWarning');
+        const warnList = document.getElementById('warningList');
+        let warnings = [];
+
+        document.getElementById('cart').innerHTML = cart.map(i => {
+            let css = '';
+            if(i.status === 'high') {
+                css = 'item-red';
+                warnings.push(`⚠️ ${i.name}: Rate ${i.rate} > Offer ${i.offPrice}`);
+            } else if(i.status === 'safe') {
+                css = 'item-green';
+            }
+            return `<div class="cart-item ${css}">
+                <div style="font-size:12px;"><b>${i.name}</b><br>Qty: ${i.qty} | Rate: ${i.rate}</div>
+                <b>₹${i.total}</b>
+            </div>`;
+        }).reverse().join('');
+
+        warnBox.style.display = (warnings.length > 0) ? 'block' : 'none';
+        if(warnings.length > 0) warnList.innerHTML = warnings.join('<br>');
+        
+        document.getElementById('printBody').innerHTML = cart.map(i => 
+            `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`
+        ).join('');
+        document.getElementById('printWarningMsg').innerHTML = warnings.join('<br>');
+    }
+
+    function handleDoubleDot(input, action) {
+        if (input.value.includes('..')) {
+            input.value = input.value.replace('..', '');
+            if (action === 'total') document.getElementById('total').focus();
+            else addToCart();
+        }
+    }
+
+    function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
+    function clearCart() { if(confirm("Clear Cart?")) { localStorage.removeItem('k_invoice_local_v3'); renderCart(); } }
+</script>
+</body>
+</html>
