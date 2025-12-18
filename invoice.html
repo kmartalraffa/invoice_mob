@@ -13,7 +13,6 @@
         .header-ui { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; position: relative; margin-bottom: 15px; }
         .home-link { position: absolute; left: 12px; top: 18px; color: white; font-size: 18px; }
         
-        /* Matching Colors for Warning Box and Cart Shading */
         .warning-box { display: none; background: var(--warn-bg); color: var(--danger); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 12px; text-align: center; border: 1px solid var(--warn-border); line-height: 1.5; }
         
         input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 10px; }
@@ -26,11 +25,15 @@
         .btn-finish { background: var(--success); }
         
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Shading for items with warnings - Matches Warning Box */
         .cart-warning { background: var(--warn-bg) !important; border: 1px solid var(--warn-border) !important; color: var(--danger) !important; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 10px; border-radius: 6px; font-weight: 700; cursor: pointer; }
         .cart-warning .edit-btn { background: #fff; border: 1px solid var(--warn-border); }
+
+        /* On-Screen Bill Preview Table */
+        #billPreview { display: none; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px; }
+        .bill-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+        .bill-table th, .bill-table td { padding: 10px; border: 1px solid #eee; text-align: left; }
+        .bill-table th { background: #555; color: white; -webkit-print-color-adjust: exact; }
 
         .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
         .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
@@ -76,13 +79,24 @@
     </div>
 
     <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD TO LIST</button>
-    <div id="cart" style="max-height: 250px; overflow-y: auto; margin-top: 15px;"></div>
+    <div id="cart" style="max-height: 200px; overflow-y: auto; margin-top: 15px;"></div>
     
     <div class="action-grid">
         <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> Clear</button>
         <button onclick="toggleBillView()" class="btn btn-view"><i class="fas fa-eye"></i> View Bill</button>
         <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> Print Bill</button>
         <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-sync"></i> Finish</button>
+    </div>
+
+    <div id="billPreview">
+        <h4 style="text-align: center; margin-bottom: 10px;">BILL SUMMARY</h4>
+        <table class="bill-table">
+            <thead>
+                <tr><th>Code</th><th>Item</th><th>Qty</th><th>Total</th></tr>
+            </thead>
+            <tbody id="billBody"></tbody>
+        </table>
+        <h3 style="text-align: right; margin-top:10px; padding-right:5px;">Total: ₹<span id="screenGrandTotal">0.00</span></h3>
     </div>
 </div>
 
@@ -171,7 +185,6 @@
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         const warningDiv = document.getElementById('priceWarning');
         const warningItemsSpan = document.getElementById('warningItems');
-        
         let warningList = cart.filter(i => i.isOverPrice).map(i => i.name);
         
         if(warningList.length > 0) {
@@ -190,6 +203,7 @@
                 </div>
             </div>
         `).reverse().join('');
+        if(document.getElementById('billPreview').style.display === "block") updateBillView();
     }
 
     function editItem(code) {
@@ -205,20 +219,33 @@
         renderCart();
     }
 
+    function toggleBillView() {
+        const display = document.getElementById('billPreview');
+        if (display.style.display === "block") { display.style.display = "none"; return; }
+        updateBillView();
+        display.style.display = "block";
+    }
+
+    function updateBillView() {
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        let total = 0;
+        document.getElementById('billBody').innerHTML = cart.map(i => {
+            total += parseFloat(i.total);
+            return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.total}</td></tr>`;
+        }).join('');
+        document.getElementById('screenGrandTotal').innerText = total.toFixed(2);
+    }
+
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         if(!cart.length) return alert("Empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
-        
-        let total = 0;
-        let warnings = [];
-        
+        let total = 0, warnings = [];
         document.getElementById('printBodyActual').innerHTML = cart.map(i => {
             total += parseFloat(i.total);
             if(i.isOverPrice) warnings.push("OFFER PRICE LESSER THAN ITEM PRICE: " + i.name);
             return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
         }).join('');
-        
         document.getElementById('printWarnings').innerHTML = warnings.join("<br>");
         document.getElementById('printGrandTotal').innerText = total.toFixed(2);
         window.print();
@@ -234,7 +261,7 @@
         btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
     }
 
-    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
+    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); document.getElementById('billPreview').style.display="none"; }
     function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
     init();
 </script>
