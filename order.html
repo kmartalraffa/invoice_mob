@@ -10,12 +10,10 @@
         :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; --highlight: #fef9c3; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
         
-        /* Dynamic Header Styles */
         .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; transition: 0.5s; }
         .header.making { background: var(--highlight) !important; color: #854d0e !important; border: 2px solid #facc15; }
         .home-icon { position: absolute; left: 12px; top: 15px; color: inherit; text-decoration: none; }
         
-        /* Status Blinking Effect */
         .status-badge { font-size: 11px; font-weight: 800; text-transform: uppercase; display: none; margin-top: 4px; }
         .header.making .status-badge { display: block; animation: blinker 1.2s linear infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
@@ -85,9 +83,15 @@
 
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+        const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
+        
         let products = [], orderData = {}, activeCode = null;
 
         async function fetchList() {
+            // Local storage-ൽ നിന്ന് പഴയ ഡാറ്റ ഉണ്ടോ എന്ന് നോക്കുന്നു
+            const savedData = localStorage.getItem('k_order_local');
+            if(savedData) orderData = JSON.parse(savedData);
+
             try {
                 const res = await fetch(CSV_URL + "&t=" + new Date().getTime());
                 const data = await res.text();
@@ -145,17 +149,7 @@
                 </tr>`;
             }).join('');
 
-            // Update Header Status
-            const header = document.getElementById('mainHeader');
-            if(filledCount >= 3) header.classList.add('making');
-            else header.classList.remove('making');
-        }
-
-        function showInput(type, code) {
-            document.getElementById(`btn-${type}-${code}`).style.display = 'none';
-            const input = document.getElementById(`in-${type}-${code}`);
-            input.style.display = 'block';
-            input.focus();
+            updateHeader(filledCount);
         }
 
         function handleInput(input, type, code) {
@@ -164,18 +158,63 @@
                 input.value = val;
                 input.blur();
                 if(type === 'q' && val > 0) openTypeModal(code);
+                else syncToSheet(code); // Offer എൻട്രി കഴിഞ്ഞാൽ ഷീറ്റിലേക്ക്
             }
             if(type === 'q') orderData[code].qty = input.value;
             else orderData[code].offer = input.value;
-            updateHeaderStatus(); // Immediate Check
+            
+            saveLocal();
+        }
+
+        function saveLocal() {
+            localStorage.setItem('k_order_local', JSON.stringify(orderData));
+            updateHeaderStatus();
+        }
+
+        // ഗൂഗിൾ ഷീറ്റിലേക്ക് പശ്ചാത്തലത്തിൽ ഡാറ്റ അയക്കുന്നു
+        async function syncToSheet(code) {
+            const data = orderData[code];
+            try {
+                fetch(WEB_APP, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        action: 'order_update',
+                        code: code,
+                        qty: data.qty,
+                        type: data.type,
+                        offer: data.offer
+                    })
+                });
+            } catch (e) { console.log("Background sync failed"); }
+        }
+
+        function selectType(unit) {
+            orderData[activeCode].type = unit;
+            document.getElementById('typeModal').style.display = 'none';
+            saveLocal();
+            renderTable(filterTable(true));
+            syncToSheet(activeCode); // ടൈപ്പ് സെലക്ട് ചെയ്താലുടൻ ഷീറ്റിലേക്ക്
+        }
+
+        // ബാക്കി ഫംഗ്ഷനുകൾ മാറ്റമില്ലാതെ തുടരുന്നു...
+        function showInput(type, code) {
+            document.getElementById(`btn-${type}-${code}`).style.display = 'none';
+            const input = document.getElementById(`in-${type}-${code}`);
+            input.style.display = 'block';
+            input.focus();
+        }
+
+        function updateHeader(count) {
+            const header = document.getElementById('mainHeader');
+            if(count >= 3) header.classList.add('making');
+            else header.classList.remove('making');
         }
 
         function updateHeaderStatus() {
             let count = 0;
             Object.values(orderData).forEach(d => { if(d.qty > 0 && d.type !== '+') count++; });
-            const header = document.getElementById('mainHeader');
-            if(count >= 3) header.classList.add('making');
-            else header.classList.remove('making');
+            updateHeader(count);
         }
 
         function checkEmpty(type, code, val) {
@@ -184,7 +223,9 @@
                 document.getElementById(`btn-${type}-${code}`).style.display = 'flex';
                 if(type === 'q') { orderData[code].qty = ''; orderData[code].type = '+'; }
                 else orderData[code].offer = '';
+                syncToSheet(code); // ക്ലിയർ ചെയ്താലും ഷീറ്റിൽ അപ്‌ഡേറ്റ് ചെയ്യണം
             }
+            saveLocal();
             renderTable(filterTable(true));
         }
 
@@ -192,18 +233,13 @@
             const newName = prompt("Edit Item Name:", orderData[code].customName);
             if (newName) {
                 orderData[code].customName = newName;
+                saveLocal();
                 renderTable(filterTable(true));
             }
         }
 
         function openTypeModal(code) { activeCode = code; document.getElementById('typeModal').style.display = 'block'; }
-        function selectType(unit) {
-            orderData[activeCode].type = unit;
-            document.getElementById('typeModal').style.display = 'none';
-            renderTable(filterTable(true));
-        }
         function closeModal() { document.getElementById('typeModal').style.display = 'none'; }
-        
         function filterTable(returnData = false) {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.code.includes(query));
