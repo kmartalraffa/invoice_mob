@@ -18,33 +18,38 @@
         
         /* Cart Styles */
         .cart-item { background: #fff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .cart-info { font-size: 13px; line-height: 1.4; }
+        .cart-info { font-size: 13px; }
         .edit-btn { background: #eff6ff; color: var(--primary); border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }
 
-        /* Button Grid Layout */
+        /* Action Buttons Grid */
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn { padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; color: white; }
-        .btn-add { background: var(--primary); width: 100%; margin-top: 5px; }
-        .btn-finish { background: var(--success); }
-        .btn-print { background: #334155; }
-        .btn-view { background: #64748b; }
+        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; color: white; text-transform: uppercase; }
+        
+        .btn-add { background: var(--primary); width: 100%; margin-bottom: 10px; }
         .btn-clear { background: var(--danger); }
+        .btn-view { background: #64748b; }
+        .btn-print { background: #334155; }
+        .btn-finish { background: var(--success); }
 
-        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-height: 150px; overflow-y: auto; }
+        .autocomplete-list { position: absolute; background: white; border: 1px solid #e2e8f0; width: 100%; z-index: 1000; border-radius: 8px; max-height: 150px; overflow-y: auto; }
         .item-row { padding: 10px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 14px; }
 
+        /* On-Screen Bill Table */
+        #billDisplay { display: none; margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px; }
+        .bill-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
+        .bill-table th, .bill-table td { padding: 10px; border: 1px solid #eee; text-align: left; }
+        .bill-table th { background: #f8fafc; }
+
         /* Print Design */
-        #printArea { display: none; padding: 40px; }
+        #printArea { display: none; }
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; }
-            .no-print { display: none !important; }
+            #printArea { position: absolute; left: 0; top: 0; display: block !important; width: 100%; padding: 20px; }
+            .print-header { text-align: center; margin-bottom: 30px; }
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 10px; text-align: left; }
         }
-        .print-header { text-align: center; border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 10px; }
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
-        .print-table th { background: #f8fafc; }
     </style>
 </head>
 <body>
@@ -67,30 +72,35 @@
 
     <button onclick="addToCart()" id="addBtn" class="btn btn-add" disabled><i class="fas fa-plus"></i> ADD TO LIST</button>
     
-    <div id="cart" style="margin-top:15px; max-height: 250px; overflow-y: auto;"></div>
+    <div id="cart" style="max-height: 200px; overflow-y: auto;"></div>
     
     <div class="action-grid">
-        <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-sync"></i> FINISH</button>
-        <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> PRINT BILL</button>
-        <button onclick="toggleView()" class="btn btn-view"><i class="fas fa-eye"></i> VIEW BILL</button>
-        <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> CLEAR</button>
+        <button onclick="clearCart()" class="btn btn-clear"><i class="fas fa-trash"></i> Clear</button>
+        <button onclick="toggleBillView()" class="btn btn-view"><i class="fas fa-eye"></i> View Bill</button>
+        <button onclick="preparePrint()" class="btn btn-print"><i class="fas fa-print"></i> Print Bill</button>
+        <button onclick="finishUpdate()" id="finishBtn" class="btn btn-finish"><i class="fas fa-sync"></i> Finish</button>
+    </div>
+
+    <div id="billDisplay">
+        <h4 style="text-align: center; margin-bottom: 10px;">BILL PREVIEW</h4>
+        <table class="bill-table">
+            <thead>
+                <tr><th>Code</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
+            </thead>
+            <tbody id="billBody"></tbody>
+        </table>
+        <h3 style="text-align: right; margin-right: 10px;">Total: ₹<span id="screenGrandTotal">0.00</span></h3>
     </div>
 </div>
 
 <div id="printArea">
     <div class="print-header">
         <h2 style="margin:0;">K MART SUPERMARKET AL RAFFA</h2>
-        <p>Date: <span id="printDate"></span></p>
+        <p style="margin:5px 0;">Date: <span id="printDate"></span></p>
     </div>
     <table class="print-table">
         <thead>
-            <tr>
-                <th>Code</th>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Rate</th>
-                <th>Total</th>
-            </tr>
+            <tr><th>Code</th><th>Description</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
         </thead>
         <tbody id="printBody"></tbody>
     </table>
@@ -143,9 +153,7 @@
         let cart = JSON.parse(localStorage.getItem('k_cart') || '{}');
         cart[selected.code] = { ...selected, qty: q, total: t, rate: (t/q).toFixed(2) };
         localStorage.setItem('k_cart', JSON.stringify(cart));
-        
         fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'live_update', code:selected.code, qty:q, total:t }) });
-        
         resetInputs(); renderCart();
     }
 
@@ -153,11 +161,8 @@
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
         document.getElementById('cart').innerHTML = cart.map(i => `
             <div class="cart-item">
-                <div class="cart-info">
-                    <b>${i.name}</b><br>
-                    <small>Code: ${i.code} | Rate: ${i.rate} | Qty: ${i.qty}</small>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
+                <div class="cart-info"><b>${i.name}</b><br><small>#${i.code} | Rt: ${i.rate} | Qty: ${i.qty}</small></div>
+                <div style="display:flex; gap:10px; align-items:center;">
                     <b>₹${i.total}</b>
                     <button class="edit-btn" onclick="editItem('${i.code}')">EDIT</button>
                 </div>
@@ -178,9 +183,23 @@
         renderCart();
     }
 
+    function toggleBillView() {
+        const display = document.getElementById('billDisplay');
+        if (display.style.display === "block") { display.style.display = "none"; return; }
+        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if (!cart.length) return alert("Cart empty!");
+        let total = 0;
+        document.getElementById('billBody').innerHTML = cart.map(i => {
+            total += i.total;
+            return `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td><td>${i.rate}</td><td>${i.total}</td></tr>`;
+        }).join('');
+        document.getElementById('screenGrandTotal').innerText = total.toFixed(2);
+        display.style.display = "block";
+    }
+
     function preparePrint() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Cart is empty!");
+        if(!cart.length) return alert("Empty!");
         document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB');
         let total = 0;
         document.getElementById('printBody').innerHTML = cart.map(i => {
@@ -191,25 +210,18 @@
         window.print();
     }
 
-    function toggleView() {
-        const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
-        if(!cart.length) return alert("Empty!");
-        let msg = cart.map(i => `${i.name}: ₹${i.total}`).join('\n');
-        alert("Current Bill:\n" + msg);
-    }
-
     async function finishUpdate() {
         const cart = Object.values(JSON.parse(localStorage.getItem('k_cart') || '{}'));
+        if(!cart.length) return;
         const btn = document.getElementById('finishBtn');
         btn.innerHTML = 'SYNCING...';
         await fetch(WEB_APP, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action:'finish_billing', cartItems: cart }) });
         alert("Updated!");
-        btn.innerHTML = '<i class="fas fa-sync"></i> FINISH';
+        btn.innerHTML = '<i class="fas fa-sync"></i> Finish';
     }
 
-    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); }
+    function clearCart() { localStorage.removeItem('k_cart'); renderCart(); document.getElementById('billDisplay').style.display="none"; }
     function resetInputs() { document.getElementById('search').value=""; document.getElementById('qty').value=""; document.getElementById('total').value=""; document.getElementById('search').focus(); }
-    
     init();
 </script>
 </body>
