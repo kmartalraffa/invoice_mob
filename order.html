@@ -1,96 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>K MART - ORDER MODE</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; --highlight: #fef9c3; --offer: #ef4444; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
-        .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
-        .home-icon { position: absolute; left: 12px; top: 15px; color: inherit; text-decoration: none; }
-        .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
-        .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-        th { background: #f1f5f9; padding: 8px 4px; text-align: center; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 10px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; }
-        .item-name-text { font-size: 14px; font-weight: 600; text-align: left; display: block; line-height: 1.2; }
-        .offer-badge { background: var(--success); color: white; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 800; margin-left: 5px; }
-        .offer-price-txt { color: var(--offer); font-size: 11px; font-weight: 700; display: block; margin-top: 2px; }
-        .qty-input, .type-input, .offer-input { width: 52px; font-size: 13px; font-weight: 700; text-align: center; border-radius: 4px; border: 2px solid var(--primary); padding: 6px 2px; display: none; background: white; outline: none; text-transform: uppercase; }
-        .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin: auto; }
-        .btn-plus { background: var(--success); }
-        .saved-val { font-size: 13px; font-weight: 700; color: var(--primary); display: block; text-transform: uppercase; }
-        .row-active { background-color: var(--highlight) !important; }
-    </style>
-</head>
-<body onload="initAll()">
-    <div class="header">
-        <a href="index.html" class="home-icon"><i class="fas fa-arrow-left"></i></a>
-        <h2 style="margin:0; font-size: 16px;">ORDER MODE</h2>
-    </div>
-    <input type="text" id="searchInput" class="search-bar" placeholder="Search item..." oninput="filterTable()">
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr><th style="width: 35px;">Cd</th><th style="text-align: left;">Item Name</th><th style="width: 60px;">Ord.Qty</th><th style="width: 55px;">Typ</th><th style="width: 55px;">Off</th></tr>
-            </thead>
-            <tbody id="productBody"></tbody>
-        </table>
-    </div>
+<script>
+    const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+    const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
+    
+    let items = [], offerItems = {}, selected = null, isOfferDay = false;
 
-    <script>
-        const MAIN_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
-        const OFFER_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=806396571&single=true&output=csv";
-        let products = [], orderData = {}, activeRow = null, activeField = null, offerItems = {}, isOfferDay = false;
+    function parseDate(dateStr) {
+        if(!dateStr) return null;
+        if(dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            return new Date(parts[2], parts[1]-1, parts[0]);
+        }
+        return new Date(dateStr);
+    }
 
-        async function initAll() { await fetchOffers(); await fetchProducts(); }
-        async function fetchOffers() {
-            try {
-                const res = await fetch(OFFER_CSV + "&t=" + new Date().getTime());
-                const data = await res.text();
-                const rows = data.split('\n');
+    async function fetchOffers() {
+        try {
+            const res = await fetch(OFFER_CSV + "&t=" + new Date().getTime());
+            const data = await res.text();
+            const rows = data.split('\n');
+            if(rows.length > 0) {
                 const dates = rows[0].split(',');
-                const start = new Date(dates[0]); const end = new Date(dates[1]);
+                const start = parseDate(dates[0]);
+                const end = parseDate(dates[1]);
                 const today = new Date(); today.setHours(0,0,0,0);
-                const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1); tomorrow.setHours(0,0,0,0);
-                // ഇന്ന് അല്ലെങ്കിൽ നാളെ ഓഫർ ഉണ്ടോ എന്ന് പരിശോധിക്കുന്നു
-                isOfferDay = (today >= start && today <= end) || (tomorrow >= start && tomorrow <= end);
-                rows.slice(1).forEach(r => { const c = r.split(','); if(c[0]) offerItems[c[0].trim()] = c[1]?.trim(); });
-            } catch (e) { console.error("Offer Fetch Error"); }
-        }
-        async function fetchProducts() {
-            const savedData = localStorage.getItem('k_order_local');
-            if(savedData) orderData = JSON.parse(savedData);
-            try {
-                const res = await fetch(MAIN_CSV + "&t=" + new Date().getTime());
-                const data = await res.text();
-                const rows = data.split('\n').slice(1);
-                products = rows.map(r => {
-                    const c = r.split(','); const code = c[0]?.trim();
-                    if(!orderData[code]) orderData[code] = { qty: '', type: '', offer: '', customName: c[1]?.trim() };
-                    return { code: code, name: c[1]?.trim() };
-                }).filter(p => p.name);
-                renderTable(products);
-            } catch (e) { console.error("Product Fetch Error"); }
-        }
-        function renderTable(dataList) {
-            const body = document.getElementById('productBody');
-            body.innerHTML = dataList.map(p => {
-                const d = orderData[p.code]; const isEditing = activeRow === p.code;
-                const hasOffer = isOfferDay && offerItems[p.code];
-                return `<tr id="row-${p.code}" class="${isEditing ? 'row-active' : ''}">
-                    <td style="color:#94a3b8;">${p.code}</td>
-                    <td style="text-align:left;" onclick="activateRow('${p.code}')">
-                        <span class="item-name-text">${d.customName} ${hasOffer ? '<span class="offer-badge">OFFER</span>' : ''}</span>
-                        ${hasOffer ? `<span class="offer-price-txt">OFFER PRICE: ${offerItems[p.code]}</span>` : ''}
-                    </td>
-                    <td>
-                        <button class="circle-btn btn-plus" style="display:${(isEditing && activeField === 'q') ? 'none' : (d.qty ? 'none' : 'flex')}" onclick="activateRow('${p.code}', 'q')"><i class="fas fa-plus"></i></button>
-                        <span class="saved-val" style="display:${(isEditing && activeField === 'q') ? 'none' : (d.qty ? 'block' : 'none')}" onclick="activateRow('${p.code}', 'q')">${d.qty}</span>
-                        <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" style="display:${(isEditing && activeField === 'q') ? 'block' : 'none'}" value="${d.qty}" oninput="handleKey(this, '${p.code}', 'q')">
-                    </td>
-                    <td>
-                        <button class="circle-btn" style="background:var(--primary); display:${(isEditing && activeField === 't') ? 'none' : (d.
+                isOfferDay = start && end && (today >= start && today <= end);
+                rows.slice(1).forEach(r => {
+                    const c = r.split(',');
+                    if(c[0]) offerItems[c[0].trim()] = parseFloat(c[1]);
+                });
+            }
+        } catch (e) { console.log("Offer Error"); }
+    }
+    // ... (rest of invoice logic) ...
+</script>
