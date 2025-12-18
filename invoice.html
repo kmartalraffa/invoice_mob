@@ -66,12 +66,11 @@
     
     let items = [], offerItems = {}, selected = null, isOfferDay = false;
 
-    // നിങ്ങളുടെ ഷീറ്റിലെ 18/12/2025 ഫോർമാറ്റ് വായിക്കാൻ സഹായിക്കുന്ന ഫംഗ്‌ഷൻ
+    // പച്ചിന് തീയതി മാറ്റുന്ന ഫംഗ്ഷൻ
     function parseSheetDate(dateStr) {
         if(!dateStr) return null;
         const parts = dateStr.trim().split('/');
         if(parts.length === 3) {
-            // Day, Month (0-indexed), Year
             return new Date(parts[2], parts[1] - 1, parts[0]);
         }
         return new Date(dateStr);
@@ -92,9 +91,10 @@
                 const dates = rows[0].split(',');
                 const start = parseSheetDate(dates[0]);
                 const end = parseSheetDate(dates[1]);
-                const today = new Date(); today.setHours(0,0,0,0);
+                const today = new Date(); 
+                today.setHours(0,0,0,0);
 
-                // ഇന്നത്തെ തീയതി ഓഫർ പീരിയഡിലാണോ എന്ന് നോക്കുന്നു
+                // ഓഫർ തീയതിക്കുള്ളിലാണോ എന്ന് നോക്കുന്നു
                 isOfferDay = (start && end && today >= start && today <= end);
 
                 rows.slice(1).forEach(r => {
@@ -102,7 +102,7 @@
                     if(c[0] && c[1]) offerItems[c[0].trim()] = parseFloat(c[1]);
                 });
             }
-        } catch (e) { console.log("Offer Error", e); }
+        } catch (e) { console.log("Offer Fetch Error", e); }
     }
 
     async function fetchItems() {
@@ -141,7 +141,7 @@
         const offerPrice = offerItems[selected.code];
         let status = 'normal';
         
-        // ഓഫർ വിലയേക്കാൾ കൂടിയാൽ status 'high' ആകും
+        // ലോജിക്: കറന്റ് റേറ്റ് ഓഫർ വിലയേക്കാൾ കൂടുതലായാൽ ചുവപ്പ് വരും
         if (isOfferDay && offerPrice) {
             status = (parseFloat(rate) > offerPrice) ? 'high' : 'safe';
         }
