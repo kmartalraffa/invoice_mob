@@ -2,63 +2,103 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADD NEW ITEM - K MART</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ADD NEW PRODUCT - K MART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1e293b; margin-top: 0; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn-save { width: 100%; padding: 15px; background: #16a34a; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-save:disabled { background: #94a3b8; }
-        .home-btn { display: block; text-align: center; margin-top: 15px; color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 600; }
+        :root { --primary: #2563eb; --secondary: #1e293b; --success: #16a34a; --bg: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .add-card { background: white; width: 92%; max-width: 400px; padding: 25px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 10px 0; color: var(--secondary); }
+        .home-btn { position: absolute; top: 20px; left: 20px; background: white; border: none; padding: 10px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; color: var(--secondary); text-decoration: none; }
+        
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        .cat-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        .cat-card { border: 2px solid #e2e8f0; padding: 15px 10px; border-radius: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
+        .cat-card i { font-size: 24px; display: block; margin-bottom: 8px; }
+        .cat-card span { font-size: 14px; font-weight: 600; }
+        .cat-card.active { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+        
+        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn-save:disabled { background: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
-<body>
+<body onload="loadExistingItems()">
 
-<div class="card">
-    <h2><i class="fas fa-plus-circle"></i> ADD NEW ITEM</h2>
-    <input type="text" id="itemCode" placeholder="Item Code (e.g. 101)">
-    <input type="text" id="itemName" placeholder="Item Name">
-    <input type="number" id="itemPrice" placeholder="Default Price (Column C)">
-    <button onclick="saveItem()" id="saveBtn" class="btn-save">SAVE TO SHEET</button>
-    <a href="index.html" class="home-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-</div>
+    <a href="index.html" class="home-btn"><i class="fas fa-arrow-left"></i></a>
 
-<script>
-    // നിങ്ങളുടെ പുതിയ Web App URL ഇവിടെ നൽകുക
-    const WEB_APP = "https://script.google.com/macros/s/AKfycby_NZ1iI5a_uSK58ZjZyd3H8MPLpozwcR0CwiRBaRfrXzEoEPgnq2pFc-_2rU_WlyuCZg/exec";
+    <div class="add-card">
+        <div class="header">
+            <i class="fas fa-plus-circle" style="font-size: 40px; color: var(--primary);"></i>
+            <h2>Add New Product</h2>
+        </div>
 
-    async function saveItem() {
-        const code = document.getElementById('itemCode').value;
-        const name = document.getElementById('itemName').value;
-        const price = document.getElementById('itemPrice').value;
+        <input type="text" id="newCode" inputmode="numeric" pattern="[0-9]*" placeholder="Enter Product Code" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <input type="text" id="newName" placeholder="Enter Item Name">
+        
+        <div class="cat-container">
+            <div class="cat-card active" id="cat-veg" onclick="setCategory('veg')"><i class="fas fa-carrot"></i><span>Vegetable</span></div>
+            <div class="cat-card" id="cat-fruit" onclick="setCategory('fruit')"><i class="fas fa-apple-whole"></i><span>Fruits</span></div>
+        </div>
 
-        if(!code || !name || !price) return alert("ദയവായി എല്ലാ വിവരങ്ങളും നൽകുക!");
+        <button id="saveBtn" onclick="submitNewItem()" class="btn-save">ADD PRODUCT</button>
+    </div>
 
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "SAVING...";
-        btn.disabled = true;
+    <script>
+        let selectedCategory = 'veg';
+        let existingItems = [];
+        const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQfKOLigH7-3yCD2FNxvZNYDcoj97Gl0tqqsgHKIAWLAZpZp4sKzQ_s5w2QpjfZ638M-y4z-c79M3t/pub?gid=446680044&single=true&output=csv";
+        const WEB_APP = "https://script.google.com/macros/s/AKfycbx3MihOEOPqRfSbVyFMyHkpgFwhn18psCFBM0WDjTkqBNRqwAZ6QogH14kJEPrYEC9vNw/exec";
 
-        try {
-            // Google Apps Script-ലേക്ക് വിവരങ്ങൾ അയക്കുന്നു
-            await fetch(WEB_APP, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ action: 'add_new_item', code: code, name: name, price: price })
-            });
-            alert("ഐറ്റം വിജയകരമായി ഷീറ്റിൽ ചേർത്തു!");
-            document.getElementById('itemCode').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-        } catch (e) {
-            alert("Error: വിവരങ്ങൾ സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല.");
-        } finally {
-            btn.innerText = "SAVE TO SHEET";
-            btn.disabled = false;
+        async function loadExistingItems() {
+            try {
+                const res = await fetch(SHEET_CSV);
+                const csv = await res.text();
+                const rows = csv.split('\n').slice(1);
+                existingItems = rows.map(r => {
+                    const cols = r.split(',');
+                    return { code: cols[0]?.trim(), name: cols[1]?.trim().toLowerCase() };
+                });
+            } catch (e) { console.log("Sync Error"); }
         }
-    }
-</script>
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            document.getElementById('cat-veg').classList.toggle('active', cat === 'veg');
+            document.getElementById('cat-fruit').classList.toggle('active', cat === 'fruit');
+        }
+
+        async function submitNewItem() {
+            const code = document.getElementById('newCode').value.trim();
+            const name = document.getElementById('newName').value.trim();
+            const btn = document.getElementById('saveBtn');
+
+            if(!code || !name) { alert("⚠️ Please fill all fields"); return; }
+            
+            // ഡ്യൂപ്ലിക്കേഷൻ ചെക്കിംഗ്
+            if(existingItems.some(i => i.code === code)) { alert("❌ This Code already exists!"); return; }
+            if(existingItems.some(i => i.name === name.toLowerCase())) { alert("❌ This Item Name already exists!"); return; }
+
+            btn.textContent = "⌛ Saving..."; btn.disabled = true;
+
+            try {
+                await fetch(WEB_APP, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify({ code, itemName: name, category: selectedCategory }) 
+                });
+                alert("✅ Success! Product Added.");
+                location.reload(); // പുതിയ ഡാറ്റ ലോഡ് ചെയ്യാൻ പേജ് റിഫ്രഷ് ചെയ്യുന്നു
+            } catch (err) { 
+                alert("❌ Error while saving. Try again."); 
+            } finally { 
+                btn.textContent = "ADD PRODUCT"; btn.disabled = false; 
+            }
+        }
+    </script>
 </body>
 </html>
