@@ -7,24 +7,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; }
+        :root { --primary: #2563eb; --dark: #1e293b; --bg: #f8fafc; --success: #16a34a; --highlight: #fef9c3; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 5px; }
         .header { background: var(--dark); color: white; padding: 12px; border-radius: 10px; text-align: center; position: relative; margin-bottom: 10px; }
         .home-icon { position: absolute; left: 12px; top: 15px; color: white; text-decoration: none; }
         .search-bar { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+        
         .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
         th { background: #f1f5f9; padding: 8px 4px; text-align: left; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 8px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; word-wrap: break-word; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; word-wrap: break-word; transition: background 0.3s; }
 
-        .qty-input { width: 45px; padding: 6px 2px; border: 1px solid var(--primary); border-radius: 4px; text-align: center; font-weight: 700; font-size: 14px; display: none; }
-        .offer-input { width: 45px; padding: 6px 2px; border: 1px solid #f59e0b; border-radius: 4px; text-align: center; font-size: 13px; display: none; margin-top: 5px; }
-        .circle-btn { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; margin: auto; transition: 0.2s; }
+        /* Highlight Row when Offer exists */
+        .offer-active td { background-color: var(--highlight) !important; }
+
+        /* Font Synchronization */
+        .item-name-text { font-size: 14px; font-weight: 600; color: var(--dark); }
+        .qty-input, .offer-input { font-size: 14px; font-weight: 700; text-align: center; border-radius: 4px; border: 1px solid var(--primary); padding: 6px 2px; box-sizing: border-box; }
+
+        .qty-input { width: 45px; display: none; }
+        .offer-input { width: 45px; border-color: #f59e0b; display: none; }
+
+        .circle-btn { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; margin: auto; }
         .btn-plus { background: var(--success); }
         .btn-type { background: var(--primary); font-weight: 700; font-size: 9px; }
         .btn-offer { background: #f59e0b; }
         .btn-disabled { background: #e2e8f0 !important; color: #94a3b8 !important; cursor: not-allowed; }
-        .edit-name-btn { background: none; border: none; color: #94a3b8; font-size: 10px; padding: 0 5px; cursor: pointer; }
+        .edit-name-btn { background: none; border: none; color: #94a3b8; font-size: 10px; padding-left: 5px; cursor: pointer; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
         .modal-content { background: white; margin: 30% auto; padding: 20px; border-radius: 15px; width: 80%; text-align: center; }
@@ -81,84 +90,77 @@
                 products = rows.map(r => {
                     const c = r.split(',');
                     const code = c[0]?.trim();
-                    if(!orderData[code]) orderData[code] = { qty: '', type: '+', offer: '', showOfferBox: false, customName: c[1]?.trim() };
+                    if(!orderData[code]) orderData[code] = { qty: '', type: '+', offer: '', customName: c[1]?.trim() };
                     return { code: code, name: c[1]?.trim() };
                 }).filter(p => p.name);
                 renderTable(products);
-            } catch (e) { console.error("Data Sync Error"); }
+            } catch (e) { console.error("Sync Error"); }
         }
 
         function renderTable(dataList) {
             const body = document.getElementById('productBody');
             body.innerHTML = dataList.map(p => {
                 const d = orderData[p.code];
-                const hasValue = d.qty && d.qty > 0;
+                const hasQty = d.qty && d.qty > 0;
+                const hasOffer = d.offer && d.offer.length > 0;
+                
                 return `
-                <tr>
+                <tr id="row-${p.code}" class="${hasOffer ? 'offer-active' : ''}">
                     <td style="color:#64748b;">${p.code}</td>
                     <td>
-                        <span id="name-${p.code}" style="font-weight:600;">${d.customName}</span>
+                        <span id="name-${p.code}" class="item-name-text">${d.customName}</span>
                         <button class="edit-name-btn" onclick="editName('${p.code}')"><i class="fas fa-edit"></i></button>
                     </td>
                     <td>
-                        <button id="btn-q-${p.code}" class="circle-btn btn-plus" style="display:${d.qty ? 'none' : 'flex'}" onclick="showInput('${p.code}')"><i class="fas fa-plus"></i></button>
+                        <button id="btn-q-${p.code}" class="circle-btn btn-plus" style="display:${d.qty ? 'none' : 'flex'}" onclick="showInput('q', '${p.code}')"><i class="fas fa-plus"></i></button>
                         <input type="text" inputmode="decimal" id="in-q-${p.code}" class="qty-input" 
                             style="display:${d.qty ? 'block' : 'none'}" 
                             value="${d.qty}" 
-                            oninput="handleDoubleDot(this, '${p.code}')"
-                            onblur="checkEmpty('${p.code}', this.value)">
+                            oninput="handleInput(this, 'q', '${p.code}')"
+                            onblur="checkEmpty('q', '${p.code}', this.value)">
                     </td>
                     <td>
-                        <button id="btn-t-${p.code}" class="circle-btn btn-type ${hasValue ? '' : 'btn-disabled'}" ${hasValue ? '' : 'disabled'} onclick="openTypeModal('${p.code}')">${d.type}</button>
+                        <button id="btn-t-${p.code}" class="circle-btn btn-type ${hasQty ? '' : 'btn-disabled'}" ${hasQty ? '' : 'disabled'} onclick="openTypeModal('${p.code}')">${d.type}</button>
                     </td>
                     <td>
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <button id="btn-o-${p.code}" class="circle-btn btn-offer ${hasValue ? '' : 'btn-disabled'}" ${hasValue ? '' : 'disabled'} onclick="toggleOfferBox('${p.code}')"><i class="fas fa-tag"></i></button>
-                            <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" style="display:${d.showOfferBox && hasValue ? 'block' : 'none'}" value="${d.offer}" placeholder="₹" oninput="handleOfferInput(this, '${p.code}')">
-                        </div>
+                        <button id="btn-o-${p.code}" class="circle-btn btn-offer ${hasQty ? '' : 'btn-disabled'}" 
+                            style="display:${d.offer ? 'none' : 'flex'}"
+                            ${hasQty ? '' : 'disabled'} onclick="showInput('o', '${p.code}')"><i class="fas fa-tag"></i></button>
+                        
+                        <input type="text" inputmode="decimal" id="in-o-${p.code}" class="offer-input" 
+                            style="display:${d.offer ? 'block' : 'none'}" 
+                            value="${d.offer}" 
+                            oninput="handleInput(this, 'o', '${p.code}')"
+                            onblur="checkEmpty('o', '${p.code}', this.value)">
                     </td>
                 </tr>`;
             }).join('');
         }
 
-        function showInput(code) {
-            document.getElementById(`btn-q-${code}`).style.display = 'none';
-            const input = document.getElementById(`in-q-${code}`);
+        function showInput(type, code) {
+            document.getElementById(`btn-${type}-${code}`).style.display = 'none';
+            const input = document.getElementById(`in-${type}-${code}`);
             input.style.display = 'block';
             input.focus();
         }
 
-        // ✅ Double Dot Trigger Logic (Like invoice.html)
-        function handleDoubleDot(input, code) {
+        function handleInput(input, type, code) {
             if (input.value.includes('..')) {
-                const finalVal = input.value.replace('..', '');
-                input.value = finalVal;
-                orderData[code].qty = finalVal;
-                
-                if (finalVal && finalVal > 0) {
-                    input.blur(); // Hide keyboard
-                    openTypeModal(code); // Open Unit selection
-                }
+                const val = input.value.replace('..', '');
+                input.value = val;
+                input.blur();
+                if(type === 'q' && val > 0) openTypeModal(code);
             }
+            if(type === 'q') orderData[code].qty = input.value;
+            else orderData[code].offer = input.value;
         }
 
-        function handleOfferInput(input, code) {
-            if (input.value.includes('..')) {
-                const finalVal = input.value.replace('..', '');
-                input.value = finalVal;
-                orderData[code].offer = finalVal;
-                input.blur(); // Finish entry
-            } else {
-                orderData[code].offer = input.value;
-            }
-        }
-
-        function checkEmpty(code, val) {
+        function checkEmpty(type, code, val) {
             if(!val || val <= 0) {
-                document.getElementById(`in-q-${code}`).style.display = 'none';
-                document.getElementById(`btn-q-${code}`).style.display = 'flex';
-                orderData[code].qty = '';
-                orderData[code].showOfferBox = false;
+                document.getElementById(`in-${type}-${code}`).style.display = 'none';
+                document.getElementById(`btn-${type}-${code}`).style.display = 'flex';
+                if(type === 'q') orderData[code].qty = '';
+                else orderData[code].offer = '';
             }
             renderTable(filterTable(true));
         }
@@ -167,26 +169,16 @@
             const newName = prompt("Edit Item Name:", orderData[code].customName);
             if (newName) {
                 orderData[code].customName = newName;
-                document.getElementById(`name-${code}`).innerText = newName;
+                renderTable(filterTable(true));
             }
         }
 
         function openTypeModal(code) { activeCode = code; document.getElementById('typeModal').style.display = 'block'; }
-        
         function selectType(unit) {
             orderData[activeCode].type = unit;
             document.getElementById('typeModal').style.display = 'none';
             renderTable(filterTable(true));
         }
-
-        function toggleOfferBox(code) {
-            orderData[code].showOfferBox = !orderData[code].showOfferBox;
-            renderTable(filterTable(true));
-            if(orderData[code].showOfferBox) {
-                setTimeout(() => document.getElementById(`in-o-${code}`).focus(), 100);
-            }
-        }
-
         function closeModal() { document.getElementById('typeModal').style.display = 'none'; }
         
         function filterTable(returnData = false) {
